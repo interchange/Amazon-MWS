@@ -11,12 +11,13 @@ use DateTime;
 use XML::Simple;
 use URI::Escape;
 use MIME::Base64;
-use Digest::HMAC_SHA1 qw(hmac_sha1);
+use Digest::SHA;
 use HTTP::Request;
 use LWP::UserAgent;
 use Class::InsideOut qw(:std);
 use Digest::MD5 qw(md5_base64);
 use Amazon::MWS::TypeMap qw(:all);
+use Data::Dumper;
 
 my $baseEx;
 BEGIN { Readonly $baseEx => 'Amazon::MWS::Client::Exception' }
@@ -123,15 +124,15 @@ sub define_api_method {
         my $args = slurp_kwargs(@_);
         my $body;
         my %form = (
-            Action           => $method_name,
-            AWSAccessKeyId   => $self->access_key_id,
-            Merchant         => $self->merchant_id,
-            Marketplace      => $self->marketplace_id,
-            Version          => '2009-01-01',
-            SignatureVersion => 2,
-            SignatureMethod  => 'HmacSHA1',
-            Timestamp        => to_amazon('datetime', DateTime->now),
+            Action                      => $method_name,
+            AWSAccessKeyId              => $self->access_key_id,
+            Merchant                    => $self->merchant_id,
+            Version                     => '2009-01-01',
+            SignatureVersion            => 2,
+            SignatureMethod             => 'HmacSHA256',
+            Timestamp                   => to_amazon('datetime', DateTime->now),
         );
+
 
         foreach my $name (keys %$params) {
             my $param = $params->{$name};
@@ -220,22 +221,29 @@ sub sign_request {
     my ($self, $request) = @_;
     my $uri = $request->uri;
     my %params = $uri->query_form;
+
     my $canonical = join '&', map {
         my $param = uri_escape($_);
         my $value = uri_escape($params{$_});
         "$param=$value";
     } sort keys %params;
 
+    my $path = $uri->path || '/';
+
     my $string = $request->method . "\n"
         . $uri->authority . "\n"
-        . $uri->path . "\n"
+        . $path . "\n"
         . $canonical;
 
-    $params{Signature} = 
-        encode_base64(hmac_sha1($string, $self->secret_key), '');
+    $params{Signature} = Digest::SHA::hmac_sha256_base64($string, $self->secret_key);
+     while (length($params{Signature}) % 4) {
+                $params{Signature} .= '=';
+        }
     $uri->query_form(\%params);
     $request->uri($uri);
+
 }
+
 
 sub new {
     my $class = shift;
@@ -474,9 +482,10 @@ define_api_method ManageReportSchedule =>
     },
     respond => sub {
         my $root = shift;
-        convert($root, ScheduledDate => 'datetime');
+        convert_ReportSchedule($root, ScheduledDate => 'datetime');
         return $root;
     };
+
 
 define_api_method GetReportScheduleList =>
     parameters => {
