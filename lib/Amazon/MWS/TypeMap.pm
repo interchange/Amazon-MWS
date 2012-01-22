@@ -34,7 +34,9 @@ my %to_map = (
         $int = 1 unless $int > 0;
         return $int;
     },
-    'datetime' => sub { shift->iso8601 }
+    'datetime' => sub { 
+	return DateTime::Format::ISO8601->parse_datetime(shift);
+    },
 );
 
 sub to_amazon {
