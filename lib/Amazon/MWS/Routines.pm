@@ -104,6 +104,8 @@ sub define_api_method {
 
         my ($response, $content);
 
+	$spec->{method} = 'GET' unless $spec->{method};
+
         if ($spec->{method} eq 'POST' || $body) {
             $request->uri($uri);
             $request->method('POST'); 
@@ -159,7 +161,7 @@ sub define_api_method {
                 unless ($md5 eq md5_base64($content) . '==');
         }
 
-        return $content if $spec->{raw_body};
+        return $content if ($spec->{raw_body} || $args->{raw_body});
 
         my $hash = $xs->xml_in($content);
 
