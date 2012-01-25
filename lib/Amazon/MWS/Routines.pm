@@ -27,7 +27,7 @@ sub define_api_method {
     my $method = sub {
         my $self = shift;
         my $args = slurp_kwargs(@_);
-        my $body;
+        my $body = '';
 
         my %form = (
             Action           		=> $method_name,
@@ -52,7 +52,7 @@ sub define_api_method {
             my $array_names  = $param->{array_names};
             my $value = $args->{$name};
 
-	    if ($type =~ /List/) {
+	    if ($type =~ /^List$/) {
 	 	my %valuehash;
 		@valuehash{@{$param->{values}}}=();
 		Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value) unless (exists ($valuehash{$value}));
@@ -61,6 +61,7 @@ sub define_api_method {
 
             # Odd 'structured list' notation handled here
             if ($type =~ /(\w+)List/) {
+		 Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
                 my $list_type = $1;
                 my $counter   = 1;
                 foreach my $sub_value (@$value) {
@@ -71,6 +72,7 @@ sub define_api_method {
             }
 
             if ($type =~ /(\w+)Array/) {
+		 Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
                 my $list_type = $1;
                 my $counter   = 0;
                 foreach my $sub_value (@$value) {
@@ -85,15 +87,12 @@ sub define_api_method {
                 }
                 next;
             }
-
-
             if ($type eq 'HTTP-BODY') {
                 $body = $value;
             }
             else {
                 $form{$name} = to_amazon($type, $value);
             }
-
         }
 
 	my $endpoint = ( $spec->{service} ) ? "$self->{endpoint}$spec->{service}" : $self->{endpoint};
@@ -101,6 +100,7 @@ sub define_api_method {
         my $uri = URI->new($endpoint);
 
         my $request = HTTP::Request->new;
+	   $request->protocol('HTTP/1.0');
 
         my ($response, $content);
 
@@ -178,6 +178,7 @@ sub define_api_method {
 }
 
 sub force_array {
+
     my ($hash, $key) = @_;
     my $val = $hash->{$key};
 
