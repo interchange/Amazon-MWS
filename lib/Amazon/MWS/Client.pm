@@ -3,7 +3,7 @@ package Amazon::MWS::Client;
 use warnings;
 use strict;
 
-our $VERSION = '0.1';
+our $VERSION = '0.5';
 
 
 use Amazon::MWS::TypeMap qw(:all);
@@ -15,51 +15,6 @@ use Amazon::MWS::Sellers;
 use Amazon::MWS::Reports;
 use Amazon::MWS::Feeds;
 use Data::Dumper;
-
-sub convert {
-    my ($hash, $key, $type) = @_;
-    $hash->{$key} = from_amazon($type, $hash->{$key});
-}
-
-sub convert_FeedSubmissionInfo {
-    my $root = shift;
-    force_array($root, 'FeedSubmissionInfo');
-
-    foreach my $info (@{ $root->{FeedSubmissionInfo} }) {
-        convert($info, SubmittedDate => 'datetime');
-    }
-}
-
-sub convert_ReportRequestInfo {
-    my $root = shift; 
-    force_array($root, 'ReportRequestInfo');
-
-    foreach my $info (@{ $root->{ReportRequestInfo} }) {
-        convert($info, StartDate     => 'datetime');
-        convert($info, EndDate       => 'datetime');
-        convert($info, Scheduled     => 'boolean');
-        convert($info, SubmittedDate => 'datetime');
-    }
-}
-
-sub convert_ReportInfo {
-    my $root = shift;
-    force_array($root, 'ReportInfo');
-
-    foreach my $info (@{ $root->{ReportInfo} }) {
-        convert($info, AvailableDate => 'datetime');
-        convert($info, Acknowledged  => 'boolean');
-    }
-}
-
-sub convert_ReportSchedule {
-    my $root = shift;
-    force_array($root, 'ReportSchedule');
-
-    foreach my $info (@{ $root->{ReportSchedule} }) {
-        convert($info, ScheduledDate => 'datetime');
-    }
-}
 
 1;
 
