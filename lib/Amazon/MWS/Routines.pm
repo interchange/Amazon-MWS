@@ -14,7 +14,7 @@ use Amazon::MWS::Exception;
 use Data::Dumper;
 
 use Exporter qw(import);
-our @EXPORT_OK = qw(define_api_method new sign_request);
+our @EXPORT_OK = qw(define_api_method new sign_request convert force_array);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 sub slurp_kwargs { ref $_[0] eq 'HASH' ? shift : { @_ } }
@@ -34,7 +34,6 @@ sub define_api_method {
             AWSAccessKeyId   		=> $self->{access_key_id},
             Merchant         		=> $self->{merchant_id},
             SellerId         		=> $self->{merchant_id},
-            Version         	 	=> '2010-10-01',
             SignatureVersion 		=> 2,
             SignatureMethod  		=> 'HmacSHA256',
             Timestamp        		=> to_amazon('datetime', DateTime->now),
@@ -94,6 +93,8 @@ sub define_api_method {
                 $form{$name} = to_amazon($type, $value);
             }
         }
+
+	$form{Version} = $spec->{version} || '2010-01-01';
 
 	my $endpoint = ( $spec->{service} ) ? "$self->{endpoint}$spec->{service}" : $self->{endpoint};
 
@@ -219,6 +220,12 @@ sub sign_request {
    
     return  $params{Signature};
 }
+
+sub convert {
+    my ($hash, $key, $type) = @_;
+    $hash->{$key} = from_amazon($type, $hash->{$key});
+}
+
 
 sub new {
 	
