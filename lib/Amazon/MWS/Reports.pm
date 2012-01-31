@@ -3,6 +3,7 @@ package Amazon::MWS::Reports;
 use Amazon::MWS::Routines qw(:all);
 
 define_api_method RequestReport =>
+    version => '2009-01-01',
     parameters => {
         ReportType => {
             type     => 'string',
@@ -18,6 +19,7 @@ define_api_method RequestReport =>
     };
 
 define_api_method GetReportRequestList =>
+    version => '2009-01-01',
     parameters => {
         ReportRequestIdList        => { type => 'IdList' },
         ReportTypeList             => { type => 'TypeList' },
@@ -34,6 +36,7 @@ define_api_method GetReportRequestList =>
     };
 
 define_api_method GetReportRequestListByNextToken =>
+    version => '2009-01-01',
     parameters => {
         NextToken => { 
             required => 1,
@@ -48,6 +51,7 @@ define_api_method GetReportRequestListByNextToken =>
     };
 
 define_api_method GetReportRequestCount =>
+    version => '2009-01-01',
     parameters => {
         ReportTypeList             => { type => 'TypeList' },
         ReportProcessingStatusList => { type => 'StatusList' },
@@ -57,6 +61,7 @@ define_api_method GetReportRequestCount =>
     respond => sub { $_[0]->{Count} };
 
 define_api_method CancelReportRequests =>
+    version => '2009-01-01',
     parameters => {
         ReportRequestIdList        => { type => 'IdList' },
         ReportTypeList             => { type => 'TypeList' },
@@ -88,6 +93,7 @@ define_api_method GetReportList =>
     };
 
 define_api_method GetReportListByNextToken =>
+    version => '2009-01-01',
     parameters => {
         NextToken => {
             type     => 'string',
@@ -102,6 +108,7 @@ define_api_method GetReportListByNextToken =>
     };
 
 define_api_method GetReportCount =>
+    version => '2009-01-01',
     parameters => {
         ReportTypeList      => { type => 'TypeList' },
         Acknowledged        => { type => 'boolean' },
@@ -111,6 +118,7 @@ define_api_method GetReportCount =>
     respond => sub { $_[0]->{Count} };
 
 define_api_method GetReport =>
+    version => '2009-01-01',
     raw_body   => 1,
     parameters => {
         ReportId => { 
@@ -120,6 +128,7 @@ define_api_method GetReport =>
     };
 
 define_api_method ManageReportSchedule =>
+    version => '2009-01-01',
     parameters => {
         ReportType    => { type => 'string' },
         Schedule      => { type => 'string' },
@@ -132,6 +141,7 @@ define_api_method ManageReportSchedule =>
     };
 
 define_api_method GetReportScheduleList =>
+    version => '2009-01-01',
     parameters => {
         ReportTypeList => { type => 'ReportType' },
     },
@@ -143,6 +153,7 @@ define_api_method GetReportScheduleList =>
     };
 
 define_api_method GetReportScheduleListByNextToken =>
+    version => '2009-01-01',
     parameters => {
         NextToken => {
             type     => 'string',
@@ -157,12 +168,14 @@ define_api_method GetReportScheduleListByNextToken =>
     };
 
 define_api_method GetReportScheduleCount =>
+    version => '2009-01-01',
     parameters => {
         ReportTypeList => { type => 'ReportType' },
     },
     respond => sub { $_[0]->{Count} };
 
 define_api_method UpdateReportAcknowledgements =>
+    version => '2009-01-01',
     parameters => {
         ReportIdList => { 
             type     => 'IdList',
