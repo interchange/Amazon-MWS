@@ -9,7 +9,7 @@ use Exception::Class (
     },
     "Amazon::MWS::Exception::Invalid" => {
         isa    => Amazon::MWS::Exception,
-        fields => [qw(field value)],
+        fields => [qw(field value message)],
 	alias  => 'list_error', 
     },
     "Amazon::MWS::Exception::Transport" => {
