@@ -4,6 +4,16 @@ use Amazon::MWS::Routines qw(:all);
 
 my $orders_service = '/Orders/2011-01-01';
 
+define_api_method GetServiceStatus =>
+    raw_body => 0,
+    service => "$orders_service",
+    module_name => 'Amazon::MWS::Orders',
+    parameters => {},
+    respond => sub {
+        my $root = shift;
+        return $root->{Status};
+   };
+
 define_api_method ListOrders =>
     service => "$orders_service",
     parameters => {
