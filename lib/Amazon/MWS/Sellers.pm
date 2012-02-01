@@ -7,6 +7,7 @@ my $sellers_service = '/Sellers/2011-07-01';
 define_api_method GetServiceStatus => 
     raw_body => 0,
     service => "$sellers_service",
+    module_name => 'Amazon::MWS::Sellers',
     parameters => {},
     respond => sub {
 	my $root = shift;
