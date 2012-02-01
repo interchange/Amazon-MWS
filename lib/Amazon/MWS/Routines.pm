@@ -25,6 +25,7 @@ sub define_api_method {
     my $params      = $spec->{parameters};
 
     my $method = sub {
+
         my $self = shift;
         my $args = slurp_kwargs(@_);
         my $body = '';
@@ -40,7 +41,6 @@ sub define_api_method {
         );
 
         foreach my $name (keys %$params) {
-
             my $param = $params->{$name};
             unless (exists $args->{$name}) {
                 Amazon::MWS::Exception::MissingArgument->throw(name => $name) if $param->{required};
@@ -55,14 +55,16 @@ sub define_api_method {
 	 	my %valuehash;
 		@valuehash{@{$param->{values}}}=();
 		Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value) unless (exists ($valuehash{$value}));
+		$form{$name} = $value;
 		next;
             }
 
             # Odd 'structured list' notation handled here
             if ($type =~ /(\w+)List/) {
-		 Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
                 my $list_type = $1;
+		 Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
                 my $counter   = 1;
+
                 foreach my $sub_value (@$value) {
                     my $listKey = "$name.$list_type." . $counter++;
                     $form{$listKey} = $sub_value;
@@ -172,7 +174,9 @@ sub define_api_method {
         return $spec->{respond}->($root);
     };
 
-    my $fqn = join '::', 'Amazon::MWS::Client', $method_name;
+    my $module_name = $spec->{module_name} || 'Amazon::MWS::Client';
+    my $fqn = join '::', "$module_name", $method_name;
+
     no strict 'refs';
     *$fqn = $method;
 
@@ -269,6 +273,7 @@ sub new {
     }
 
   bless {
+    package => "$pkg",
     agent => LWP::UserAgent->new(agent => $agent_string),
     endpoint => $opts{endpoint} || 'https://mws.amazonaws.com/',
     access_key_id => $opts{access_key_id},
