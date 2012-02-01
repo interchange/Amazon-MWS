@@ -10,10 +10,12 @@ use Amazon::MWS::TypeMap qw(:all);
 use Amazon::MWS::Routines qw(:all);
 use Amazon::MWS::InboundShipments;
 use Amazon::MWS::FulfillmentInventory;
+use Amazon::MWS::FulfillmentOutbound;
 use Amazon::MWS::Orders;
 use Amazon::MWS::Sellers;
 use Amazon::MWS::Reports;
 use Amazon::MWS::Feeds;
+use Amazon::MWS::Products;
 use Data::Dumper;
 
 1;
