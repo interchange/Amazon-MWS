@@ -109,19 +109,27 @@ sub define_api_method {
 
 	$spec->{method} = 'GET' unless $spec->{method};
 
-        if ($spec->{method} eq 'POST' || $body) {
+        if ($spec->{method} eq 'POST') {
             $request->uri($uri);
             $request->method('POST'); 
             $request->content($body);
-            $request->header('Content-MD5' => md5_base64($body) . '==') if ($body);
-            $request->content_type($args->{content_type}||'text/plain');
+            $request->content_type($args->{content_type}||'application/x-www-form-urlencoded');
             my $signature = $self->sign_request($request, %form);
 
-	    $form{Signature} = $signature;
-            $response = $self->{agent}->post($uri,\%form);
+            $response = $self->{agent}->request($request);
             $content  = $response->content;
-        }
-        else {
+        } elsif ($body) {
+	    $request->uri($uri);
+            $request->method('POST');
+            $request->content($body);
+            $request->header('Content-MD5' => md5_base64($body) . '==');
+            $request->content_type($args->{content_type}||'text/plain');
+
+   	    $self->sign_request($request, %form);
+            $request->content($body);
+            $response = $self->{agent}->request($request);
+            $content = $response->content;
+        } else {
             $uri->query_form(\%form);
             $request->uri($uri);
             $request->method('GET');
@@ -202,7 +210,7 @@ sub sign_request {
 
     my $uri = $request->uri;
     my %params = ($request->method eq 'GET' ) ? $uri->query_form : %form;
-    
+
     my $canonical = join '&', map {
         my $param = uri_escape($_);
         my $value = uri_escape($params{$_});
@@ -219,10 +227,15 @@ sub sign_request {
      while (length($params{Signature}) % 4) {
                 $params{Signature} .= '=';
         }
-    $uri->query_form(\%params);
-    $request->uri($uri);
-   
-    return  $params{Signature};
+
+    if ($request->{_method} eq 'GET' || $request->{_content} ) {
+    	$uri->query_form(\%params);
+    } else {
+	$request->{_content} = "$canonical&Signature=$params{Signature}";
+    }
+	$request->uri($uri);
+	return $request;
+
 }
 
 sub convert {
