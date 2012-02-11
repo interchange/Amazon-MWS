@@ -61,6 +61,7 @@ define_api_method ListInboundShipmentItemsByNextToken =>
 
 
 define_api_method CreateInboundShipmentPlan =>
+    version => '2010-10-01',
     raw_body => 1,
     method => 'POST',
     service => "$inbound_service",
@@ -81,6 +82,7 @@ define_api_method CreateInboundShipmentPlan =>
     };	
 
 define_api_method CreateInboundShipment =>
+    version => '2010-10-01',
     raw_body => 1,
     method => 'POST',
     service => "$inbound_service",
