@@ -2,7 +2,10 @@ package Amazon::MWS::Feeds;
 
 use Amazon::MWS::Routines qw(:all);
 
+my $version = '2009-01-01';
+
 define_api_method SubmitFeed =>
+    version => "$version",
     parameters => {
         FeedContent => {
             required => 1,
@@ -23,6 +26,7 @@ define_api_method SubmitFeed =>
     };
 
 define_api_method GetFeedSubmissionList =>
+    version => "$version",
     parameters => {
         FeedSubmissionIdList     => { type => 'IdList' },
         MaxCount                 => { type => 'nonNegativeInteger' },
@@ -39,6 +43,7 @@ define_api_method GetFeedSubmissionList =>
     };
 
 define_api_method GetFeedSubmissionListByNextToken =>
+    version => "$version",
     parameters => { 
         NextToken => {
             type     => 'string',
@@ -54,6 +59,7 @@ define_api_method GetFeedSubmissionListByNextToken =>
     };
 
 define_api_method GetFeedSubmissionCount =>
+    version => "$version",
     parameters => {
         FeedTypeList             => { type => 'TypeList' },
         FeedProcessingStatusList => { type => 'StatusList' },
@@ -63,6 +69,7 @@ define_api_method GetFeedSubmissionCount =>
     respond => sub { $_[0]->{Count} };
 
 define_api_method CancelFeedSubmissions =>
+    version => "$version",
     parameters => {
         FeedSubmissionIdList => { type => 'IdList' },
         FeedTypeList         => { type => 'TypeList' },
@@ -76,6 +83,7 @@ define_api_method CancelFeedSubmissions =>
     };
 
 define_api_method GetFeedSubmissionResult =>
+    version => "$version",
     raw_body   => 1,
     parameters => {
         FeedSubmissionId => { 
