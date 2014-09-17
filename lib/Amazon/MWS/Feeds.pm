@@ -38,7 +38,7 @@ define_api_method GetFeedSubmissionList =>
     respond => sub {
         my $root = shift;
         convert($root, HasNext => 'boolean');
-        convert_FeedSubmissionInfo($root);
+        Amazon::MWS::Reports::convert_FeedSubmissionInfo($root);
         return $root;
     };
 
@@ -53,7 +53,7 @@ define_api_method GetFeedSubmissionListByNextToken =>
     respond => sub {
         my $root = shift;
         convert($root, HasNext => 'boolean');
-        convert_FeedSubmissionInfo($root);
+        Amazon::MWS::Reports::convert_FeedSubmissionInfo($root);
 
         return $root;
     };
@@ -78,7 +78,7 @@ define_api_method CancelFeedSubmissions =>
     },
     respond => sub {
         my $root = shift;
-        convert_FeedSubmissionInfo($root);
+        Amazon::MWS::Reports::convert_FeedSubmissionInfo($root);
         return $root;
     };
 
