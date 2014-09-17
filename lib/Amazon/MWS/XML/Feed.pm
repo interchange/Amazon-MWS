@@ -154,7 +154,7 @@ send a replenishment value. The inventory feed can also be used to
 indicate the lead-time to ship a given item. If no value is sent, the
 default value of two business days is used.
 
-=head inventory_feed_name
+=head2 inventory_feed_name
 
 =cut
 
@@ -166,6 +166,24 @@ sub inventory_feed_name {
     return '_POST_INVENTORY_AVAILABILITY_DATA_';
 }
 
+=head2 price_feed
+
+The Price feed allows you to set the current price and sale price
+(when applicable) for an item. The sale price is optional, but, if
+used, the start and end date must be provided also (so far, not
+implemented).
+
+=head2 price_feed_name
+
+=cut
+
+sub price_feed {
+    die "Not implemented yet";
+}
+
+sub price_feed_name {
+    return '_POST_PRODUCT_PRICING_DATA_ ';
+}
 
 1;
 
