@@ -69,6 +69,49 @@ sub _build_schema {
     return $write;
 }
 
+sub _create_feed {
+    my ($self, $type) = @_;
+    my $operation = ucfirst($type);
+
+    my %methods = (
+                   product => 'as_product_hash',
+                   inventory => 'as_inventory_hash',
+                  );
+
+    my $method = $methods{$type} or die "$type is not supported";
+    my $data = {
+                Header => {
+                           MerchantIdentifier => $self->merchant_id,
+                           DocumentVersion => "1.1", # unclear
+                          },
+                MessageType => $operation,
+                # MarketplaceName => "example",
+                # PurgeAndReplace => "false", unclear if "false" works
+               };
+
+    my @messages;
+    my @products = @{ $self->products };
+    for (my $i = 0; $i < @products; $i++) {
+        push @messages, {
+                         MessageID => $i + 1,
+                         OperationType => 'Update',
+                         # here will crash if the object is not the one required.
+                         $operation => $products[$i]->$method,
+                        };
+    }
+    $data->{Message} = \@messages;
+    return $self->_write_out($data);
+}
+
+sub _write_out {
+    my ($self, $data) = @_;
+    my $doc = XML::LibXML::Document->new('1.0', 'UTF-8');
+    my $xml = $self->schema->($doc, $data);
+    $doc->setDocumentElement($xml);
+    return $doc->toString(1);
+}
+
+
 =head1 METHODS
 
 =head2 product_feed
@@ -83,40 +126,44 @@ submitting products to Amazon because it establishes the mapping
 between the seller's unique identifier (SKU) and Amazon's unique
 identifier (ASIN).
 
+=head2 product_feed_name
+
+The amazon internal feed name to be posted together with the feed
+
 =cut
 
 sub product_feed {
-    my $self = shift;
-    my $data = {
-                Header => {
-                           MerchantIdentifier => $self->merchant_id,
-                           DocumentVersion => "1.1", # unclear
-                          },
-                MessageType => 'Product',
-                # MarketplaceName => "example",
-                # PurgeAndReplace => "false", unclear if "false" works
-               };
-
-    my @messages;
-    my @products = @{ $self->products };
-    for (my $i = 0; $i < @products; $i++) {
-        push @messages, {
-                         MessageID => $i + 1,
-                         OperationType => 'Update',
-                         # here will crash if the object is not the one required.
-                         Product => $products[$i]->as_hash,
-                        };
-    }
-    $data->{Message} = \@messages;
-    return $self->_write_out($data);
+    return shift->_create_feed('product');
 }
 
-sub _write_out {
-    my ($self, $data) = @_;
-    my $doc = XML::LibXML::Document->new('1.0', 'UTF-8');
-    my $xml = $self->schema->($doc, $data);
-    $doc->setDocumentElement($xml);
-    return $doc->toString(1);
+sub product_feed_name {
+    return '_POST_PRODUCT_DATA_';
+}
+
+=head2 inventory_feed
+
+The Inventory feed allows you to update inventory quantities (stock
+levels) for your items. For each item you offer only on Amazon, send
+the exact number you currently have in stock. If you use multiple
+sales channels, we recommend configuring your systems to send a value
+of zero once your available inventory reaches a level you specify.
+When the quantity is greater than zero the buy button is activated and
+the quantity is decremented with each order. When the quantity reaches
+zero, the item is no longer available for purchase on Amazon until you
+send a replenishment value. The inventory feed can also be used to
+indicate the lead-time to ship a given item. If no value is sent, the
+default value of two business days is used.
+
+=head inventory_feed_name
+
+=cut
+
+sub inventory_feed {
+    return shift->_create_feed('inventory');
+}
+
+sub inventory_feed_name {
+    return '_POST_INVENTORY_AVAILABILITY_DATA_';
 }
 
 
