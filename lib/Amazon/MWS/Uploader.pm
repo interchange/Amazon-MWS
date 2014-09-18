@@ -6,7 +6,7 @@ use warnings;
 use DBI;
 use Amazon::MWS::XML::Feed;
 use Amazon::MWS::Client;
-use XML::LibXML::Simple qw/XMLin/;
+use Amazon::MWS::XML::Response::FeedSubmissionResult;
 use Data::Dumper;
 use File::Spec;
 use DateTime;
@@ -340,7 +340,7 @@ is and resume.
 
 sub process_feeds {
     my ($self, $row) = @_;
-    print Dumper($row);
+    # print Dumper($row);
     # upload the feeds one by one and stop if something is blocking
     foreach my $type (qw/product inventory/) {
         if (!$row->{$type. "_ok"}) {
@@ -396,7 +396,67 @@ sub upload_feed {
         }
     }
     warn "Feed is is $feed_id\n";
-    return;
+
+    # At this point, we need to know if it's processed
+    my $feed_sth = $self->_exe_query($self->sqla
+                                     ->select(amazon_mws_feeds => '*',
+                                              { amws_feed_id => $feed_id }));
+    my $record = $feed_sth->fetchrow_hashref;
+    # for now let's die
+    die "This shouldn't happen, no record for $feed_id" unless $record;
+    $feed_sth->finish;
+
+    if (!$record->{processing_complete}) {
+        if ($self->_check_processing_complete($feed_id)) {
+            # update the record and set the flag to true
+            $self->_exe_query($self->sqla
+                              ->update('amazon_mws_feeds',
+                                       { processing_complete => 1 },
+                                       { amws_feed_id => $feed_id }));
+        }
+        else {
+            warn "Still processing\n";
+            return;
+        }
+    }
+
+    # check if we didn't already processed it
+    if (!$record->{aborted} || !$record->{success}) {
+        # we need a class to parse the result.
+        my $result = $self->submission_result($feed_id);
+        if ($result->is_success) {
+            $self->_exe_query($self->sqla
+                              ->update('amazon_mws_feeds',
+                                       { success => 1 },
+                                       { amws_feed_id => $feed_id }));
+            # all good, update the job itself and set it tu success
+            $self->_exe_query($self->sqla
+                              ->update('amazon_mws_jobs',
+                                       { "${type}_ok" => 1 },
+                                       { amws_job_id => $job_id }));
+            return 1;
+        }
+        else {
+            $self->_exe_query($self->sqla
+                              ->update('amazon_mws_feeds',
+                                       {
+                                        aborted => 1,
+                                        errors => $result->errors,
+                                       },
+                                       { amws_feed_id => $feed_id }));
+            # no go, we got errors
+            $self->_exe_query($self->sqla
+                              ->update('amazon_mws_jobs',
+                                       {
+                                        aborted => 1,
+                                       },
+                                       { amws_job_id => $job_id }));
+
+            # and we stop this job, has errors
+            return 0;
+        }
+    }
+    return $record->{success};
 }
 
 sub _exe_query {
@@ -404,6 +464,47 @@ sub _exe_query {
     my $sth = $self->dbh->prepare($stmt);
     $sth->execute(@bind);
     return $sth;
+}
+
+sub _check_processing_complete {
+    my ($self, $feed_id) = @_;
+    my $res = $self->client->GetFeedSubmissionList;
+    warn "Checking if the processing is complete\n"; # . Dumper($res);
+    my $found;
+    if (my $list = $res->{FeedSubmissionInfo}) {
+        foreach my $feed (@$list) {
+            if ($feed->{FeedSubmissionId} eq $feed_id) {
+                $found = $feed;
+                last;
+            }
+        }
+
+        # check the result
+        if ($found && $found->{FeedProcessingStatus} eq '_DONE_') {
+            return 1;
+        }
+        elsif ($found) {
+            warn "Feed $feed_id still $found->{FeedProcessingStatus}\n";
+            return;
+        }
+        else {
+            # there is a remote possibility that in it in another
+            # page, but it should be very unlikely, as we block the
+            # process when the first one is not complete
+            warn "$feed_id not found in submission list\n";
+            return;
+        }
+    }
+    else {
+        warn "No FeedSubmissionInfo found:" . Dumper($res);
+        return;
+    }
+}
+
+sub submission_result {
+    my ($self, $feed_id) = @_;
+    my $xml = $self->client->GetFeedSubmissionResult(FeedSubmissionId => $feed_id);
+    return Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml);
 }
 
 1;
