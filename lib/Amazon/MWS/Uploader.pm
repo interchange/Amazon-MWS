@@ -395,7 +395,7 @@ sub upload_feed {
             die "Couldn't get a submission id, response is " . Dumper($res);
         }
     }
-    warn "Feed is is $feed_id\n";
+    warn "Feed is $feed_id\n";
 
     # At this point, we need to know if it's processed
     my $feed_sth = $self->_exe_query($self->sqla
