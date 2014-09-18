@@ -8,6 +8,9 @@ use Amazon::MWS::XML::Feed;
 use Amazon::MWS::Client;
 use XML::LibXML::Simple qw/XMLin/;
 use Data::Dumper;
+use File::Spec;
+use DateTime;
+use SQL::Abstract;
 
 use Moo;
 use namespace::clean;
@@ -189,6 +192,10 @@ B<This is set as read-write, so you can set the product after the
 object construction, but if you change it afterward, you will get
 unexpected results>.
 
+=item sqla
+
+Lazy attribute to hold the C<SQL::Abstract> object.
+
 =back
 
 =cut
@@ -197,6 +204,16 @@ has products => (is => 'rw',
                  isa => sub {
                      die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
                  });
+
+has sqla => (
+             is => 'ro',
+             default => sub {
+                 return SQL::Abstract->new;
+             }
+            );
+
+
+
 
 =item client
 
@@ -219,11 +236,174 @@ sub _build_client {
 }
 
 
-=head1 METHODS
+=head1 MAIN METHODS
+
+=head2 upload
+
+If the products is set, begin the routine to upload them. Because of
+the asynchronous way AMWS works, at some point it will bail out,
+saving the state in the database. You should reinstantiate the object
+and call C<resume> on it every 10 minutes or so.
+
+The workflow is described here:
+L<http://docs.developer.amazonservices.com/en_US/feeds/Feeds_Overview.html>
+
+This has to be done for each feed: Product, Inventory, Price, Image,
+Relationship (for variants).
+
+This method first generate the feeds in the feed directory, and then
+calls C<resume>, which is in charge for the actual uploading.
+
+=head2 resume
+
+Restore the state and resume where it was left.
+
+=head1 INTERNAL METHODS
+
 
 =cut
 
+sub _feed_file_for_method {
+    my ($self, $job_id, $feed_type) = @_;
+    die unless $job_id && $feed_type;
+    my $feed_subdir = File::Spec->catdir($self->feed_dir,
+                                         $job_id);
+    unless ( -d $feed_subdir) {
+        mkdir $feed_subdir;
+    }
+    my $file = File::Spec->catfile($feed_subdir, $feed_type . '.xml');
+    return File::Spec->rel2abs($file)
+}
+
+sub _feed_content_for_method {
+    my ($self, $job_id, $feed_type) = @_;
+    my $file = $self->_feed_file_for_method($job_id, $feed_type);
+    open (my $fh, '<', $file) or die "Couldn't open $file $!";
+    local $/ = undef;
+    my $content = <$fh>;
+    close $fh;
+    return $content;
+}
 
 
+sub upload {
+    my $self = shift;
+    # first create the job id, using the current time
+    my $job_id = DateTime->now->strftime('%F-%H-%M');
+    # create the feeds to be uploaded using the products
+    my $feeder = $self->feeder;
+    # to be extended
+    
+    foreach my $feed_type (qw/product
+                              inventory
+                             /) {
+        my $file = $self->_feed_file_for_method($job_id, $feed_type);
+        my $method = $feed_type . "_feed";
+        open (my $fh, '>', $file) or die "Couldn't open $file $!";
+        print $fh $feeder->$method ;
+        close $fh;
+    }
+    $self->_exe_query($self->sqla
+                      ->insert(amazon_mws_jobs => {
+                                                   amws_job_id => $job_id,
+                                                  }));
+    $self->resume;
+}
+
+
+sub resume {
+    my $self = shift;
+    my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', [
+                                                                     aborted => 0,
+                                                                     success => 0,
+                                                                    ]);
+    my $pending = $self->_exe_query($stmt, @bind);
+    while (my $row = $pending->fetchrow_hashref) {
+        # check if the job dir exists
+        if (-d File::Spec->catdir($self->feed_dir, $row->{amws_job_id})) {
+            $self->process_feeds($row);
+        }
+        else {
+            my ($del_stmt, @del_bind) = $self->sqla
+              ->delete(amazon_mws_jobs => { amws_job_id => $row->{amws_job_id} });
+            $self->_exe_query($del_stmt, @del_bind);
+        }
+    }
+}
+
+=head2 process_feeds(\%job_row)
+
+Given the hashref with the db row of the job, check at which point it
+is and resume.
+
+=cut
+
+sub process_feeds {
+    my ($self, $row) = @_;
+    print Dumper($row);
+    # upload the feeds one by one and stop if something is blocking
+    foreach my $type (qw/product inventory/) {
+        if (!$row->{$type. "_ok"}) {
+            last unless $self->upload_feed($row->{amws_job_id},
+                                           $type,
+                                           $row->{$type});
+        }
+    }
+}
+
+=head2 upload_feed($type, $feed_id);
+
+Routine to upload the feed. Return true if it's complete, false
+otherwise.
+
+=cut
+
+sub upload_feed {
+    my ($self, $job_id, $type, $feed_id) = @_;
+
+    my %names = (
+                 product => '_POST_PRODUCT_DATA_',
+                 inventory => '_POST_INVENTORY_AVAILABILITY_DATA_',
+                );
+
+    # no feed id, it's a new batch
+    if (!$feed_id) {
+        warn "No feed id passed, doing a request for $job_id $type\n";
+        my $feed_content = $self->_feed_content_for_method($job_id, $type);
+        my $res = $self->client
+          ->SubmitFeed(content_type => 'text/xml; charset=utf-8',
+                       FeedType => $names{$type},
+                       FeedContent => $feed_content,
+                      );
+        if ($feed_id = $res->{FeedSubmissionId}) {
+            my $insertion = {
+                             amws_feed_id => $feed_id,
+                             feed_name => $names{$type},
+                             feed_file => $self->_feed_file_for_method($job_id,
+                                                                       $type),
+                             amws_job_id => $job_id,
+                            };
+            $self->_exe_query($self->sqla
+                              ->insert(amazon_mws_feeds => $insertion));
+            # and update the job to hold it
+            $self->_exe_query($self->sqla
+                              ->update(amazon_mws_jobs => { $type => $feed_id },
+                                       { amws_job_id => $job_id }));
+        }
+        else {
+            # something is really wrong here, we have to die
+            die "Couldn't get a submission id, response is " . Dumper($res);
+        }
+    }
+    warn "Feed is is $feed_id\n";
+    return;
+}
+
+sub _exe_query {
+    my ($self, $stmt, @bind) = @_;
+    my $sth = $self->dbh->prepare($stmt);
+    $sth->execute(@bind);
+    return $sth;
+}
 
 1;
