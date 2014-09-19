@@ -76,6 +76,7 @@ sub _create_feed {
     my %methods = (
                    product => 'as_product_hash',
                    inventory => 'as_inventory_hash',
+                   price => 'as_price_hash',
                   );
 
     my $method = $methods{$type} or die "$type is not supported";
@@ -126,18 +127,10 @@ submitting products to Amazon because it establishes the mapping
 between the seller's unique identifier (SKU) and Amazon's unique
 identifier (ASIN).
 
-=head2 product_feed_name
-
-The amazon internal feed name to be posted together with the feed
-
 =cut
 
 sub product_feed {
     return shift->_create_feed('product');
-}
-
-sub product_feed_name {
-    return '_POST_PRODUCT_DATA_';
 }
 
 =head2 inventory_feed
@@ -162,10 +155,6 @@ sub inventory_feed {
     return shift->_create_feed('inventory');
 }
 
-sub inventory_feed_name {
-    return '_POST_INVENTORY_AVAILABILITY_DATA_';
-}
-
 =head2 price_feed
 
 The Price feed allows you to set the current price and sale price
@@ -178,12 +167,9 @@ implemented).
 =cut
 
 sub price_feed {
-    die "Not implemented yet";
+    return shift->_create_feed('price');
 }
 
-sub price_feed_name {
-    return '_POST_PRODUCT_PRICING_DATA_ ';
-}
 
 1;
 

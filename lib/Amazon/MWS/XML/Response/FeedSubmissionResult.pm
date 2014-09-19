@@ -63,11 +63,37 @@ sub errors {
     my $self = shift;
     my $struct = $self->structure;
     # this shouldn't happen, we already checked if complete or not
-    if ($struct->{StatusCode} ne 'Complete') {
-        return $struct->{StatusCode};
+    if ($struct->{Result} and ref($struct->{Result}) eq 'ARRAY') {
+        my @errors;
+        foreach my $res (@{ $struct->{Result} }) {
+            push @errors, $self->_parse_result_errors($res);
+        }
+        return join(' ', @errors);
     }
-    # so just dump the structure for now
-    return Dumper($self->structure);
+    elsif ($struct->{Result} and ref($struct->{Result}) eq 'HASH') {
+        return $self->_parse_result_errors($struct->{Result});
+    }
+    else {
+        # so just dump the structure
+        return Dumper($struct);
+    }
+}
+
+sub _parse_result_errors {
+    my ($self, $res) = @_;
+    my $msg = 'ERROR: ';
+    if ($res->{AdditionalInfo} && $res->{AdditionalInfo}->{SKU}) {
+        $msg = $res->{AdditionalInfo}->{SKU} . ' ';
+    }
+
+    if (my $code = $res->{ResultMessageCode}) {
+        $msg .= "(errcode $code) ";
+    }
+
+    if (my $desc = $res->{ResultDescription}) {
+        $msg .= $desc;
+    }
+    return $msg;
 }
 
 1;

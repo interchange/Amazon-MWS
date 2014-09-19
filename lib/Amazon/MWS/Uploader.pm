@@ -11,6 +11,7 @@ use Data::Dumper;
 use File::Spec;
 use DateTime;
 use SQL::Abstract;
+use Try::Tiny;
 
 use Moo;
 use namespace::clean;
@@ -296,6 +297,7 @@ sub upload {
     
     foreach my $feed_type (qw/product
                               inventory
+                              price
                              /) {
         my $file = $self->_feed_file_for_method($job_id, $feed_type);
         my $method = $feed_type . "_feed";
@@ -313,10 +315,10 @@ sub upload {
 
 sub resume {
     my $self = shift;
-    my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', [
+    my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', {
                                                                      aborted => 0,
                                                                      success => 0,
-                                                                    ]);
+                                                                    });
     my $pending = $self->_exe_query($stmt, @bind);
     while (my $row = $pending->fetchrow_hashref) {
         # check if the job dir exists
@@ -342,8 +344,10 @@ sub process_feeds {
     my ($self, $row) = @_;
     # print Dumper($row);
     # upload the feeds one by one and stop if something is blocking
-    foreach my $type (qw/product inventory/) {
+    print "Processing job $row->{amws_job_id}\n";
+    foreach my $type (qw/product inventory price/) {
         if (!$row->{$type. "_ok"}) {
+            print "Trying $type feed\n";
             last unless $self->upload_feed($row->{amws_job_id},
                                            $type,
                                            $row->{$type});
@@ -364,17 +368,25 @@ sub upload_feed {
     my %names = (
                  product => '_POST_PRODUCT_DATA_',
                  inventory => '_POST_INVENTORY_AVAILABILITY_DATA_',
+                 price => '_POST_PRODUCT_PRICING_DATA_',
                 );
 
     # no feed id, it's a new batch
     if (!$feed_id) {
         warn "No feed id passed, doing a request for $job_id $type\n";
         my $feed_content = $self->_feed_content_for_method($job_id, $type);
-        my $res = $self->client
-          ->SubmitFeed(content_type => 'text/xml; charset=utf-8',
-                       FeedType => $names{$type},
-                       FeedContent => $feed_content,
-                      );
+        my $res;
+        try {
+            $res = $self->client
+              ->SubmitFeed(content_type => 'text/xml; charset=utf-8',
+                           FeedType => $names{$type},
+                           FeedContent => $feed_content,
+                          );
+        }
+        catch {
+            print $_->xml;
+        };
+        die unless $res;
         if ($feed_id = $res->{FeedSubmissionId}) {
             my $insertion = {
                              amws_feed_id => $feed_id,
@@ -437,6 +449,7 @@ sub upload_feed {
             return 1;
         }
         else {
+            print "Error: " . $result->errors;
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        {
@@ -468,7 +481,13 @@ sub _exe_query {
 
 sub _check_processing_complete {
     my ($self, $feed_id) = @_;
-    my $res = $self->client->GetFeedSubmissionList;
+    my $res;
+    try {
+        $res = $self->client->GetFeedSubmissionList;
+    } catch {
+        print $_->xml;
+    };
+    die unless $res;
     warn "Checking if the processing is complete\n"; # . Dumper($res);
     my $found;
     if (my $list = $res->{FeedSubmissionInfo}) {
@@ -503,7 +522,14 @@ sub _check_processing_complete {
 
 sub submission_result {
     my ($self, $feed_id) = @_;
-    my $xml = $self->client->GetFeedSubmissionResult(FeedSubmissionId => $feed_id);
+    my $xml;
+    try {
+        $xml = $self->client
+          ->GetFeedSubmissionResult(FeedSubmissionId => $feed_id);
+    } catch {
+        print $_->xml;
+    };
+    die unless $xml;
     return Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml);
 }
 
