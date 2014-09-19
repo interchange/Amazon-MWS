@@ -62,6 +62,7 @@ sub is_success {
 sub errors {
     my $self = shift;
     my $struct = $self->structure;
+    print Dumper($struct);
     # this shouldn't happen, we already checked if complete or not
     if ($struct->{Result} and ref($struct->{Result}) eq 'ARRAY') {
         my @errors;

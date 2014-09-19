@@ -449,7 +449,7 @@ sub upload_feed {
             return 1;
         }
         else {
-            print "Error: " . $result->errors;
+            print "Error: " . $result->xml;
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        {
