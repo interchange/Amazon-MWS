@@ -123,6 +123,11 @@ has currency => (is => 'ro',
                  },
                  default => sub { 'EUR' });
 
+has images => (is => 'ro',
+               isa => sub {
+                   die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
+               });
+
 
 # has restock_date => (is => 'ro');
 
@@ -220,6 +225,62 @@ sub as_price_hash {
         }
     }
     return $data;
+}
+
+=head2 as_image_hash
+
+Return a data structure suitable to feed the ProductImage slot in a
+Image feed.
+
+=over 4
+
+=item SKU
+
+=item ImageType The type of image (Main, Alternate, or Swatch)
+
+=over 4
+
+=item Main – Main image for the product
+
+=item Alternate (PT) – Other views of the product
+
+=item Swatch – Color or fabric (Note: Swatch images will be scaled down to 30 x 30 pixels
+so they should only be used for displaying the color of your product's fabric, for
+example, not for displaying your whole product.)
+
+=back
+
+=item ImageLocation
+
+The exact location of the image using a full URL (such as
+http://mystore.com/images/1234.jpg). Amazon cannot access images
+stored with a secured URL (https) so be sure to use http instead.
+
+=back
+
+=cut
+
+sub as_images_array {
+    my $self = shift;
+    # for now just push the main image
+    return unless $self->images;
+    my $sku = $self->sku;
+    # here we assign the first as the main one, the others as alternate.
+    my @images = @{ $self->images };
+    my @types = (qw/Main PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8/);
+
+    my @out;
+
+    while (@images && @types) {
+        my $img = shift @images;
+        my $type = shift @types;
+        push @out, {
+                    SKU => $sku,
+                    ImageType => $type,
+                    ImageLocation => $img,
+                   };
+    }
+    @out ? return \@out : return;
 }
 
 1;

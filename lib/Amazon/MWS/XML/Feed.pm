@@ -6,6 +6,7 @@ use utf8;
 
 use XML::Compile::Schema;
 use File::Spec;
+use Data::Dumper;
 
 use Moo;
 
@@ -70,16 +71,16 @@ sub _build_schema {
 }
 
 sub _create_feed {
-    my ($self, $type) = @_;
-    my $operation = ucfirst($type);
+    my ($self, $operation) = @_;
 
     my %methods = (
-                   product => 'as_product_hash',
-                   inventory => 'as_inventory_hash',
-                   price => 'as_price_hash',
+                   Product => 'as_product_hash',
+                   Inventory => 'as_inventory_hash',
+                   Price => 'as_price_hash',
+                   ProductImage => 'as_images_array',
                   );
 
-    my $method = $methods{$type} or die "$type is not supported";
+    my $method = $methods{$operation} or die "$operation is not supported";
     my $data = {
                 Header => {
                            MerchantIdentifier => $self->merchant_id,
@@ -91,16 +92,33 @@ sub _create_feed {
                };
 
     my @messages;
+    my $message_counter = 1;
     my @products = @{ $self->products };
     for (my $i = 0; $i < @products; $i++) {
-        push @messages, {
-                         MessageID => $i + 1,
-                         OperationType => 'Update',
-                         # here will crash if the object is not the one required.
-                         $operation => $products[$i]->$method,
-                        };
+        my $data = $products[$i]->$method;
+        warn Dumper($data);
+        # unclear if it's the right thing to do
+        if (ref($data) eq 'ARRAY') {
+            foreach my $msg (@$data) {
+                push @messages, {
+                                 MessageID => $message_counter++,
+                                 OperationType => 'Update',
+                                 $operation => $msg,
+                                };
+            }
+        }
+        elsif ($data) {
+            push @messages, {
+                             MessageID => $message_counter++,
+                             OperationType => 'Update',
+                             # here will crash if the object is not the one required.
+                             $operation => $data,
+                            };
+        }
     }
-    $data->{Message} = \@messages;
+    if (@messages) {
+        $data->{Message} = \@messages;
+    }
     return $self->_write_out($data);
 }
 
@@ -130,7 +148,7 @@ identifier (ASIN).
 =cut
 
 sub product_feed {
-    return shift->_create_feed('product');
+    return shift->_create_feed('Product');
 }
 
 =head2 inventory_feed
@@ -152,7 +170,7 @@ default value of two business days is used.
 =cut
 
 sub inventory_feed {
-    return shift->_create_feed('inventory');
+    return shift->_create_feed('Inventory');
 }
 
 =head2 price_feed
@@ -167,9 +185,46 @@ implemented).
 =cut
 
 sub price_feed {
-    return shift->_create_feed('price');
+    return shift->_create_feed('Price');
 }
 
+=head2 image_feed
+
+The Image feed allows you to upload various images for a product.
+Amazon can display several images for each product. It is in your best
+interest to provide several high-resolution images for each of your
+products so customers can make informed buying decisions.
+
+=head3 Image Requirements
+
+=over 4
+
+=item Format - photographs, not drawings
+
+=item Color Model – RGB (no CMYK images)
+
+=item Background - white or clear, no borders or words, no brand logos
+
+=item Recommended dimensions
+
+Images should be 1000 pixels or larger in either height or width as
+this will enable zoom functionality on the website (zoom has proven to
+enhance sales). The smallest your file should be is 500 pixels on the
+longest side. Consistently sized images are strongly recommended.
+
+=item File type - JPEG (.jpg) or GIF (.gif)
+
+=item Resolution - 72 ppi
+
+=item Animation - none
+
+=back
+
+=cut
+
+sub image_feed {
+    return shift->_create_feed('ProductImage');
+}
 
 1;
 

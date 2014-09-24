@@ -298,6 +298,7 @@ sub upload {
     foreach my $feed_type (qw/product
                               inventory
                               price
+                              image
                              /) {
         my $file = $self->_feed_file_for_method($job_id, $feed_type);
         my $method = $feed_type . "_feed";
