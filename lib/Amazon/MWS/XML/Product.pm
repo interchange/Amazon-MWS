@@ -69,6 +69,15 @@ A DateTime object with the sale start date
 
 A DateTime object with the sale end date
 
+=item images
+
+An (optional) arrayref of image urls. The first will become the main
+image, the other one will become the PT1, etc.
+
+=item children
+
+An (optional) arraryref of children sku.
+
 =back
 
 =cut
@@ -128,6 +137,11 @@ has images => (is => 'ro',
                    die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
                });
 
+has children => (is => 'ro',
+                 isa => sub {
+                     die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
+                 });
+
 
 # has restock_date => (is => 'ro');
 
@@ -148,7 +162,6 @@ Inventory feed.
 
 Return a data structure suitable to feed the Price slot in a
 Price feed.
-
 
 =cut
 
@@ -282,5 +295,28 @@ sub as_images_array {
     }
     @out ? return \@out : return;
 }
+
+=item as_variants_hash
+
+Return a structure suitable for the Relationship feed.
+
+=cut
+
+sub as_variants_hash {
+    my $self = shift;
+    my $children = $self->children;
+    return unless $children;
+    my $data = { ParentSKU => $self->sku,
+                 Relation => [] };
+    foreach my $child (@$children) {
+        push @{ $data->{Relation} }, {
+                                      SKU => $child,
+                                      Type => 'Variation',
+                                     };
+    }
+    return $data;
+}
+
+
 
 1;

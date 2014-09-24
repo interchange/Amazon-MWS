@@ -78,6 +78,7 @@ sub _create_feed {
                    Inventory => 'as_inventory_hash',
                    Price => 'as_price_hash',
                    ProductImage => 'as_images_array',
+                   Relationship => 'as_variants_hash',
                   );
 
     my $method = $methods{$operation} or die "$operation is not supported";
@@ -224,6 +225,10 @@ longest side. Consistently sized images are strongly recommended.
 
 sub image_feed {
     return shift->_create_feed('ProductImage');
+}
+
+sub variants_feed {
+    return shift->_create_feed('Relationship');
 }
 
 1;

@@ -299,6 +299,7 @@ sub upload {
                               inventory
                               price
                               image
+                              variants
                              /) {
         my $file = $self->_feed_file_for_method($job_id, $feed_type);
         my $method = $feed_type . "_feed";
@@ -310,7 +311,7 @@ sub upload {
                       ->insert(amazon_mws_jobs => {
                                                    amws_job_id => $job_id,
                                                   }));
-    $self->resume;
+    return;
 }
 
 
@@ -346,7 +347,7 @@ sub process_feeds {
     # print Dumper($row);
     # upload the feeds one by one and stop if something is blocking
     print "Processing job $row->{amws_job_id}\n";
-    foreach my $type (qw/product inventory price/) {
+    foreach my $type (qw/product inventory price image variants/) {
         if (!$row->{$type. "_ok"}) {
             print "Trying $type feed\n";
             last unless $self->upload_feed($row->{amws_job_id},
@@ -370,6 +371,8 @@ sub upload_feed {
                  product => '_POST_PRODUCT_DATA_',
                  inventory => '_POST_INVENTORY_AVAILABILITY_DATA_',
                  price => '_POST_PRODUCT_PRICING_DATA_',
+                 image => '_POST_PRODUCT_IMAGE_DATA_',
+                 variants => '_POST_PRODUCT_RELATIONSHIP_DATA_',
                 );
 
     # no feed id, it's a new batch
