@@ -7,6 +7,10 @@ my $version = '2009-01-01';
 define_api_method SubmitFeed =>
     version => "$version",
     parameters => {
+        MarketplaceIdList => {
+             required   =>      0,
+             type       =>      'IdList',
+        },
         FeedContent => {
             required => 1,
             type     => 'HTTP-BODY',
