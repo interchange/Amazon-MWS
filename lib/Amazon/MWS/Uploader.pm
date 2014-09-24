@@ -381,6 +381,7 @@ sub upload_feed {
               ->SubmitFeed(content_type => 'text/xml; charset=utf-8',
                            FeedType => $names{$type},
                            FeedContent => $feed_content,
+                           MarketplaceIdList => [$self->marketplace_id],
                           );
         }
         catch {
