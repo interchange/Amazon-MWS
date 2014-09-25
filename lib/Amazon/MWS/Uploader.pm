@@ -276,16 +276,14 @@ sub _feed_file_for_method {
     return File::Spec->rel2abs($file)
 }
 
-sub _feed_content_for_method {
-    my ($self, $job_id, $feed_type) = @_;
-    my $file = $self->_feed_file_for_method($job_id, $feed_type);
+sub _slurp_file {
+    my ($self, $file) = @_;
     open (my $fh, '<', $file) or die "Couldn't open $file $!";
     local $/ = undef;
     my $content = <$fh>;
     close $fh;
     return $content;
 }
-
 
 sub upload {
     my $self = shift;
@@ -295,6 +293,19 @@ sub upload {
     my $feeder = $self->feeder;
     # to be extended
     
+
+    $self->_exe_query($self->sqla
+                      ->insert(amazon_mws_jobs => {
+                                                   amws_job_id => $job_id,
+                                                  }));
+
+    # to complete the process, we need to fill out these five
+    # feeds. every feed has the same procedure, as per
+    # http://docs.developer.amazonservices.com/en_US/feeds/Feeds_Overview.html
+    # so we put a flag on the feed when it is done. The processing
+    # of the feed itself is tracked in the amazon_mws_feeds
+
+    # TODO: we could pass to the object some flags to filter out results.
     foreach my $feed_type (qw/product
                               inventory
                               price
@@ -303,14 +314,29 @@ sub upload {
                              /) {
         my $file = $self->_feed_file_for_method($job_id, $feed_type);
         my $method = $feed_type . "_feed";
-        open (my $fh, '>', $file) or die "Couldn't open $file $!";
-        print $fh $feeder->$method ;
-        close $fh;
+        my $content = $feeder->$method;
+
+        # write out the feed if we got something to do, and add a row
+        # to the feeds.
+
+        # when there is no content, no need to create a job for it.
+        if ($content) {
+            open (my $fh, '>', $file) or die "Couldn't open $file $!";
+            print $fh $content;
+            close $fh;
+            # and prepare a row for it
+
+            my $insertion = {
+                             feed_name => $feed_type,
+                             feed_file => $self->_feed_file_for_method($job_id,
+                                                                       $feed_type),
+                             amws_job_id => $job_id,
+                            };
+            $self->_exe_query($self->sqla
+                              ->insert(amazon_mws_feeds => $insertion));
+
+        }
     }
-    $self->_exe_query($self->sqla
-                      ->insert(amazon_mws_jobs => {
-                                                   amws_job_id => $job_id,
-                                                  }));
     return;
 }
 
@@ -346,14 +372,59 @@ sub process_feeds {
     my ($self, $row) = @_;
     # print Dumper($row);
     # upload the feeds one by one and stop if something is blocking
-    print "Processing job $row->{amws_job_id}\n";
-    foreach my $type (qw/product inventory price image variants/) {
-        if (!$row->{$type. "_ok"}) {
-            print "Trying $type feed\n";
-            last unless $self->upload_feed($row->{amws_job_id},
-                                           $type,
-                                           $row->{$type});
-        }
+    my $job_id = $row->{amws_job_id};
+    print "Processing job $job_id\n";
+
+    # query the feeds table for this job
+    my ($stmt, @bind) = $self->sqla->select(amazon_mws_feeds => '*',
+                                            {
+                                             amws_job_id => $job_id,
+                                             aborted => 0,
+                                             success => 0,
+                                            },
+                                            ['amws_feed_pk']);
+
+    my $sth = $self->_exe_query($stmt, @bind);
+    my $unfinished;
+    while (my $feed = $sth->fetchrow_hashref) {
+        last unless $self->upload_feed($feed);
+    }
+    $sth->finish;
+
+    ($stmt, @bind) = $self->sqla->select(amazon_mws_feeds => '*',
+                                         {
+                                          amws_job_id => $job_id,
+                                         });
+
+    $sth = $self->_exe_query($stmt, @bind);
+
+    my ($total, $success, $aborted) = (0, 0, 0);
+
+    # query again and check if we have aborted jobs;
+    while (my $feed = $sth->fetchrow_hashref) {
+        $total++;
+        $success++ if $feed->{success};
+        $aborted++ if $feed->{aborted};
+    }
+
+    # a job was aborted
+    my $update;
+    if ($aborted) {
+        $update = { aborted => 1 };
+        warn "Job $job_id aborted!\n";
+    }
+    elsif ($success == $total) {
+        $update = { success => 1 };
+        print "Job successful!\n";
+    }
+    else {
+        print "Job still to be processed\n";
+    }
+    if ($update) {
+        $self->_exe_query($self->sqla->update(amazon_mws_jobs => $update,
+                                              {
+                                               amws_job_id => $job_id,
+                                              }));
     }
 }
 
@@ -365,8 +436,11 @@ otherwise.
 =cut
 
 sub upload_feed {
-    my ($self, $job_id, $type, $feed_id) = @_;
-
+    my ($self, $record) = @_;
+    my $job_id = $record->{amws_job_id};
+    my $type   = $record->{feed_name};
+    my $feed_id = $record->{feed_id};
+    print "Checking $type feed for $job_id\n";
     my %names = (
                  product => '_POST_PRODUCT_DATA_',
                  inventory => '_POST_INVENTORY_AVAILABILITY_DATA_',
@@ -377,8 +451,8 @@ sub upload_feed {
 
     # no feed id, it's a new batch
     if (!$feed_id) {
-        warn "No feed id passed, doing a request for $job_id $type\n";
-        my $feed_content = $self->_feed_content_for_method($job_id, $type);
+        print "No feed id passed, doing a request for $job_id $type\n";
+        my $feed_content = $self->_slurp_file($record->{feed_file});
         my $res;
         try {
             $res = $self->client
@@ -389,23 +463,24 @@ sub upload_feed {
                           );
         }
         catch {
-            print $_->xml;
+            if (ref($_)) {
+                warn $_->xml;
+            }
+            else {
+                warn $_;
+            }
         };
+        # do not register the failure on die, because in this case (no
+        # response) there could be throttling, or network failure
         die unless $res;
-        if ($feed_id = $res->{FeedSubmissionId}) {
-            my $insertion = {
-                             amws_feed_id => $feed_id,
-                             feed_name => $names{$type},
-                             feed_file => $self->_feed_file_for_method($job_id,
-                                                                       $type),
-                             amws_job_id => $job_id,
-                            };
+
+        # update the feed_id row storing it and updating.
+        if ($feed_id = $record->{feed_id} = $res->{FeedSubmissionId}) {
             $self->_exe_query($self->sqla
-                              ->insert(amazon_mws_feeds => $insertion));
-            # and update the job to hold it
-            $self->_exe_query($self->sqla
-                              ->update(amazon_mws_jobs => { $type => $feed_id },
-                                       { amws_job_id => $job_id }));
+                              ->update(amazon_mws_feeds => $record,
+                                       {
+                                        amws_feed_pk => $record->{amws_feed_pk},
+                                       }));
         }
         else {
             # something is really wrong here, we have to die
@@ -414,22 +489,13 @@ sub upload_feed {
     }
     warn "Feed is $feed_id\n";
 
-    # At this point, we need to know if it's processed
-    my $feed_sth = $self->_exe_query($self->sqla
-                                     ->select(amazon_mws_feeds => '*',
-                                              { amws_feed_id => $feed_id }));
-    my $record = $feed_sth->fetchrow_hashref;
-    # for now let's die
-    die "This shouldn't happen, no record for $feed_id" unless $record;
-    $feed_sth->finish;
-
     if (!$record->{processing_complete}) {
         if ($self->_check_processing_complete($feed_id)) {
             # update the record and set the flag to true
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        { processing_complete => 1 },
-                                       { amws_feed_id => $feed_id }));
+                                       { feed_id => $feed_id }));
         }
         else {
             warn "Still processing\n";
@@ -445,31 +511,18 @@ sub upload_feed {
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        { success => 1 },
-                                       { amws_feed_id => $feed_id }));
-            # all good, update the job itself and set it tu success
-            $self->_exe_query($self->sqla
-                              ->update('amazon_mws_jobs',
-                                       { "${type}_ok" => 1 },
-                                       { amws_job_id => $job_id }));
+                                       { feed_id => $feed_id }));
             return 1;
         }
         else {
-            print "Error: " . $result->xml;
+            warn "Error on feed $feed_id ($type) : " . $result->xml;
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        {
                                         aborted => 1,
                                         errors => $result->errors,
                                        },
-                                       { amws_feed_id => $feed_id }));
-            # no go, we got errors
-            $self->_exe_query($self->sqla
-                              ->update('amazon_mws_jobs',
-                                       {
-                                        aborted => 1,
-                                       },
-                                       { amws_job_id => $job_id }));
-
+                                       { feed_id => $feed_id }));
             # and we stop this job, has errors
             return 0;
         }
@@ -480,6 +533,7 @@ sub upload_feed {
 sub _exe_query {
     my ($self, $stmt, @bind) = @_;
     my $sth = $self->dbh->prepare($stmt);
+    # print $stmt, Dumper(\@bind);
     $sth->execute(@bind);
     return $sth;
 }
@@ -490,7 +544,12 @@ sub _check_processing_complete {
     try {
         $res = $self->client->GetFeedSubmissionList;
     } catch {
-        print $_->xml;
+        if (ref($_)) {
+            warn $_->xml;
+        }
+        else {
+            warn $_;
+        }
     };
     die unless $res;
     warn "Checking if the processing is complete\n"; # . Dumper($res);
@@ -532,7 +591,7 @@ sub submission_result {
         $xml = $self->client
           ->GetFeedSubmissionResult(FeedSubmissionId => $feed_id);
     } catch {
-        print $_->xml;
+        warn $_->xml;
     };
     die unless $xml;
     return Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml);
