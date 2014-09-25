@@ -451,7 +451,7 @@ sub upload_feed {
 
     # no feed id, it's a new batch
     if (!$feed_id) {
-        print "No feed id passed, doing a request for $job_id $type\n";
+        print "No feed id found, doing a request for $job_id $type\n";
         my $feed_content = $self->_slurp_file($record->{feed_file});
         my $res;
         try {

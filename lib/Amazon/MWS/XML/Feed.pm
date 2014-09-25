@@ -120,6 +120,10 @@ sub _create_feed {
     if (@messages) {
         $data->{Message} = \@messages;
     }
+    else {
+        # no messages, there is nothing to do
+        return;
+    }
     return $self->_write_out($data);
 }
 
