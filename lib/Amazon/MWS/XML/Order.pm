@@ -128,7 +128,7 @@ sub subtotal {
     my @items = $self->items;
     my $total = 0;
     foreach my $i (@items) {
-        $total += $i->price;
+        $total += $i->subtotal;
     }
     return sprintf('%.2f', $total);
 }

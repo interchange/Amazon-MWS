@@ -53,11 +53,13 @@ sub currency {
 }
 
 sub price {
-    return shift->ItemPrice->{Amount} || 0;
+    my $price = shift->ItemPrice->{Amount} || 0;
+    return sprintf('%.2f', $price);
 }
 
 sub shipping {
-    return shift->ShippingPrice->{Amount} || 0;
+    my $shipping =  shift->ShippingPrice->{Amount} || 0;
+    return sprintf('%.2f', $shipping);
 }
 
 sub sku {
@@ -78,7 +80,7 @@ sub name {
 sub subtotal {
     my $self = shift;
     # and possibly others...
-    return $self->price + $self->shipping;
+    return sprintf('%.2f', $self->price * $self->quantity);
 }
 
 1;
