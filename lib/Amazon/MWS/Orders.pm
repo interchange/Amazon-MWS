@@ -54,6 +54,7 @@ define_api_method ListOrdersByNextToken =>
 
 define_api_method GetOrder =>
     service => "$orders_service",
+    version => $version,
     parameters => {
 	AmazonOrderId => {
              required   =>      1,
