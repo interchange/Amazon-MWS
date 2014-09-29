@@ -19,4 +19,29 @@ has City => (is => 'ro');
 has Name => (is => 'ro');
 has CountryCode => (is => 'ro');
 
+sub name {
+    return shift->Name;
+}
+
+sub address_line {
+    my $self = shift;
+    my $line = $self->AddressLine1 || '';
+    if (my $second = $self->AddressLine2) {
+        $line .= $second;
+    }
+    return $line;
+}
+
+sub city {
+    return shift->City;
+}
+
+sub zip {
+    return shift->PostalCode;
+}
+
+sub country {
+    return shift->CountryCode;
+}
+
 1;

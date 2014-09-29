@@ -5,6 +5,8 @@ use Amazon::MWS::XML::OrderlineItem;
 
 use strict;
 use warnings;
+use DateTime;
+use DateTime::Format::ISO8601;
 
 use Moo;
 
@@ -77,8 +79,11 @@ sub email {
     return shift->order->{BuyerEmail};
 }
 
-sub shipping_address {
-    my $address = shift->order->{ShippingAddress};
+has shipping_address => (is => 'lazy');
+                         
+sub _build_shipping_address {
+    my $self = shift;
+    my $address = $self->order->{ShippingAddress};
     return Amazon::MWS::XML::Address->new(%$address);
 }
 
@@ -91,5 +96,60 @@ sub items {
     }
     return @items;
 }
+
+=head2 order_date
+
+Return a L<DateTime> object with th purchase date.
+
+=cut
+
+sub order_date {
+    my ($self) = @_;
+    return $self->_get_dt($self->order->{PurchaseDate});
+}
+
+sub _get_dt {
+    my ($self, $date) = @_;
+    return DateTime::Format::ISO8601->parse_datetime($date);
+}
+
+sub shipping_cost {
+    my $self = shift;
+    my @items = $self->items;
+    my $shipping = 0;
+    foreach my $i (@items) {
+        $shipping += $i->shipping;
+    }
+    return sprintf('%.2f', $shipping);
+}
+
+sub subtotal {
+    my $self = shift;
+    my @items = $self->items;
+    my $total = 0;
+    foreach my $i (@items) {
+        $total += $i->price;
+    }
+    return sprintf('%.2f', $total);
+}
+
+sub total_cost {
+    my $self = shift;
+    my $total_cost = $self->order->{OrderTotal}->{Amount};
+    die "Couldn't retrieve the OrderTotal/Amount" unless defined $total_cost;
+    unless (($self->subtotal + $self->shipping_cost) == $total_cost) {
+        die $self->subtotal . " + " . $self->shipping_cost . " is not $total_cost";
+    }
+    return sprintf('%.2f', $total_cost);
+}
+
+sub currency {
+    my $self = shift;
+    my $currency = $self->order->{OrderTotal}->{CurrencyCode}; 
+    die "Couldn't find OrderTotal/Currency" unless $currency;
+    return $currency;
+}
+
+
 
 1;
