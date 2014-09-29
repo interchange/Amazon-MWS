@@ -44,4 +44,12 @@ sub country {
     return shift->CountryCode;
 }
 
+sub phone {
+    return shift->Phone;
+}
+
+sub region {
+    return shift->StateOrRegion;
+}
+
 1;
