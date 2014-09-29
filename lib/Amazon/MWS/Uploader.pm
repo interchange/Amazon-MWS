@@ -5,6 +5,7 @@ use warnings;
 
 use DBI;
 use Amazon::MWS::XML::Feed;
+use Amazon::MWS::XML::Order;
 use Amazon::MWS::Client;
 use Amazon::MWS::XML::Response::FeedSubmissionResult;
 use Data::Dumper;
@@ -97,6 +98,10 @@ has db_options => (is => 'ro',
                        die "Not an hashref" unless ref($_[0]) eq 'HASH';
                    });
 has dbh => (is => 'lazy');
+
+has debug => (is => 'ro');
+
+has logfile => (is => 'ro');
 
 sub _build_dbh {
     my $self = shift;
@@ -231,6 +236,8 @@ sub _build_client {
                                                marketplace_id
                                                access_key_id
                                                secret_key
+                                               debug
+                                               logfile
                                                endpoint/);
 
     return Amazon::MWS::Client->new(%mws_args);
@@ -441,6 +448,9 @@ sub upload_feed {
     my $type   = $record->{feed_name};
     my $feed_id = $record->{feed_id};
     print "Checking $type feed for $job_id\n";
+    # http://docs.developer.amazonservices.com/en_US/feeds/Feeds_FeedType.html
+
+
     my %names = (
                  product => '_POST_PRODUCT_DATA_',
                  inventory => '_POST_INVENTORY_AVAILABILITY_DATA_',
@@ -596,5 +606,59 @@ sub submission_result {
     die unless $xml;
     return Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml);
 }
+
+=head2 get_orders($from_date)
+
+This is a self-contained method and doesn't require a product list.
+The from_date must be a L<DateTime> object. If not provided, it will
+the last week.
+
+Returns a list of Amazon::MWS::XML::Order objects.
+
+=cut
+
+sub get_orders {
+    my ($self, $from_date) = @_;
+    unless ($from_date) {
+        $from_date = DateTime->now;
+        $from_date->subtract(days => 7);
+    }
+    my $res;
+    eval {
+        $res = $self->client->ListOrders(
+                                         MarketplaceId => [$self->marketplace_id],
+                                         CreatedAfter  => $from_date,
+                                        );
+    };
+    if (my $err = $@) {
+        die Dumper($err);
+    }
+    my @orders;
+    # TODO: there could be a next token thing to parse.
+    die "tokens not implemented, fix the code"
+      if $res->{HasNext} || $res->{NextToken};
+    foreach my $order (@{ $res->{Orders}->{Order} }) {
+        my $amws_id = $order->{AmazonOrderId};
+        die "Missing amazon AmazonOrderId?!" unless $amws_id;
+
+        # get the orderline
+        my $orderline;
+        eval {
+            $orderline = $self->client->ListOrderItems(AmazonOrderId => $amws_id);
+        };
+        if (my $err = $@) {
+            die Dumper($err);
+        }
+        die "tokens not implemented, fix the code"
+          if $orderline->{HasNext} || $orderline->{NextToken};
+
+        my $items = $orderline->{OrderItems}->{OrderItem};
+
+        push @orders, Amazon::MWS::XML::Order->new(order => $order,
+                                                   orderline => $items);
+    }
+    return @orders;
+}
+
 
 1;
