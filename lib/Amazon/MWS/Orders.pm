@@ -1,8 +1,12 @@
 package Amazon::MWS::Orders;
 
+use strict;
+use warnings;
+
 use Amazon::MWS::Routines qw(:all);
 
-my $orders_service = '/Orders/2011-01-01';
+my $version = '2013-09-01';
+my $orders_service = "/Orders/$version";
 
 define_api_method GetServiceStatus =>
     raw_body => 0,
@@ -15,7 +19,8 @@ define_api_method GetServiceStatus =>
    };
 
 define_api_method ListOrders =>
-    service => "$orders_service",
+    service => $orders_service,
+    version => $version,
     parameters => {
         MarketplaceId => {
              required   =>      1,
