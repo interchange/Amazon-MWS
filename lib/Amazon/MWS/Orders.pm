@@ -69,6 +69,7 @@ define_api_method GetOrder =>
 
 define_api_method ListOrderItems =>
     service => "$orders_service",
+    version => $version,
     parameters => {
         AmazonOrderId => {
              required   =>      1,
