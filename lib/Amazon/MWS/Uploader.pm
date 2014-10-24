@@ -17,6 +17,8 @@ use Try::Tiny;
 use Moo;
 use namespace::clean;
 
+our $VERSION = '0.01';
+
 
 =head1 NAME
 
