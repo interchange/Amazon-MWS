@@ -295,7 +295,8 @@ sub _slurp_file {
 sub upload {
     my $self = shift;
     # first create the job id, using the current time
-    my $job_id = DateTime->now->strftime('%F-%H-%M');
+    my $task = 'upload';
+    my $job_id = $task . '-' . DateTime->now->strftime('%F-%H-%M');
     # create the feeds to be uploaded using the products
     my $feeder = $self->feeder;
     # to be extended
@@ -304,6 +305,7 @@ sub upload {
     $self->_exe_query($self->sqla
                       ->insert(amazon_mws_jobs => {
                                                    amws_job_id => $job_id,
+                                                   task => 'products'
                                                   }));
 
     # to complete the process, we need to fill out these five
