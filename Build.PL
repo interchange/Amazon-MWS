@@ -19,6 +19,7 @@ my $build = Module::Build->new(
         'URI::Escape'    => 0,
         'HTTP::Request'  => 0,
         'LWP::UserAgent' => 0,
+        'LWP::Protocol::https' => 0,
         'XML::Simple'    => 0,
 
         'DateTime'                  => 0,
