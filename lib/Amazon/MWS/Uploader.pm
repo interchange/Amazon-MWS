@@ -478,7 +478,12 @@ sub upload_feed {
         }
         catch {
             if (ref($_)) {
-                warn $_->xml;
+                if ($_->can('xml')) {
+                    warn $_->xml;
+                }
+                else {
+                    warn Dumper($_);
+                }
             }
             else {
                 warn $_;
