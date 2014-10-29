@@ -38,6 +38,8 @@ has schema_dir => (is => 'ro',
 
 has schema => (is => 'lazy');
 
+has debug => (is => 'rw');
+
 has merchant_id => (is => 'ro',
                     required => 1,
                     isa => sub {
