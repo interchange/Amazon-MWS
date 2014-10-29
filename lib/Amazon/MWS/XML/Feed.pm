@@ -4,8 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use XML::Compile::Schema;
-use File::Spec;
+use base 'Amazon::MWS::XML::GenericFeed';
 use Data::Dumper;
 
 use Moo;
@@ -13,6 +12,10 @@ use Moo;
 =head1 NAME
 
 Amazon::MWS::XML::Feed -- module to create XML feeds for Amazon MWS
+
+=head2 DESCRIPTION
+
+Extends Amazon::MWS::XML::GenericFeed and inherits its accessors/methods.
 
 =head1 ACCESSORS
 
@@ -42,33 +45,11 @@ The data structure to populate the Product stanza.
 =cut
 
 
-has schema_dir => (is => 'ro',
-                   required => 1,
-                   isa => sub {
-                       die "Not a dir" unless -d $_[0];
-                   });
-
-has schema => (is => 'lazy');
-
-has merchant_id => (is => 'ro',
-                    required => 1,
-                    isa => sub {
-                        die "the merchant id must be a string" unless $_[0];
-                    });
-
 has products => (is => 'ro',
                  required => 1,
                  isa => sub {
                      die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
                  });
-
-sub _build_schema {
-    my $self = shift;
-    my $files = File::Spec->catfile($self->schema_dir, '*.xsd');
-    my $schema = XML::Compile::Schema->new([glob $files]);
-    my $write  = $schema->compile(WRITER => 'AmazonEnvelope');
-    return $write;
-}
 
 sub _create_feed {
     my ($self, $operation) = @_;
@@ -82,15 +63,6 @@ sub _create_feed {
                   );
 
     my $method = $methods{$operation} or die "$operation is not supported";
-    my $data = {
-                Header => {
-                           MerchantIdentifier => $self->merchant_id,
-                           DocumentVersion => "1.1", # unclear
-                          },
-                MessageType => $operation,
-                # MarketplaceName => "example",
-                # PurgeAndReplace => "false", unclear if "false" works
-               };
 
     my @messages;
     my $message_counter = 1;
@@ -117,22 +89,7 @@ sub _create_feed {
                             };
         }
     }
-    if (@messages) {
-        $data->{Message} = \@messages;
-    }
-    else {
-        # no messages, there is nothing to do
-        return;
-    }
-    return $self->_write_out($data);
-}
-
-sub _write_out {
-    my ($self, $data) = @_;
-    my $doc = XML::LibXML::Document->new('1.0', 'UTF-8');
-    my $xml = $self->schema->($doc, $data);
-    $doc->setDocumentElement($xml);
-    return $doc->toString(1);
+    return $self->create_feed($operation, \@messages);
 }
 
 
