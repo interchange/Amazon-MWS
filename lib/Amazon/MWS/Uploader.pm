@@ -669,5 +669,22 @@ sub get_orders {
     return @orders;
 }
 
+sub acknowledge_successful_order {
+    my ($self, $order) = @_;
+    die "Missing order" unless $order;
+    my $order_feed = Amazon::MWS::XML::GenericFeed->new(
+                                                        schema_dir => $self->schema_dir,
+                                                        merchant_id => $self->merchant_id,
+                                                );
+
+    my $data = $order->as_ack_order_hashref;
+    $data->{StatusCode} = 'Success';
+
+    my $message = {
+                   MessageID => 1,
+                   OrderAcknowledgement => $data,
+                  };
+    return $order_feed->create_feed(OrderAcknowledgement => [ $message ]);
+}
 
 1;

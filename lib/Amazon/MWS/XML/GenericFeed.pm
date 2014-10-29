@@ -54,6 +54,13 @@ sub _build_schema {
     return $write;
 }
 
+=head2 create_feed($operation, \@messages, %options)
+
+Create a feed of type $operation, with the messages passed. The
+options are not used yet.
+
+=cut
+
 sub create_feed {
     my ($self, $operation, $messages, %options) = @_;
     die "Missign operation" unless $operation;

@@ -44,6 +44,10 @@ root, e.g. C<$response->{Orders}->{Order}->[0]>
 It should be the output of C<ListOrderItems> without the root, like
 C<$response->{OrderItems}->{OrderItem}>.
 
+=head2 order_number
+
+Our order ID.
+
 =cut
 
 
@@ -59,17 +63,14 @@ has orderline => (is => 'rw',
                       die unless ref($_[0]) eq 'ARRAY';
                   });
 
+has order_number => (is => 'rw');
+
+
 =head1 METHODS
 
 They are mostly shortcuts to retrieve the correct information.
 
 =cut
-
-sub order_number {
-    # for now return undef. Probably when acknowledged, we will get
-    # ours somewhere
-    return;
-}
 
 sub amazon_order_number {
     return shift->order->{AmazonOrderId};
@@ -87,14 +88,21 @@ sub _build_shipping_address {
     return Amazon::MWS::XML::Address->new(%$address);
 }
 
-sub items {
+has items_ref => (is => 'lazy');
+
+sub _build_items_ref {
     my ($self) = @_;
     my $orderline = $self->orderline;
     my @items;
     foreach my $item (@$orderline) {
         push @items, Amazon::MWS::XML::OrderlineItem->new(%$item);
     }
-    return @items;
+    return \@items;
+}
+
+sub items {
+    my $self = shift;
+    return @{ $self->items_ref };
 }
 
 =head2 order_date
@@ -150,6 +158,17 @@ sub currency {
     return $currency;
 }
 
-
+sub as_ack_order_hashref {
+    my $self = shift;
+    my @items;
+    foreach my $item ($self->items) {
+        push @items, $item->as_ack_orderline_item_hashref;
+    }
+    return {
+            AmazonOrderID => $self->amazon_order_number,
+            MerchantOrderID => $self->order_number,
+            Item => \@items,
+           };
+}
 
 1;

@@ -48,6 +48,18 @@ has ConditionSubtypeId => (is => 'ro');
 has QuantityShipped => (is => 'ro');
 has QuantityOrdered => (is => 'ro');
 
+=head2 merchant_order_item
+
+Our id
+
+=cut
+
+has merchant_order_item => (is => 'rw');
+
+sub amazon_order_item {
+    return shift->OrderItemId;
+}
+
 sub currency {
     return shift->ItemPrice->{CurrencyCode};
 }
@@ -82,5 +94,14 @@ sub subtotal {
     # and possibly others...
     return sprintf('%.2f', $self->price * $self->quantity);
 }
+
+sub as_ack_orderline_item_hashref {
+    my $self = shift;
+    return {
+            AmazonOrderItemCode => $self->amazon_order_item,
+            MerchantOrderItemID => $self->merchant_order_item,
+           };
+}
+
 
 1;
