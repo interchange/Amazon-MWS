@@ -162,6 +162,15 @@ sub _build_feeder {
 }
 
 
+sub generic_feeder {
+    my $self = shift;
+    return Amazon::MWS::XML::GenericFeed->new(
+                                              schema_dir => $self->schema_dir,
+                                              merchant_id => $self->merchant_id,
+                                             );
+}
+
+
 =item merchant_id
 
 The merchant ID provided by Amazon.
@@ -694,10 +703,7 @@ sub acknowledge_feed {
     my ($self, $order, $status) = @_;
     die "Missing order" unless $order;
     $status ||= 'Success';
-    my $order_feed = Amazon::MWS::XML::GenericFeed->new(
-                                                        schema_dir => $self->schema_dir,
-                                                        merchant_id => $self->merchant_id,
-                                                );
+    my $feeder = $self->generic_feeder;
 
     my $data = $order->as_ack_order_hashref;
     $data->{StatusCode} = $status;
@@ -706,7 +712,36 @@ sub acknowledge_feed {
                    MessageID => 1,
                    OrderAcknowledgement => $data,
                   };
-    return $order_feed->create_feed(OrderAcknowledgement => [ $message ]);
+    return $feeder->create_feed(OrderAcknowledgement => [ $message ]);
 }
+
+sub delete_skus {
+    my ($self, @skus) = @_;
+    return unless @skus;
+    my $feed_content = $self->delete_skus_feed(@skus);
+    $self->prepare_feeds(product_deletion => [{
+                                               name => 'product',
+                                               content => $feed_content,
+                                              }] );
+}
+
+sub delete_skus_feed {
+    my ($self, @skus) = @_;
+    return unless @skus;
+    my $feeder = $self->generic_feeder;
+    my $counter = 1;
+    my @messages;
+    foreach my $sku (@skus) {
+        push @messages, {
+                         MessageID => $counter++,
+                         OperationType => 'Delete',
+                         Product => {
+                                     SKU => $sku,
+                                    }
+                        };
+    }
+    return $feeder->create_feed(Product => \@messages);
+}
+
 
 1;
