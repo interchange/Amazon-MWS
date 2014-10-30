@@ -27,7 +27,9 @@ sub address_line {
     my $self = shift;
     my $line = $self->AddressLine1 || '';
     if (my $second = $self->AddressLine2) {
-        $line .= $second;
+        if ($second ne $line) {
+            $line .= "\n" . $second;
+        }
     }
     return $line;
 }
