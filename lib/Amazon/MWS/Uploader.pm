@@ -671,14 +671,20 @@ sub get_orders {
 
 sub acknowledge_successful_order {
     my ($self, $order) = @_;
+    my $feed = $self->acknowledge_feed($order);
+}
+
+sub acknowledge_feed {
+    my ($self, $order, $status) = @_;
     die "Missing order" unless $order;
+    $status ||= 'Success';
     my $order_feed = Amazon::MWS::XML::GenericFeed->new(
                                                         schema_dir => $self->schema_dir,
                                                         merchant_id => $self->merchant_id,
                                                 );
 
     my $data = $order->as_ack_order_hashref;
-    $data->{StatusCode} = 'Success';
+    $data->{StatusCode} = $status;
 
     my $message = {
                    MessageID => 1,
