@@ -143,12 +143,16 @@ sub subtotal {
 
 sub total_cost {
     my $self = shift;
-    my $total_cost = $self->order->{OrderTotal}->{Amount};
+    my $total_cost = sprintf('%.2f', $self->order->{OrderTotal}->{Amount});
     die "Couldn't retrieve the OrderTotal/Amount" unless defined $total_cost;
-    unless (($self->subtotal + $self->shipping_cost) == $total_cost) {
-        die $self->subtotal . " + " . $self->shipping_cost . " is not $total_cost";
+    my $subtotal = $self->subtotal;
+    my $shipping = $self->shipping_cost;
+    if (_kinda_equal($subtotal + $shipping, $total_cost)) {
+        return $total_cost;
     }
-    return sprintf('%.2f', $total_cost);
+    else {
+        die "$subtotal + $shipping is not $total_cost\n";
+    }
 }
 
 sub currency {
@@ -169,6 +173,10 @@ sub as_ack_order_hashref {
             MerchantOrderID => $self->order_number,
             Item => \@items,
            };
+}
+
+sub _kinda_equal {
+    return abs($_[0] - $_[1]) < 0.01;
 }
 
 1;
