@@ -296,18 +296,35 @@ sub _slurp_file {
 
 sub upload {
     my $self = shift;
-    # first create the job id, using the current time
-    my $task = 'upload';
-    my $job_id = $task . '-' . DateTime->now->strftime('%F-%H-%M');
     # create the feeds to be uploaded using the products
     my $feeder = $self->feeder;
-    # to be extended
-    
+    my @feeds;
+    foreach my $feed_name (qw/product
+                              inventory
+                              price
+                              image
+                              variants
+                             /) {
+        my $method = $feed_name . "_feed";
+        my $content = $feeder->$method;
+        push @feeds, {
+                      name => $feed_name,
+                      content => $content,
+                     }
+    }
+    $self->prepare_feeds(upload => \@feeds);
+}
+
+
+sub prepare_feeds {
+    my ($self, $task, $feeds) = @_;
+    die "Missing task ($task) and feeds ($feeds)" unless $task && $feeds;
+    my $job_id = $task . "-" . DateTime->now->strftime('%F-%H-%M');
 
     $self->_exe_query($self->sqla
                       ->insert(amazon_mws_jobs => {
                                                    amws_job_id => $job_id,
-                                                   task => 'products'
+                                                   task => $task,
                                                   }));
 
     # to complete the process, we need to fill out these five
@@ -317,35 +334,26 @@ sub upload {
     # of the feed itself is tracked in the amazon_mws_feeds
 
     # TODO: we could pass to the object some flags to filter out results.
-    foreach my $feed_type (qw/product
-                              inventory
-                              price
-                              image
-                              variants
-                             /) {
-        my $file = $self->_feed_file_for_method($job_id, $feed_type);
-        my $method = $feed_type . "_feed";
-        my $content = $feeder->$method;
-
+    foreach my $feed (@$feeds) {
         # write out the feed if we got something to do, and add a row
         # to the feeds.
 
         # when there is no content, no need to create a job for it.
-        if ($content) {
+        if (my $content = $feed->{content}) {
+            my $name = $feed->{name} or die "Missing feed_name";
+            my $file = $self->_feed_file_for_method($job_id, $name);
             open (my $fh, '>', $file) or die "Couldn't open $file $!";
             print $fh $content;
             close $fh;
             # and prepare a row for it
 
             my $insertion = {
-                             feed_name => $feed_type,
-                             feed_file => $self->_feed_file_for_method($job_id,
-                                                                       $feed_type),
+                             feed_name => $name,
+                             feed_file => $file,
                              amws_job_id => $job_id,
                             };
             $self->_exe_query($self->sqla
                               ->insert(amazon_mws_feeds => $insertion));
-
         }
     }
     return;
@@ -461,7 +469,10 @@ sub upload_feed {
                  price => '_POST_PRODUCT_PRICING_DATA_',
                  image => '_POST_PRODUCT_IMAGE_DATA_',
                  variants => '_POST_PRODUCT_RELATIONSHIP_DATA_',
+                 order_ack => '_POST_ORDER_ACKNOWLEDGEMENT_DATA_',
                 );
+
+    die "Unrecognized type $type" unless $names{$type};
 
     # no feed id, it's a new batch
     if (!$feed_id) {
@@ -671,7 +682,12 @@ sub get_orders {
 
 sub acknowledge_successful_order {
     my ($self, $order) = @_;
-    my $feed = $self->acknowledge_feed($order);
+    my $feed_content = $self->acknowledge_feed($order);
+    # here we have only one feed to upload and check
+    $self->prepare_feeds(order_ack => [{
+                                        name => 'order_ack',
+                                        content => $feed_content,
+                                       }]);
 }
 
 sub acknowledge_feed {
