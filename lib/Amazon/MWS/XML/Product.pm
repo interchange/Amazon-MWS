@@ -32,6 +32,8 @@ Mandatory.
 
 =item brand
 
+=item category_code
+
 =item inventory
 
 Indicates whether or not an item is available (any positive number =
@@ -87,6 +89,7 @@ has ean => (is => 'ro');
 has title => (is => 'ro');
 has description => (is => 'ro');
 has brand => (is => 'ro');
+has category_code => (is => 'ro');
 
 has inventory => (is => 'ro',
                   default => sub { '0' },
@@ -201,7 +204,9 @@ sub as_product_hash {
     if (my $desc = $self->description) {
         $data->{DescriptionData}->{Description} = $desc;
     }
-     # $data->{ProductData} deals with categories.
+    if (my $cat = $self->category_code) {
+        $data->{DescriptionData}->{RecommendedBrowseNode} = $cat;
+    }
     return $data;
 }
 
