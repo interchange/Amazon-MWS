@@ -69,7 +69,7 @@ sub _create_feed {
     my @products = @{ $self->products };
     for (my $i = 0; $i < @products; $i++) {
         my $data = $products[$i]->$method;
-        warn Dumper($data) if $self->debug;
+        print Dumper($data) if $self->debug;
         # unclear if it's the right thing to do
         if (ref($data) eq 'ARRAY') {
             foreach my $msg (@$data) {

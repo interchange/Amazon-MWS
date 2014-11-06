@@ -526,7 +526,7 @@ sub upload_feed {
             die "Couldn't get a submission id, response is " . Dumper($res);
         }
     }
-    warn "Feed is $feed_id\n";
+    print "Feed is $feed_id\n";
 
     if (!$record->{processing_complete}) {
         if ($self->_check_processing_complete($feed_id)) {
@@ -537,7 +537,7 @@ sub upload_feed {
                                        { feed_id => $feed_id }));
         }
         else {
-            warn "Still processing\n";
+            print "Still processing\n";
             return;
         }
     }
@@ -591,7 +591,7 @@ sub _check_processing_complete {
         }
     };
     die unless $res;
-    warn "Checking if the processing is complete\n"; # . Dumper($res);
+    print "Checking if the processing is complete\n"; # . Dumper($res);
     my $found;
     if (my $list = $res->{FeedSubmissionInfo}) {
         foreach my $feed (@$list) {
@@ -606,7 +606,7 @@ sub _check_processing_complete {
             return 1;
         }
         elsif ($found) {
-            warn "Feed $feed_id still $found->{FeedProcessingStatus}\n";
+            print "Feed $feed_id still $found->{FeedProcessingStatus}\n";
             return;
         }
         else {
