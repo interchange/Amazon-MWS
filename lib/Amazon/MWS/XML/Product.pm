@@ -24,6 +24,11 @@ They has to be passed to the constructor
 
 Mandatory.
 
+=item timestamp_string
+
+An arbitrary string (usually a timestamp) which identifies the
+revision of the product.
+
 =item ean
 
 =item title
@@ -85,6 +90,8 @@ An (optional) arraryref of children sku.
 =cut
 
 has sku => (is => 'ro', required => 1);
+has timestamp_string => (is => 'ro',
+                         default => sub { '0' });
 has ean => (is => 'ro');
 has title => (is => 'ro');
 has description => (is => 'ro');

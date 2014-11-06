@@ -147,21 +147,6 @@ has feed_dir => (is => 'ro',
                      die "$_[0] is not a directory" unless -d $_[0];
                  });
 
-has feeder => (is => 'lazy');
-
-sub _build_feeder {
-    my $self = shift;
-    my $products = $self->products;
-    die "Missing products, can't build a feeder!" unless $products && @$products;
-    my $feeder = Amazon::MWS::XML::Feed->new(
-                                             products => $products,
-                                             schema_dir => $self->schema_dir,
-                                             merchant_id => $self->merchant_id,
-                                            );
-    return $feeder;
-}
-
-
 sub generic_feeder {
     my $self = shift;
     return Amazon::MWS::XML::GenericFeed->new(
@@ -229,7 +214,54 @@ has sqla => (
              }
             );
 
+has existing_products => (is => 'lazy');
 
+sub _build_existing_products {
+    my $self = shift;
+    my $sth = $self->_exe_query($self->sqla->select(amazon_mws_products => [qw/sku
+                                                                               timestamp_string
+                                                                               status
+                                                                              /])),
+    my %uploaded;
+    while (my $row = $sth->fetchrow_hashref) {
+        $row->{timestamp_string} ||= 0;
+        $uploaded{$row->{sku}} = $row;
+    }
+    return \%uploaded;
+}
+
+has products_to_upload => (is => 'lazy');
+
+sub _build_products_to_upload {
+    my $self = shift;
+    my $product_arrayref = $self->products;
+    return unless $product_arrayref && @$product_arrayref;
+    my @products = @$product_arrayref;
+    my $existing = $self->existing_products;
+    my @todo;
+    foreach my $product (@products) {
+        if (my $exists = $existing->{$product->sku}) {
+            # skip already uploaded products with the same timestamp string.
+            if ($exists->{status} and $exists->{status} eq 'ok') {
+                if ($exists->{timestamp_string} eq ($product->timestamp_string || 0)) {
+                    print "Skipping already uploaded item " . $product->sku . "\n";
+                    next;
+                }
+            }
+            # skip products in progress or failed.
+            if ($exists->{status}) {
+                # something else is going on. Pending or failed
+                print "Skipping $exists->{status} item " . $product->sku . "\n";
+                next;
+            }
+        }
+        push @todo, $product;
+    }
+    # delete those skus from the db, we will insert them again aftward
+    $self->_exe_query($self->sqla->delete('amazon_mws_products',
+                                          { sku => { -in => [map { $_->sku } @todo] } }));
+    return \@todo;
+}
 
 
 =item client
@@ -279,6 +311,13 @@ Restore the state and resume where it was left.
 
 =head1 INTERNAL METHODS
 
+=head2 prepare_feeds($type, { name => $feed_name, content => "<xml>..."}, { name => $feed_name2, content => "<xml>..."}, ....)
+
+Prepare the feed of type $type with the feeds provided as additional
+arguments.
+
+Return the job id
+
 
 =cut
 
@@ -306,7 +345,16 @@ sub _slurp_file {
 sub upload {
     my $self = shift;
     # create the feeds to be uploaded using the products
-    my $feeder = $self->feeder;
+    my @products = @{ $self->products_to_upload };
+    unless (@products) {
+        print "No products, can't upload anything\n";
+        return;
+    }
+    my $feeder = Amazon::MWS::XML::Feed->new(
+                                             products => \@products,
+                                             schema_dir => $self->schema_dir,
+                                             merchant_id => $self->merchant_id,
+                                            );
     my @feeds;
     foreach my $feed_name (qw/product
                               inventory
@@ -321,7 +369,22 @@ sub upload {
                       content => $content,
                      }
     }
-    $self->prepare_feeds(upload => \@feeds);
+    my $job_id = $self->prepare_feeds(upload => \@feeds);
+    $self->_mark_products_as_pending($job_id, @products);
+}
+
+sub _mark_products_as_pending {
+    my ($self, $job_id, @products) = @_;
+    die "Bad usage" unless $job_id;
+    # these skus were cleared up when asking for the products to upload
+    foreach my $p (@products) {
+        $self->_exe_query($self->sqla->insert(amazon_mws_products => {
+                                                                      amws_job_id => $job_id,
+                                                                      sku => $p->sku,
+                                                                      status => 'pending',
+                                                                      timestamp_string => $p->timestamp_string,
+                                                                     }));
+    }
 }
 
 
@@ -365,7 +428,7 @@ sub prepare_feeds {
                               ->insert(amazon_mws_feeds => $insertion));
         }
     }
-    return;
+    return $job_id;
 }
 
 
@@ -444,6 +507,13 @@ sub process_feeds {
     elsif ($success == $total) {
         $update = { success => 1 };
         print "Job successful!\n";
+        # if we're here, all the products are fine, so mark them as
+        # such if it's an upload job
+        if ($row->task eq 'upload') {
+            $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                                  { status => 'ok'},
+                                                  { amws_job_id => $job_id }));
+        }
     }
     else {
         print "Job still to be processed\n";
