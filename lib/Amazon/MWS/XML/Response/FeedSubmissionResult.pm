@@ -81,14 +81,11 @@ sub errors {
         foreach my $res (@{ $struct->{Result} }) {
             push @errors, $self->_parse_result_errors($res);
         }
-        return join(' ', @errors);
-    }
-    elsif ($struct->{Result} and ref($struct->{Result}) eq 'HASH') {
-        return $self->_parse_result_errors($struct->{Result});
+        return join("\n", @errors) . "\n";
     }
     else {
-        # so just dump the structure
-        return Dumper($struct);
+        # so just dump the structure and die
+        die "Not the expected structure: " . Dumper($struct);
     }
 }
 
@@ -107,6 +104,23 @@ sub _parse_result_errors {
         $msg .= $desc;
     }
     return $msg;
+}
+
+sub failed_skus {
+    my ($self) = @_;
+    my $struct = $self->structure;
+    # print Dumper($struct);
+    my @failed;
+    if ($struct->{Result}) {
+        foreach my $res (@{ $struct->{Result} }) {
+            if ($res->{ResultCode} and $res->{ResultCode} eq 'Error') {
+                if (my $sku = $res->{AdditionalInfo}->{SKU}) {
+                    push @failed, $sku;
+                }
+            }
+        }
+    }
+    return @failed;
 }
 
 1;
