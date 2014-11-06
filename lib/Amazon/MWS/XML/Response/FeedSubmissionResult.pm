@@ -58,6 +58,32 @@ sub _build_structure {
     return $struct->{Message}->[0]->{ProcessingReport};
 }
 
+has skus_errors => (is => 'lazy');
+
+sub _build_skus_errors {
+    my $self = shift;
+    my $struct = $self->structure;
+    my @failed;
+    if ($struct->{Result}) {
+        foreach my $res (@{ $struct->{Result} }) {
+            if ($res->{ResultCode} and $res->{ResultCode} eq 'Error') {
+                if (my $sku = $res->{AdditionalInfo}->{SKU}) {
+                    push @failed, {
+                                   sku => $sku,
+                                   error => $res->{ResultDescription} || '',
+                                   code => $res->{ResultMessageCode} || '',
+                                  };
+                }
+            }
+        }
+    }
+    @failed ? return \@failed : return;
+
+}
+
+
+
+
 sub is_success {
     my $self = shift;
     my $struct = $self->structure;
@@ -75,52 +101,24 @@ sub is_success {
 sub errors {
     my $self = shift;
     my $struct = $self->structure;
-    # this shouldn't happen, we already checked if complete or not
-    if ($struct->{Result} and ref($struct->{Result}) eq 'ARRAY') {
-        my @errors;
-        foreach my $res (@{ $struct->{Result} }) {
-            push @errors, $self->_parse_result_errors($res);
-        }
-        return join("\n", @errors) . "\n";
+    if (my $errors = $self->skus_errors) {
+        return join("\n", map
+                    { "$_->{sku}: $_->{error} ($_->{code})" } @$errors) . "\n";
     }
     else {
-        # so just dump the structure and die
-        die "Not the expected structure: " . Dumper($struct);
+        return;
     }
-}
-
-sub _parse_result_errors {
-    my ($self, $res) = @_;
-    my $msg = 'ERROR: ';
-    if ($res->{AdditionalInfo} && $res->{AdditionalInfo}->{SKU}) {
-        $msg = $res->{AdditionalInfo}->{SKU} . ' ';
-    }
-
-    if (my $code = $res->{ResultMessageCode}) {
-        $msg .= "(errcode $code) ";
-    }
-
-    if (my $desc = $res->{ResultDescription}) {
-        $msg .= $desc;
-    }
-    return $msg;
 }
 
 sub failed_skus {
     my ($self) = @_;
-    my $struct = $self->structure;
-    # print Dumper($struct);
-    my @failed;
-    if ($struct->{Result}) {
-        foreach my $res (@{ $struct->{Result} }) {
-            if ($res->{ResultCode} and $res->{ResultCode} eq 'Error') {
-                if (my $sku = $res->{AdditionalInfo}->{SKU}) {
-                    push @failed, $sku;
-                }
-            }
-        }
+    my $errors = $self->skus_errors;
+    if ($errors && @$errors) {
+        return map { $_->{sku} } @$errors;
     }
-    return @failed;
+    else {
+        return;
+    }
 }
 
 1;
