@@ -2,7 +2,7 @@ package Amazon::MWS::XML::Response::FeedSubmissionResult;
 
 use strict;
 use warnings;
-use XML::LibXML::Simple qw/XMLin/;
+use XML::Compile::Schema;
 use Data::Dumper;
 
 use Moo;
@@ -36,13 +36,26 @@ Lazy attribute built via parsing the xml string passed at the constructor.
 =cut
 
 has xml => (is => 'ro', required => '1');
+has schema_dir => (is => 'ro',
+                   required => 1,
+                   isa => sub {
+                       die "Not a dir" unless -d $_[0];
+                   });
+
 
 has structure => (is => 'lazy');
 
 sub _build_structure {
     my $self = shift;
-    my $struct = XMLin($self->xml);
-    return $struct->{Message}->{ProcessingReport};
+    my $files = File::Spec->catfile($self->schema_dir, '*.xsd');
+    my $schema = XML::Compile::Schema->new([glob $files]);
+    my $reader = $schema->compile(READER => 'AmazonEnvelope');
+    my $struct = $reader->($self->xml);
+    die "not a processing report xml" unless $struct->{MessageType} eq 'ProcessingReport';
+    if (@{$struct->{Message}} > 1) {
+        die $self->xml . " returned more than 1 message!";
+    }
+    return $struct->{Message}->[0]->{ProcessingReport};
 }
 
 sub is_success {
@@ -62,7 +75,6 @@ sub is_success {
 sub errors {
     my $self = shift;
     my $struct = $self->structure;
-    print Dumper($struct);
     # this shouldn't happen, we already checked if complete or not
     if ($struct->{Result} and ref($struct->{Result}) eq 'ARRAY') {
         my @errors;

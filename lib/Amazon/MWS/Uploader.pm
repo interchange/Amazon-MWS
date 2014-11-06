@@ -703,7 +703,10 @@ sub submission_result {
         warn $_->xml;
     };
     die unless $xml;
-    return Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml);
+    return Amazon::MWS::XML::Response::FeedSubmissionResult->new(
+                                                                 xml => $xml,
+                                                                 schema_dir => $self->schema_dir,
+                                                                );
 }
 
 =head2 get_orders($from_date)
