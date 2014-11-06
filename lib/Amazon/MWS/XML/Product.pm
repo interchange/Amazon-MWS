@@ -39,6 +39,14 @@ revision of the product.
 
 =item category_code
 
+=item category
+
+To be used, both category and subcategory must be set.
+
+=item subcategory
+
+To be used, both category and subcategory must be set.
+
 =item inventory
 
 Indicates whether or not an item is available (any positive number =
@@ -97,6 +105,9 @@ has title => (is => 'ro');
 has description => (is => 'ro');
 has brand => (is => 'ro');
 has category_code => (is => 'ro');
+has manufacturer_part_number => (is => 'ro');
+has category => (is => 'ro');
+has subcategory => (is => 'ro');
 
 has inventory => (is => 'ro',
                   default => sub { '0' },
@@ -213,6 +224,13 @@ sub as_product_hash {
     }
     if (my $cat = $self->category_code) {
         $data->{DescriptionData}->{RecommendedBrowseNode} = $cat;
+    }
+    if (my $manufacturer_part = $self->manufacturer_part_number) {
+        $data->{DescriptionData}->{MfrPartNumber} = $manufacturer_part;
+    }
+    if ($self->category && $self->subcategory) {
+        # suspicious structure
+        $data->{ProductData}->{$self->category}->{ProductType}->{$self->subcategory} = {};
     }
     return $data;
 }
