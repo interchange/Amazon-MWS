@@ -242,14 +242,17 @@ sub _build_products_to_upload {
     foreach my $product (@products) {
         if (my $exists = $existing->{$product->sku}) {
             # skip already uploaded products with the same timestamp string.
-            if ($exists->{status} and $exists->{status} eq 'ok') {
+            my $status = $exists->{status} || '';
+            if ($status eq 'ok') {
                 if ($exists->{timestamp_string} eq ($product->timestamp_string || 0)) {
                     print "Skipping already uploaded item " . $product->sku . "\n";
                     next;
                 }
             }
-            # skip products in progress or failed.
-            if ($exists->{status}) {
+            elsif ($status eq 'redo') {
+                print "Redoing " . $product->sku . "\n";
+            }
+            elsif ($status) {
                 # something else is going on. Pending or failed
                 print "Skipping $exists->{status} item " . $product->sku . "\n";
                 next;
@@ -509,7 +512,7 @@ sub process_feeds {
         print "Job successful!\n";
         # if we're here, all the products are fine, so mark them as
         # such if it's an upload job
-        if ($row->task eq 'upload') {
+        if ($row->{task} eq 'upload') {
             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                   { status => 'ok'},
                                                   { amws_job_id => $job_id }));
@@ -632,6 +635,7 @@ sub upload_feed {
                                         errors => $result->errors,
                                        },
                                        { feed_id => $feed_id }));
+            $self->register_errors($job_id, $result);
             # and we stop this job, has errors
             return 0;
         }
@@ -816,5 +820,48 @@ sub delete_skus_feed {
     return $feeder->create_feed(Product => \@messages);
 }
 
+sub register_errors {
+    my ($self, $job_id, $result) = @_;
+    # first, get the list of all the skus which were scheduled for this job
+    # we don't have a products hashref anymore.
+    # probably we could parse back the produced xml, but looks like an overkill.
+    # just mark them as redo and wait for the next cron call.
+    my @products = $self->skus_in_job($job_id);
+    my $errors = $result->skus_errors;
+    # turn it into an hash
+    my %errs = map { $_->{sku} => "$job_id $_->{code} $_->{error}" } @$errors;
+
+    foreach my $sku (@products) {
+        if ($errs{$sku}) {
+            $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                                  {
+                                                   status => 'failed',
+                                                   error_msg => $errs{$sku}
+                                                  },
+                                                  { sku => $sku }));
+        }
+        else {
+            # this is good, mark it to be redone
+            $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                                  {
+                                                   status => 'redo',
+                                                  },
+                                                  { sku => $sku }));
+            print "Scheduling $sku for redoing\n";
+        }
+    }
+}
+
+sub skus_in_job {
+    my ($self, $job_id) = @_;
+    my $sth = $self->_exe_query($self->sqla->select('amazon_mws_products',
+                                                    [qw/sku/],
+                                                    { amws_job_id => $job_id }));
+    my @skus;
+    while (my $row = $sth->fetchrow_hashref) {
+        push @skus, $row->{sku};
+    }
+    return @skus;
+}
 
 1;

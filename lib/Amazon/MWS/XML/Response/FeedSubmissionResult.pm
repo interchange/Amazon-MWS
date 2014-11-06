@@ -77,8 +77,7 @@ sub _build_skus_errors {
             }
         }
     }
-    @failed ? return \@failed : return;
-
+    return \@failed;
 }
 
 
@@ -102,12 +101,12 @@ sub errors {
     my $self = shift;
     my $struct = $self->structure;
     if (my $errors = $self->skus_errors) {
-        return join("\n", map
-                    { "$_->{sku}: $_->{error} ($_->{code})" } @$errors) . "\n";
+        if (@$errors) {
+            return join("\n", map
+                        { "$_->{sku}: $_->{error} ($_->{code})" } @$errors) . "\n";
+        }
     }
-    else {
-        return;
-    }
+    return;
 }
 
 sub failed_skus {
