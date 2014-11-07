@@ -93,6 +93,10 @@ image, the other one will become the PT1, etc.
 
 An (optional) arraryref of children sku.
 
+=item search_terms
+
+An (optional) arrayref of search terms (max 5)
+
 =back
 
 =cut
@@ -106,6 +110,7 @@ has description => (is => 'ro');
 has brand => (is => 'ro');
 has category_code => (is => 'ro');
 has manufacturer_part_number => (is => 'ro');
+has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
 has category => (is => 'ro');
 has subcategory => (is => 'ro');
 
@@ -227,6 +232,12 @@ sub as_product_hash {
     }
     if (my $manufacturer_part = $self->manufacturer_part_number) {
         $data->{DescriptionData}->{MfrPartNumber} = $manufacturer_part;
+    }
+    if (my $search_terms = $self->search_terms) {
+        if (my @terms = @$search_terms) {
+            splice(@terms, 5);
+            $data->{DescriptionData}->{SearchTerms} = \@terms;
+        }
     }
     if ($self->category && $self->subcategory) {
         # suspicious structure
