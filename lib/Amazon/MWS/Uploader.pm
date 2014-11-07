@@ -128,6 +128,41 @@ C<amazon_mws_products> table. Default to false.
 
 has purge_missing_products => (is => 'ro');
 
+
+=item reset_errors
+
+If set to a true value, don't skip previously failed items and
+effectively reset (all of) them.
+
+=cut
+
+has reset_errors => (is => 'ro');
+
+=item force
+
+Same as above, but only for the selected items. An arrayref is
+expected here with the B<skus>.
+
+=cut
+
+has force => (is => 'ro',
+              isa => sub {
+                  die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
+              });
+
+
+has _force_hashref => (is => 'lazy');
+
+sub _build__force_hashref {
+    my $self = shift;
+    my %forced;
+    if (my $arrayref = $self->force) {
+        %forced = map { $_ => 1 } @$arrayref;
+    }
+    return \%forced;
+}
+
+
 =item schema_dir
 
 The directory where the xsd files for the feed building can be found.
@@ -250,23 +285,33 @@ sub _build_products_to_upload {
     my $existing = $self->existing_products;
     my @todo;
     foreach my $product (@products) {
-        if (my $exists = $existing->{$product->sku}) {
+        my $sku = $product->sku;
+        if (my $exists = $existing->{$sku}) {
             # mark the item as visited
             $exists->{_examined} = 1;
             # skip already uploaded products with the same timestamp string.
             my $status = $exists->{status} || '';
             if ($status eq 'ok') {
                 if ($exists->{timestamp_string} eq ($product->timestamp_string || 0)) {
-                    print "Skipping already uploaded item " . $product->sku . "\n";
+                    print "Skipping already uploaded item $sku \n";
                     next;
                 }
             }
             elsif ($status eq 'redo') {
-                print "Redoing " . $product->sku . "\n";
+                print "Redoing $sku\n";
+            }
+            elsif ($status eq 'failed') {
+                if ($self->reset_errors || $self->_force_hashref->{$sku}) {
+                    print "Resetting error for $sku\n";
+                }
+                else {
+                    print "Skipping failed item $sku\n";
+                    next;
+                }
             }
             elsif ($status) {
                 # something else is going on. Pending or failed
-                print "Skipping $exists->{status} item " . $product->sku . "\n";
+                print "Skipping $exists->{status} item $sku\n";
                 next;
             }
         }
