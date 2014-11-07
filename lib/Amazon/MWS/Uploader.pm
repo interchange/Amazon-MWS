@@ -162,6 +162,16 @@ sub _build__force_hashref {
     return \%forced;
 }
 
+=item limit_inventory
+
+If set to an integer, limit the inventory to this value. Setting this
+to 0 will disable it.
+
+=cut
+
+has limit_inventory => (is => 'ro',
+                        isa => sub { die "Not an integer"
+                                       unless $_[0] eq int($_[0]) });
 
 =item schema_dir
 
@@ -316,6 +326,13 @@ sub _build_products_to_upload {
             }
         }
         print "Scheduling product " . $product->sku . " for upload\n";
+        if (my $limit = $self->limit_inventory) {
+            my $real = $product->inventory;
+            if ($real > $limit) {
+                print "Limiting the $sku inventory from $real to $limit\n";
+                $product->inventory($limit);
+            }
+        }
         push @todo, $product;
     }
     if ($self->purge_missing_products) {

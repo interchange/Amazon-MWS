@@ -52,7 +52,11 @@ To be used, both category and subcategory must be set.
 Indicates whether or not an item is available (any positive number =
 available; 0 = not available). Every time a quantity is sent for an
 item, the existing quantity is replaced by the new quantity in the
-feed
+feed.
+
+This accessor is read-write because L<Amazon::MWS::Uploader> may want
+to throttle the inventory. Other code is discouraged to use this as a
+modifier.
 
 =item ship_in_days
 
@@ -114,7 +118,7 @@ has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' }
 has category => (is => 'ro');
 has subcategory => (is => 'ro');
 
-has inventory => (is => 'ro',
+has inventory => (is => 'rw',
                   default => sub { '0' },
                   isa => sub {
                       die "Not an integer" unless $_[0] eq int($_[0]);
