@@ -118,6 +118,16 @@ sub _build_dbh {
     return $dbh;
 }
 
+=item purge_missing_products
+
+If true, the first time C<products_to_upload> is called, products not
+passed to the C<products> constructor will be purged from the
+C<amazon_mws_products> table. Default to false.
+
+=cut
+
+has purge_missing_products => (is => 'ro');
+
 =item schema_dir
 
 The directory where the xsd files for the feed building can be found.
@@ -241,6 +251,8 @@ sub _build_products_to_upload {
     my @todo;
     foreach my $product (@products) {
         if (my $exists = $existing->{$product->sku}) {
+            # mark the item as visited
+            $exists->{_examined} = 1;
             # skip already uploaded products with the same timestamp string.
             my $status = $exists->{status} || '';
             if ($status eq 'ok') {
@@ -258,11 +270,24 @@ sub _build_products_to_upload {
                 next;
             }
         }
+        print "Scheduling product " . $product->sku . " for upload\n";
         push @todo, $product;
     }
-    # delete those skus from the db, we will insert them again aftward
-    $self->_exe_query($self->sqla->delete('amazon_mws_products',
-                                          { sku => { -in => [map { $_->sku } @todo] } }));
+    if ($self->purge_missing_products) {
+        # nuke the products not passed
+        # print Dumper($existing);
+        my @deletions = map { $_->{sku} }
+          grep { !$_->{_examined} }
+            values %$existing;
+        if (@deletions) {
+            print "Purging missing items " . join(" ", @deletions) . "\n";
+            # delete remotely
+            $self->delete_skus(@deletions);
+            # delete locally
+            $self->_exe_query($self->sqla->delete('amazon_mws_products',
+                                                  { sku => { -in => \@deletions } }));
+        }
+    }
     return \@todo;
 }
 
@@ -349,6 +374,10 @@ sub upload {
     my $self = shift;
     # create the feeds to be uploaded using the products
     my @products = @{ $self->products_to_upload };
+
+    # at the end of this method, we insert them anew marking them as
+    # pending
+    $self->_remove_products_from_table(@products);
     unless (@products) {
         print "No products, can't upload anything\n";
         return;
@@ -374,6 +403,15 @@ sub upload {
     }
     my $job_id = $self->prepare_feeds(upload => \@feeds);
     $self->_mark_products_as_pending($job_id, @products);
+}
+
+sub _remove_products_from_table {
+    my ($self, @products) = @_;
+    return unless @products;
+    my @skus = map { $_->sku } @products;
+    # delete those skus from the db, we will insert them again aftward
+    $self->_exe_query($self->sqla->delete('amazon_mws_products',
+                                          { sku => { -in => \@skus } }));
 }
 
 sub _mark_products_as_pending {
