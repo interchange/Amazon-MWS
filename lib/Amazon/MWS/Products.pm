@@ -65,11 +65,9 @@ define_api_method GetMatchingProductForId =>
       my $root = shift;
       return unless $root; # failed totally
       if (ref($root) ne 'ARRAY') {
-          print "Converting to array\n";
           return [ $root ];
       }
       else {
-          print "Vanilla\n";
           return $root;
       }
   };
