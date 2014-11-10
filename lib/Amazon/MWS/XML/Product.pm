@@ -101,6 +101,10 @@ An (optional) arraryref of children sku.
 
 An (optional) arrayref of search terms (max 5)
 
+=item features
+
+An (optional) arrayref of strings with features (max 5)
+
 =back
 
 =cut
@@ -115,8 +119,10 @@ has brand => (is => 'ro');
 has category_code => (is => 'ro');
 has manufacturer_part_number => (is => 'ro');
 has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
+has features => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
 has category => (is => 'ro');
 has subcategory => (is => 'ro');
+
 
 has inventory => (is => 'rw',
                   default => sub { '0' },
@@ -241,6 +247,12 @@ sub as_product_hash {
         if (my @terms = @$search_terms) {
             splice(@terms, 5);
             $data->{DescriptionData}->{SearchTerms} = \@terms;
+        }
+    }
+    if (my $features = $self->features) {
+        if (my @feats = grep { $_ } @$features) {
+            splice(@feats, 5);
+            $data->{DescriptionData}->{BulletPoint} = \@feats;
         }
     }
     if ($self->category && $self->subcategory) {
