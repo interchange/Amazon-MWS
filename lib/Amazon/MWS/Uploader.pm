@@ -964,4 +964,28 @@ sub skus_in_job {
     return @skus;
 }
 
+=head2 get_asin_for_eans(@eans)
+
+Accept a list of EANs and return an hashref where the keys are the
+eans passed as arguments, and the values are the ASIN for the current
+marketplace.
+
+=cut
+
+sub get_asin_for_eans {
+    my ($self, @eans) = @_;
+    my $client = $self->client;
+    my $res = $client->GetMatchingProductForId(IdType => 'EAN',
+                                               IdList => \@eans,
+                                               MarketplaceId => $self->marketplace_id);
+    my %ids;
+    if ($res && @$res) {
+        foreach my $product (@$res) {
+            $ids{$product->{Id}} = $product->{Products}->{Product}->{Identifiers}->{MarketplaceASIN}->{ASIN};
+        }
+    }
+    return \%ids;
+}
+
+
 1;
