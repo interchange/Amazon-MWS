@@ -968,7 +968,9 @@ sub skus_in_job {
 
 Accept a list of EANs and return an hashref where the keys are the
 eans passed as arguments, and the values are the ASIN for the current
-marketplace.
+marketplace. Max EANs: 5.x
+
+http://docs.developer.amazonservices.com/en_US/products/Products_GetMatchingProductForId.html
 
 =head2 get_asin_for_ean($ean)
 
@@ -980,6 +982,7 @@ found.
 sub get_asin_for_eans {
     my ($self, @eans) = @_;
     my $client = $self->client;
+    die "too many eans passed (max 5)" if @eans > 5;
     my $res = $client->GetMatchingProductForId(IdType => 'EAN',
                                                IdList => \@eans,
                                                MarketplaceId => $self->marketplace_id);
