@@ -2,7 +2,8 @@ package Amazon::MWS::Products;
 
 use Amazon::MWS::Routines qw(:all);
 
-my $products_service = '/Products/2011-10-01/';
+my $version = '2011-10-01';
+my $products_service = "/Products/$version";
 
 define_api_method "GetServiceStatus" =>
     raw_body => 0,
@@ -15,14 +16,20 @@ define_api_method "GetServiceStatus" =>
    };
 
 define_api_method ListMatchingProducts =>
-    raw_body => 1,
+    raw_body => 0,
+    version => $version,
     service => "$products_service",
     parameters => {
         Query      => {
-             type       => 'sttring',
+             type       => 'string',
              required   => 1
         },
         MarketplaceId   => { type => 'string', required=>1 },
+    },
+    respond => sub {
+        my $root = shift;
+        # unclear if we can get an array here. TODO.
+        return $root->{Products}->{Product};
     };
 
 define_api_method GetMatchingProduct =>
