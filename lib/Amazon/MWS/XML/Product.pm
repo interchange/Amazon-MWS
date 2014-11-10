@@ -215,39 +215,7 @@ sub as_product_hash {
            }
     }
 
-    # this should be a no-brainer. Except it's not.
-    # Values are:
-    # Club CollectibleAcceptable CollectibleGood
-    #    CollectibleLikeNew CollectibleVeryGood New
-    #    Refurbished UsedAcceptable UsedGood UsedLikeNew
-    #    UsedVeryGood
-    my %condition_map = (
-                         Club                   => 1,
-                         CollectibleAcceptable  => 1,
-                         CollectibleGood        => 1,
-                         CollectibleLikeNew     => 1,
-                         CollectibleVeryGood    => 1,
-                         New                    => 1,
-                         Refurbished            => 1,
-                         UsedAcceptable         => 1,
-                         UsedGood               => 1,
-                         UsedLikeNew            => 1,
-                         UsedVeryGood           => 1,     
-                        );
-    my $condition = $self->condition;
-    if ($condition) {
-        if (!$condition_map{$condition}) {
-            
-            warn $self->sku . ": Unknown condition $condition, defaulting to New\n";
-            $condition = 'New';
-        }
-    }
-    else {
-        $condition = 'New';
-    }
-
-
-    $data->{Condition} = { ConditionType => $condition };
+    $data->{Condition} = { ConditionType => $self->condition_type };
 
     # how many items in a package
     # $data->{ItemPackageQuantity} = 1
@@ -401,6 +369,69 @@ sub as_variants_hash {
     return $data;
 }
 
+=head2 condition_type
+
+Set the default and validate the C<condition> value to something that
+Amazon wants. Default to 'New'.
+
+=cut
+
+
+sub condition_type {
+    my $self = shift;
+    # Values are:
+    # Club CollectibleAcceptable CollectibleGood
+    #    CollectibleLikeNew CollectibleVeryGood New
+    #    Refurbished UsedAcceptable UsedGood UsedLikeNew
+    #    UsedVeryGood
+    my %condition_map = (
+                         Club                   => 1,
+                         CollectibleAcceptable  => 1,
+                         CollectibleGood        => 1,
+                         CollectibleLikeNew     => 1,
+                         CollectibleVeryGood    => 1,
+                         New                    => 1,
+                         Refurbished            => 1,
+                         UsedAcceptable         => 1,
+                         UsedGood               => 1,
+                         UsedLikeNew            => 1,
+                         UsedVeryGood           => 1,
+                        );
+    my $condition = $self->condition;
+    if ($condition) {
+        if (!$condition_map{$condition}) {
+            warn $self->sku . ": Unknown condition $condition, defaulting to New\n";
+            $condition = 'New';
+        }
+    }
+    else {
+        $condition = 'New';
+    }
+    return $condition;
+}
+
+sub condition_type_for_lowest_price_listing {
+    my $self = shift;
+    my $condition = $self->condition_type;
+    die "Shouldn't happen" unless $condition;
+    # ItemCondition values:
+    #    Any
+    #    New
+    #    Used
+    #    Collectible
+    #    Refurbished
+    #    Club
+    # beware the hack
+    if ($condition =~ m/^([A-Z][a-z]+)$/) {
+        return $condition;
+    }
+    elsif ($condition =~ m/^([A-Z][a-z]+)([A-Z][a-z]+)$/) {
+        return $1;
+    }
+    else {
+        die "$condition?";
+    }
+}
 
 
 1;
