@@ -43,6 +43,38 @@ define_api_method GetMatchingProduct =>
         MarketplaceId   => { type => 'string', required=>1 },
     };
 
+define_api_method GetMatchingProductForId =>
+  raw_body => 0,
+  version => $version,
+  service => $products_service,
+  parameters => {
+                 MarketplaceId   => {
+                                     type => 'string',
+                                     required => 1
+                                    },
+                 IdType => {
+                            type => 'string',
+                            required => 1
+                           },
+                 IdList => {
+                            type => 'IdList',
+                            required =>  1,
+                           }
+                },
+  respond => sub {
+      my $root = shift;
+      return unless $root; # failed totally
+      if (ref($root) ne 'ARRAY') {
+          print "Converting to array\n";
+          return [ $root ];
+      }
+      else {
+          print "Vanilla\n";
+          return $root;
+      }
+  };
+
+
 define_api_method GetLowestOfferListingsForSKU =>
     raw_body => 1,
     service => "$products_service",
