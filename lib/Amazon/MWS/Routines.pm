@@ -300,3 +300,8 @@ sub new {
 }
 
 1;
+
+# Local Variables:
+# tab-width: 8
+# End:
+
