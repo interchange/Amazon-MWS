@@ -131,15 +131,20 @@ define_api_method GetProductCategoriesForSKU =>
     };
 
 define_api_method GetProductCategoriesForASIN =>
-    raw_body => 1,
+    raw_body => 0,
     service => "$products_service",
+    version => $version,
     parameters => {
         ASIN      => {
              type       => 'string',
              required   => 1
         },
         MarketplaceId   => { type => 'string', required=>1 },
+    },
+    respond => sub {
+        my $root = shift;
+        force_array($root, 'Self');
+        return $root->{Self};
     };
-
 
 1;
