@@ -1035,5 +1035,45 @@ sub get_product_categories {
 }
 
 
+# http://docs.developer.amazonservices.com/en_US/products/Products_GetLowestOfferListingsForSKU.html
+
+=head2 get_lowest_price_for_asin($asin, $condition)
+
+Return the lowest price for asin, excluding ourselves. The second
+argument, condition, is optional and defaults to "New".
+
+If you need the full details, you have to call
+$self->client->GetLowestOfferListingsForASIN yourself and make sense
+of the output. This method is mostly a wrapper meant to simplify the
+routine.
+
+Return undef if no prices are found.
+
+=cut
+
+sub get_lowest_price_for_asin {
+    my ($self, $asin, $condition) = @_;
+    die "Wrong usage, missing argument asin" unless $asin;
+    my $listing = $self->client
+      ->GetLowestOfferListingsForASIN(
+                                      ASINList => [ $asin ],
+                                      MarketplaceId => $self->marketplace_id,
+                                      ExcludeMe => 1,
+                                      ItemCondition => $condition || 'New',
+                                     );
+    return unless $listing && @$listing;
+    my $lowest;
+    foreach my $item (@$listing) {
+        my $current = $item->{Price}->{LandedPrice}->{Amount};
+        $lowest ||= $current;
+        if ($current < $lowest) {
+            $lowest = $current;
+        }
+    }
+    return $lowest;
+}
+
+
+
 
 1;
