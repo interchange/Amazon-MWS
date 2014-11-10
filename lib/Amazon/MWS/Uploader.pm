@@ -1047,9 +1047,23 @@ $self->client->GetLowestOfferListingsForASIN yourself and make sense
 of the output. This method is mostly a wrapper meant to simplify the
 routine.
 
+If we can't get any info, just return undef.
+
 Return undef if no prices are found.
 
+=head2 get_lowest_price_for_ean($ean, $condition)
+
+Same as above, but use the EAN instead
+
 =cut
+
+sub get_lowest_price_for_ean {
+    my ($self, $ean, $condition) = @_;
+    return unless $ean;
+    my $asin = $self->get_asin_for_ean($ean);
+    return unless $asin;
+    return $self->get_lowest_price_for_asin($asin, $condition);
+}
 
 sub get_lowest_price_for_asin {
     my ($self, $asin, $condition) = @_;
