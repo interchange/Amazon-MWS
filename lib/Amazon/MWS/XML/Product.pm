@@ -116,6 +116,7 @@ has ean => (is => 'ro');
 has title => (is => 'ro');
 has description => (is => 'ro');
 has brand => (is => 'ro');
+has condition => (is => 'ro');
 has category_code => (is => 'ro');
 has manufacturer_part_number => (is => 'ro');
 has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
@@ -214,13 +215,39 @@ sub as_product_hash {
            }
     }
 
-    # this should be a no-brainer. Values are:
+    # this should be a no-brainer. Except it's not.
+    # Values are:
     # Club CollectibleAcceptable CollectibleGood
     #    CollectibleLikeNew CollectibleVeryGood New
     #    Refurbished UsedAcceptable UsedGood UsedLikeNew
     #    UsedVeryGood
+    my %condition_map = (
+                         Club                   => 1,
+                         CollectibleAcceptable  => 1,
+                         CollectibleGood        => 1,
+                         CollectibleLikeNew     => 1,
+                         CollectibleVeryGood    => 1,
+                         New                    => 1,
+                         Refurbished            => 1,
+                         UsedAcceptable         => 1,
+                         UsedGood               => 1,
+                         UsedLikeNew            => 1,
+                         UsedVeryGood           => 1,     
+                        );
+    my $condition = $self->condition;
+    if ($condition) {
+        if (!$condition_map{$condition}) {
+            
+            warn $self->sku . ": Unknown condition $condition, defaulting to New\n";
+            $condition = 'New';
+        }
+    }
+    else {
+        $condition = 'New';
+    }
 
-    $data->{Condition} = { ConditionType => 'New' };
+
+    $data->{Condition} = { ConditionType => $condition };
 
     # how many items in a package
     # $data->{ItemPackageQuantity} = 1
