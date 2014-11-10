@@ -970,6 +970,11 @@ Accept a list of EANs and return an hashref where the keys are the
 eans passed as arguments, and the values are the ASIN for the current
 marketplace.
 
+=head2 get_asin_for_ean($ean)
+
+Same as above, but for a single ean. Return the ASIN or undef if not
+found.
+
 =cut
 
 sub get_asin_for_eans {
@@ -986,6 +991,46 @@ sub get_asin_for_eans {
     }
     return \%ids;
 }
+
+sub get_asin_for_ean {
+    my ($self, $ean) = @_;
+    my $res = $self->get_asin_for_eans($ean);
+    if ($res && $res->{$ean}) {
+        return $res->{$ean};
+    }
+    else {
+        return;
+    }
+}
+
+=head2 get_product_categories($ean)
+
+Return a list of category codes (the ones passed to
+RecommendedBrowseNode) which exists on amazon.
+
+=cut
+
+sub get_product_categories {
+    my ($self, $ean) = @_;
+    return unless $ean;
+    my $asin = $self->get_asin_for_ean($ean);
+    unless ($asin) {
+        warn "EAN $ean doesn't exist on amazon yet\n";
+        return;
+    }
+    my $res = $self->client
+      ->GetProductCategoriesForASIN(ASIN => $asin,
+                                    MarketplaceId => $self->marketplace_id);
+    if ($res) {
+        my @ids = map { $_->{ProductCategoryId} } @$res;
+        return @ids;
+    }
+    else {
+        warn "ASIN exists but no categories found. Bug?\n";
+        return;
+    }
+}
+
 
 
 1;
