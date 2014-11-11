@@ -5,7 +5,16 @@ use warnings;
 use utf8;
 use Amazon::MWS::XML::Product;
 use Amazon::MWS::XML::Feed;
-use Test::More tests => 8;
+use Test::More;
+
+# testing requires a directory with the schema
+
+if (-d 'schemas') {
+    plan tests => 8;
+}
+else {
+    plan skip_all => q{Missing "schema" directory with the xsd from Amazon, skipping feeds tests};
+}
 
 my @products;
 foreach my $product ({
