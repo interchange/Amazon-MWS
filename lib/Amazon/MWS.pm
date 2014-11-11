@@ -4,6 +4,14 @@ package Amazon::MWS;
 
 Amazon::MWS - Perl interface to Amazon Marketplace Web Services
 
+=head1 VERSION
+
+0.111
+
+=cut
+
+our $VERSION = '0.111';
+
 =head1 DESCRIPTION
 
 See L<Amazon::MWS::Client>

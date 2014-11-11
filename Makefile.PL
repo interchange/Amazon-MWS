@@ -9,7 +9,7 @@ WriteMakefile(
                          q{Marco Pessotto <melmothx@gmail.com>},
                          q{Stefan Hornburg (Racke) <racke@linuxia.de>},
                      ],
-    VERSION_FROM     => 'lib/Amazon/MWS/Client.pm',
+    VERSION_FROM     => 'lib/Amazon/MWS.pm',
     ABSTRACT_FROM    => 'lib/Amazon/MWS.pm',
     LICENSE          => 'perl',
     PL_FILES         => {},
