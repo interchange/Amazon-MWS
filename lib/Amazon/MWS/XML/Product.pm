@@ -111,7 +111,7 @@ Possible values which validates correctly: Club CollectibleAcceptable
 CollectibleGood CollectibleLikeNew CollectibleVeryGood New Refurbished
 UsedAcceptable UsedGood UsedLikeNew UsedVeryGood
 
-Unrecognized conditions will fall back to "New" issuing a warning.
+Defaults to C<New>
 
 =item condition_note
 
@@ -129,7 +129,26 @@ has ean => (is => 'ro');
 has title => (is => 'ro');
 has description => (is => 'ro');
 has brand => (is => 'ro');
-has condition => (is => 'ro');
+has condition => (is => 'ro',
+                  default => sub { 'New' },
+                  isa => sub {
+                      my %condition_map = (
+                                           Club                   => 1,
+                                           CollectibleAcceptable  => 1,
+                                           CollectibleGood        => 1,
+                                           CollectibleLikeNew     => 1,
+                                           CollectibleVeryGood    => 1,
+                                           New                    => 1,
+                                           Refurbished            => 1,
+                                           UsedAcceptable         => 1,
+                                           UsedGood               => 1,
+                                           UsedLikeNew            => 1,
+                                           UsedVeryGood           => 1,
+                                          );
+                      my $cond = $_[0];
+                      die "Unrecognized condition $cond, must be one of the following: "
+                        . join(' ', keys %condition_map) unless $condition_map{$cond};
+                  });
 has condition_note => (
                        is => 'ro',
                        isa => sub {
@@ -234,7 +253,7 @@ sub as_product_hash {
            }
     }
 
-    $data->{Condition} = { ConditionType => $self->condition_type };
+    $data->{Condition} = { ConditionType => $self->condition };
     if (my $cond_note = $self->condition_note) {
         $data->{Condition}->{ConditionNote} = $cond_note;
     }
@@ -391,58 +410,20 @@ sub as_variants_hash {
     return $data;
 }
 
-=head2 condition_type
+=head2 condition_type_for_lowest_price_listing
 
-Set the default and validate the C<condition> value to something that
-Amazon wants. Default to 'New'.
+This is a method, not an accessor. Extract from the condition the
+string needed by some API calls, where possible values are: New Used
+Collectible Refurbished Club
 
 =cut
 
 
-sub condition_type {
-    my $self = shift;
-    # Values are:
-    # Club CollectibleAcceptable CollectibleGood
-    #    CollectibleLikeNew CollectibleVeryGood New
-    #    Refurbished UsedAcceptable UsedGood UsedLikeNew
-    #    UsedVeryGood
-    my %condition_map = (
-                         Club                   => 1,
-                         CollectibleAcceptable  => 1,
-                         CollectibleGood        => 1,
-                         CollectibleLikeNew     => 1,
-                         CollectibleVeryGood    => 1,
-                         New                    => 1,
-                         Refurbished            => 1,
-                         UsedAcceptable         => 1,
-                         UsedGood               => 1,
-                         UsedLikeNew            => 1,
-                         UsedVeryGood           => 1,
-                        );
-    my $condition = $self->condition;
-    if ($condition) {
-        if (!$condition_map{$condition}) {
-            warn $self->sku . ": Unknown condition $condition, defaulting to New\n";
-            $condition = 'New';
-        }
-    }
-    else {
-        $condition = 'New';
-    }
-    return $condition;
-}
 
 sub condition_type_for_lowest_price_listing {
     my $self = shift;
-    my $condition = $self->condition_type;
+    my $condition = $self->condition;
     die "Shouldn't happen" unless $condition;
-    # ItemCondition values:
-    #    Any
-    #    New
-    #    Used
-    #    Collectible
-    #    Refurbished
-    #    Club
     # beware the hack
     if ($condition =~ m/^([A-Z][a-z]+)$/) {
         return $condition;
