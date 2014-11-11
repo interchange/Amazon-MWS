@@ -1,0 +1,6 @@
+Makefile
+schemas/*
+pm_to_blib
+MYMETA.*
+blib/*
+MANIFEST.bak
