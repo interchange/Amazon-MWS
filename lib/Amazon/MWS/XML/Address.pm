@@ -5,7 +5,31 @@ use warnings;
 
 use Moo;
 
-=head2 ACCESSORS
+=head1 NAME
+
+Amazon::MWS::XML::Address
+
+=head1 ACCESSORS
+
+=over 4
+
+=item Name
+
+Name of customer for this address.
+
+=item PostalCode
+
+Postal code for this address.
+
+=item City
+
+City for this address.
+
+=item Phone
+
+Phone number for this address.
+
+=back
 
 =cut
 

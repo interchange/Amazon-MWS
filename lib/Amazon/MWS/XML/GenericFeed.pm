@@ -12,7 +12,7 @@ use Moo;
 
 =head1 NAME
 
-Amazon::MWS::XML::Feed -- base module to create XML feeds for Amazon MWS
+Amazon::MWS::XML::GenericFeed -- base module to create XML feeds for Amazon MWS
 
 =head1 ACCESSORS
 
@@ -27,6 +27,10 @@ The L<XML::Compile::Schema> object (built lazily).
 =head2 merchant_id
 
 Required. The merchant id provided by Amazon.
+
+=head2 debug
+
+Whether to enable debugging or not.
 
 =cut
 
@@ -53,6 +57,8 @@ sub _build_schema {
     my $write  = $schema->compile(WRITER => 'AmazonEnvelope');
     return $write;
 }
+
+=head1 METHODS
 
 =head2 create_feed($operation, \@messages, %options)
 

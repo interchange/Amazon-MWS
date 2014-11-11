@@ -48,6 +48,10 @@ C<$response->{OrderItems}->{OrderItem}>.
 
 Our order ID.
 
+=head2 shipping_address
+
+Shipping address as C<Amazon::MWS::Client::Address> object.
+
 =cut
 
 

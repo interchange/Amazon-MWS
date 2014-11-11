@@ -118,6 +118,10 @@ Defaults to C<New>
 An arbitrary string shorter than 2000 characters with comments about
 the condition.
 
+=item manufacturer_part_number
+
+Part number manufacturer.
+
 =back
 
 =cut
@@ -411,7 +415,7 @@ sub as_price_hash {
     return $data;
 }
 
-=head2 as_image_hash
+=head2 as_images_array
 
 Return a data structure suitable to feed the ProductImage slot in a
 Image feed.

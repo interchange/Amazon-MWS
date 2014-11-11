@@ -190,6 +190,12 @@ sub image_feed {
     return shift->_create_feed('ProductImage');
 }
 
+=head2 variants_feed
+
+Creates variants feed.
+
+=cut
+
 sub variants_feed {
     return shift->_create_feed('Relationship');
 }
