@@ -34,5 +34,6 @@ MANIFEST.SKIP
 MYMETA.json
 MYMETA.yml
 t/enumeration.t
+t/errors.t
 t/feeds.t
 t/SubmitFeed.t
