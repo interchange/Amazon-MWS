@@ -231,7 +231,7 @@ feed.
 =head2 as_inventory_hash
 
 Return a data structure suitable to feed the Inventory slot in a
-Inventory feed.
+Inventory feed. Negative quantities will be normalized to 0.
 
 =head2 as_price_hash
 
@@ -300,9 +300,13 @@ sub as_product_hash {
 
 sub as_inventory_hash {
     my $self = shift;
+    my $quantity = $self->inventory;
+    if ($quantity < 0) {
+        $quantity = 0;
+    }
     return {
             SKU => $self->sku,
-            Quantity => $self->inventory,
+            Quantity => $quantity,
             FulfillmentLatency => $self->ship_in_days,
            };
 }
