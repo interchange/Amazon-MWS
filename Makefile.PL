@@ -51,8 +51,10 @@ WriteMakefile(
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Amazon-MWS-*' },
     META_MERGE => {
-                   resources => {
-                                 repository => 'https://github.com/interchange/Amazon-MWS'
-                                },
-                  },
+        resources => {
+            repository => 'https://github.com/interchange/Amazon-MWS',
+            bugtracker => 'https://github.com/interchange/Interchange6/issues',
+            IRC => 'irc://irc.freenode.net/#interchange',
+        },
+    },
 );
