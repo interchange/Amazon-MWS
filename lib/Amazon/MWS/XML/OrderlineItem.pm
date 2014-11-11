@@ -5,7 +5,7 @@ use warnings;
 use Moo;
 
 
-=head ACCESSOR
+=head1 ACCESSORS
 
 =cut
 

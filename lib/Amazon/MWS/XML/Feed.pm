@@ -42,6 +42,8 @@ to the following methods:
 
 The data structure to populate the Product stanza.
 
+=back
+
 =cut
 
 
@@ -163,7 +165,7 @@ products so customers can make informed buying decisions.
 
 =item Format - photographs, not drawings
 
-=item Color Model – RGB (no CMYK images)
+=item Color Model - RGB (no CMYK images)
 
 =item Background - white or clear, no borders or words, no brand logos
 

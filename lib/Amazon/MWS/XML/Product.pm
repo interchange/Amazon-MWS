@@ -175,6 +175,8 @@ sub _check_units {
       . join(" ", keys %units) unless $units{$unit};
 }
 
+=over 4
+
 =item package_weight
 
 Weight of the package.
@@ -192,6 +194,8 @@ Weight of the product when packaged to ship.
 
 Unit for the package weight for shipping. Possible values are C<GR>,
 C<KG>, C<LB>, C<MG>, C<OZ>. Defaults to C<GR>.
+
+=back
 
 =cut
 
@@ -420,11 +424,11 @@ Image feed.
 
 =over 4
 
-=item Main – Main image for the product
+=item Main - Main image for the product
 
-=item Alternate (PT) – Other views of the product
+=item Alternate (PT) - Other views of the product
 
-=item Swatch – Color or fabric (Note: Swatch images will be scaled down to 30 x 30 pixels
+=item Swatch - Color or fabric (Note: Swatch images will be scaled down to 30 x 30 pixels
 so they should only be used for displaying the color of your product's fabric, for
 example, not for displaying your whole product.)
 
@@ -463,7 +467,7 @@ sub as_images_array {
     @out ? return \@out : return;
 }
 
-=item as_variants_hash
+=head2 as_variants_hash
 
 Return a structure suitable for the Relationship feed.
 
