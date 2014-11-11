@@ -53,7 +53,7 @@ WriteMakefile(
     META_MERGE => {
         resources => {
             repository => 'https://github.com/interchange/Amazon-MWS',
-            bugtracker => 'https://github.com/interchange/Interchange6/issues',
+            bugtracker => 'https://github.com/interchange/Amazon-MWS/issues',
             IRC => 'irc://irc.freenode.net/#interchange',
         },
     },
