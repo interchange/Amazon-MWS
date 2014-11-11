@@ -105,6 +105,19 @@ An (optional) arrayref of search terms (max 5)
 
 An (optional) arrayref of strings with features (max 5)
 
+=item condition
+
+Possible values which validates correctly: Club CollectibleAcceptable
+CollectibleGood CollectibleLikeNew CollectibleVeryGood New Refurbished
+UsedAcceptable UsedGood UsedLikeNew UsedVeryGood
+
+Unrecognized conditions will fall back to "New" issuing a warning.
+
+=item condition_note
+
+An arbitrary string shorter than 2000 characters with comments about
+the condition.
+
 =back
 
 =cut
@@ -117,6 +130,12 @@ has title => (is => 'ro');
 has description => (is => 'ro');
 has brand => (is => 'ro');
 has condition => (is => 'ro');
+has condition_note => (
+                       is => 'ro',
+                       isa => sub {
+                           die "Max lenght is 2000"
+                             if length($_[0]) > 2000 },
+                      );
 has category_code => (is => 'ro');
 has manufacturer_part_number => (is => 'ro');
 has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
@@ -216,6 +235,9 @@ sub as_product_hash {
     }
 
     $data->{Condition} = { ConditionType => $self->condition_type };
+    if (my $cond_note = $self->condition_note) {
+        $data->{Condition}->{ConditionNote} = $cond_note;
+    }
 
     # how many items in a package
     # $data->{ItemPackageQuantity} = 1
