@@ -52,7 +52,7 @@ WriteMakefile(
     clean => { FILES => 'Amazon-MWS-*' },
     META_MERGE => {
                    resources => {
-                                 repository => 'https://github.com/melmothx/Amazon-MWS'
+                                 repository => 'https://github.com/interchange/Amazon-MWS'
                                 },
                   },
 );
