@@ -327,12 +327,20 @@ sub as_product_hash {
     }
     if (my $search_terms = $self->search_terms) {
         if (my @terms = @$search_terms) {
-            splice(@terms, 5);
-            $data->{DescriptionData}->{SearchTerms} = \@terms;
+            if (@terms > 5) {
+                warn "Max terms is 5, removing some of them: " .
+                  join(" ", splice(@terms, 5)) . "\n";
+            }
+            my @filtered = map { substr $_, 0, 50 } @terms;
+            $data->{DescriptionData}->{SearchTerms} = \@filtered;
         }
     }
     if (my $features = $self->features) {
         if (my @feats = grep { $_ } @$features) {
+            if (@feats > 5) {
+                warn "Max features is 5, removing some of them: " .
+                  join(" ", splice(@feats, 5)) . "\n";
+            }
             splice(@feats, 5);
             $data->{DescriptionData}->{BulletPoint} = \@feats;
         }
