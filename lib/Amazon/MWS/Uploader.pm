@@ -724,6 +724,11 @@ sub upload_feed {
                               ->update('amazon_mws_feeds',
                                        { success => 1 },
                                        { feed_id => $feed_id }));
+            # if we have a success, print the warnings on the stderr.
+            # if we have a failure, the warnings will just confuse us.
+            if (my $warn = $result->warnings) {
+                warn "$warn\n";
+            }
             return 1;
         }
         else {

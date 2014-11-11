@@ -59,17 +59,30 @@ sub _build_structure {
 }
 
 has skus_errors => (is => 'lazy');
+has skus_warnings => (is => 'lazy');
 
 sub _build_skus_errors {
     my $self = shift;
+    return $self->_parse_results('Error');
+}
+
+sub _build_skus_warnings {
+    my $self = shift;
+    return $self->_parse_results('Warning');
+}
+
+sub _parse_results {
+    my ($self, $code) = @_;
+    die unless ($code eq 'Error' or $code eq 'Warning');
     my $struct = $self->structure;
-    my @failed;
+    my @msgs;
     if ($struct->{Result}) {
         foreach my $res (@{ $struct->{Result} }) {
-            if ($res->{ResultCode} and $res->{ResultCode} eq 'Error') {
+            if ($res->{ResultCode} and $res->{ResultCode} eq $code) {
                 if (my $sku = $res->{AdditionalInfo}->{SKU}) {
-                    push @failed, {
+                    push @msgs, {
                                    sku => $sku,
+                                   # this is a bit misnamed, but not too much
                                    error => $res->{ResultDescription} || '',
                                    code => $res->{ResultMessageCode} || '',
                                   };
@@ -77,47 +90,67 @@ sub _build_skus_errors {
             }
         }
     }
-    return \@failed;
+    @msgs ? return \@msgs : return;
 }
-
 
 
 
 sub is_success {
     my $self = shift;
     my $struct = $self->structure;
-    if ($struct->{StatusCode} eq 'Complete' and
-        $struct->{ProcessingSummary}->{MessagesSuccessful} and
-        !$struct->{ProcessingSummary}->{MessagesWithError} and
-        !$struct->{ProcessingSummary}->{MessagesWithWarning}) {
-        return 1;
+    if ($struct->{StatusCode} eq 'Complete') {
+        # Compute the total - successful
+        my $success = $struct->{ProcessingSummary}->{MessagesSuccessful};
+        my $error   = $struct->{ProcessingSummary}->{MessagesWithError};
+        # we ignore the warnings here.
+        # my $warning = $struct->{ProcessingSummary}->{MessagesWithWarning};
+        my $total   = $struct->{ProcessingSummary}->{MessagesProcessed};
+        if (!$error and $total == $success) {
+            return 1;
+        }
     }
-    else {
-        return;
-    }
+    return;
+}
+
+sub warnings {
+    my $self = shift;
+    return $self->_format_msgs($self->skus_warnings);
 }
 
 sub errors {
     my $self = shift;
-    my $struct = $self->structure;
-    if (my $errors = $self->skus_errors) {
-        if (@$errors) {
-            return join("\n", map
-                        { "$_->{sku}: $_->{error} ($_->{code})" } @$errors) . "\n";
-        }
+    return $self->_format_msgs($self->skus_errors);
+}
+
+sub _format_msgs {
+    my ($self, $list) = @_;
+    if ($list && @$list) {
+        return join("\n", map
+                    { "$_->{sku}: $_->{error} ($_->{code})" } @$list) . "\n";
     }
     return;
 }
 
 sub failed_skus {
     my ($self) = @_;
-    my $errors = $self->skus_errors;
-    if ($errors && @$errors) {
-        return map { $_->{sku} } @$errors;
+    return $self->_list_faulty_skus($self->skus_errors);
+}
+
+sub skus_with_warnings {
+    my ($self) = @_;
+    return $self->_list_faulty_skus($self->skus_warnings);
+}
+
+sub _list_faulty_skus {
+    my ($self, $list) = @_;
+    if ($list && @$list) {
+        return map { $_->{sku} } @$list;
     }
     else {
         return;
     }
 }
+
+
 
 1;
