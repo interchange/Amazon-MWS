@@ -3,7 +3,15 @@
 use strict;
 use warnings;
 use Amazon::MWS::XML::Response::FeedSubmissionResult;
-use Test::More tests => 4;
+use Test::More;
+
+if (-d 'schemas') {
+    plan tests => 4;
+}
+else {
+    plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
+}
+
 
 my $xml = <<'XML';
 <AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amzn-envelope.xsd">
