@@ -50,6 +50,8 @@ foreach my $product ({
                       subcategory => 'PhoneAccessory',
                       manufacturer_part_number => '4444123412343',
                       inventory => 2,
+                      shipping_weight => 0,
+                      package_weight => 0,
                      }) {
     push @products, Amazon::MWS::XML::Product->new(%$product);
 }
