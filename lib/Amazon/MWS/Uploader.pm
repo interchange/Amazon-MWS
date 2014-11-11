@@ -1023,7 +1023,6 @@ sub get_product_categories {
     return unless $ean;
     my $asin = $self->get_asin_for_ean($ean);
     unless ($asin) {
-        warn "EAN $ean doesn't exist on amazon yet\n";
         return;
     }
     my $res = $self->client
