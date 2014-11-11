@@ -34,7 +34,8 @@ foreach my $product ({
                       inventory => -1,
                       search_terms => [qw/a b c d e f g/],
                       features => [qw/f1 f2 f3/, '',  qw/f4 f5 f6 f7/],
-                      shipping_weight => 300,
+                      shipping_weight => '5',
+                      shipping_weight_unit => 'GR',
                       package_weight => 290,
                      },
                      {
@@ -94,7 +95,7 @@ my $exp_product_feed = <<'XML';
         <BulletPoint>f4</BulletPoint>
         <BulletPoint>f5</BulletPoint>
         <PackageWeight unitOfMeasure="GR">290</PackageWeight>
-        <ShippingWeight unitOfMeasure="GR">300</ShippingWeight>
+        <ShippingWeight unitOfMeasure="GR">5</ShippingWeight>
         <MfrPartNumber>1234123412343</MfrPartNumber>
         <SearchTerms>a</SearchTerms>
         <SearchTerms>b</SearchTerms>
