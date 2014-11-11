@@ -162,6 +162,52 @@ has features => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
 has category => (is => 'ro');
 has subcategory => (is => 'ro');
 
+sub _check_units {
+    my $unit = $_[0];
+    my %units = (
+                 GR => 1,
+                 KG => 1,
+                 LB => 1,
+                 MG => 1,
+                 OZ => 1,
+                );
+    die "Wrong unit. Possible are :"
+      . join(" ", keys %units) unless $units{$unit};
+}
+
+=item package_weight
+
+Weight of the package.
+
+=item package_weight_unit
+
+Unit for the package weight. Possible values are C<GR>, C<KG>, C<LB>,
+C<MG>, C<OZ>. Defaults to C<GR>.
+
+=item shipping_weight
+
+Weight of the product when packaged to ship.
+
+=item shipping_weight_unit
+
+Unit for the package weight for shipping. Possible values are C<GR>,
+C<KG>, C<LB>, C<MG>, C<OZ>. Defaults to C<GR>.
+
+=cut
+
+has package_weight => (is => 'ro');
+
+has package_weight_unit => (is => 'ro',
+                            default => sub { 'GR' },
+                            isa => \&_check_units,
+                           );
+
+has shipping_weight => (is => 'ro');
+
+has shipping_weight_unit => (is => 'ro',
+                             default => sub { 'GR' },
+                             isa => \&_check_units,
+                            );
 
 has inventory => (is => 'rw',
                   default => sub { '0' },
@@ -291,6 +337,22 @@ sub as_product_hash {
             $data->{DescriptionData}->{BulletPoint} = \@feats;
         }
     }
+
+    if (my $weight = $self->package_weight) {
+        my $unit = $self->package_weight_unit;
+        $data->{DescriptionData}->{PackageWeight} = {
+                                                     unitOfMeasure => $unit,
+                                                     _ => $weight,
+                                                    };
+    }
+    if (my $ship_weight = $self->shipping_weight) {
+        my $unit = $self->shipping_weight_unit;
+        $data->{DescriptionData}->{ShippingWeight} = {
+                                                     unitOfMeasure => $unit,
+                                                     _ => $ship_weight,
+                                                    };
+    }
+
     if ($self->category && $self->subcategory) {
         # suspicious structure
         $data->{ProductData}->{$self->category}->{ProductType}->{$self->subcategory} = {};
