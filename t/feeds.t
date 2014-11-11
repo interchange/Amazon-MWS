@@ -13,7 +13,7 @@ if (-d 'schemas') {
     plan tests => 8;
 }
 else {
-    plan skip_all => q{Missing "schema" directory with the xsd from Amazon, skipping feeds tests};
+    plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
 }
 
 my @products;
