@@ -16,6 +16,36 @@ our $VERSION = '0.111';
 
 See L<Amazon::MWS::Client>
 
+=head1 XML Modules
+
+=over 4
+
+=item Generic Feed
+
+L<Amazon::MWS::XML::GenericFeed>
+
+=item Feed
+
+L<Amazon::MWS::XML::Feed>
+
+=item Product
+
+L<Amazon::MWS::XML::Product>
+
+=item Address
+
+L<Amazon::MWS::XML::Address>
+
+=item Order
+
+L<Amazon::MWS::XML::Order>
+
+=item OrderlineItem
+
+L<Amazon::MWS::XML::OrderlineItem>
+
+=back
+
 =head1 AUTHORS
 
 Paul Driver
