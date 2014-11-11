@@ -4,7 +4,11 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME             => 'Amazon::MWS',
-    AUTHOR           => q{Paul Driver <paul@plainblack.com>},
+    AUTHOR           => [q{Paul Driver <paul@plainblack.com>},
+                         q{Phil Smith <phil.smith@rsdvd.com>},
+                         q{Marco Pessotto <melmothx@gmail.com>},
+                         q{Stefan Hornburg (Racke) <racke@linuxia.de>},
+                     ],
     VERSION_FROM     => 'lib/Amazon/MWS/Client.pm',
     ABSTRACT_FROM    => 'lib/Amazon/MWS.pm',
     LICENSE          => 'perl',
