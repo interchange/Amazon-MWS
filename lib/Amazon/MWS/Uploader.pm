@@ -253,8 +253,6 @@ unexpected results>.
 
 Lazy attribute to hold the C<SQL::Abstract> object.
 
-=back
-
 =cut
 
 has products => (is => 'rw',
@@ -358,6 +356,8 @@ sub _build_products_to_upload {
 
 An L<Amazon::MWS::Client> object, built lazily, so you don't have to
 pass it.
+
+=back
 
 =cut
 
