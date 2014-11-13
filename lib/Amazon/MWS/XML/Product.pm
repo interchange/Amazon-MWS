@@ -346,10 +346,9 @@ sub as_product_hash {
     if (my $features = $self->features) {
         if (my @feats = grep { $_ } @$features) {
             if (@feats > 5) {
-                warn "Max features is 5, removing some of them: " .
-                  join(" ", splice(@feats, 5)) . "\n";
+                warn "Max features is 5, removing some of them: \n";
+                warn join(" ", splice(@feats, 5)) . "\n";
             }
-            splice(@feats, 5);
             $data->{DescriptionData}->{BulletPoint} = \@feats;
         }
     }
