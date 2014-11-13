@@ -614,7 +614,8 @@ sub process_feeds {
         # such if it's an upload job
         if ($row->{task} eq 'upload') {
             $self->_exe_query($self->sqla->update('amazon_mws_products',
-                                                  { status => 'ok'},
+                                                  { status => 'ok',
+                                                    listed_date => DateTime->now},
                                                   { amws_job_id => $job_id }));
         }
     }
