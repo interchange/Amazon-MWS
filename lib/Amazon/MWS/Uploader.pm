@@ -732,6 +732,7 @@ sub upload_feed {
                           );
         }
         catch {
+            warn "Failure to submit $type feed: \n";
             if (ref($_)) {
                 if ($_->can('xml')) {
                     warn $_->xml;
