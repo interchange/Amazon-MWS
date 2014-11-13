@@ -288,7 +288,7 @@ has products_to_upload => (is => 'lazy');
 sub _build_products_to_upload {
     my $self = shift;
     my $product_arrayref = $self->products;
-    return unless $product_arrayref && @$product_arrayref;
+    return [] unless $product_arrayref && @$product_arrayref;
     my @products = @$product_arrayref;
     my $existing = $self->existing_products;
     my @todo;
