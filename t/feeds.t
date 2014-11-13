@@ -26,8 +26,7 @@ foreach my $product ({
                       description => 'my desc',
                       images => [ 'http://example.org/pippo.jpg' ],
                       category_code => '111111',
-                      category => 'CE',
-                      subcategory => 'PhoneAccessory',
+                      product_data => { CE => { ProductType  => { PhoneAccessory => {} } } },
                       manufacturer_part_number => '1234123412343',
                       condition => 'Refurbished',
                       condition_note => 'Looks like new',
@@ -47,8 +46,7 @@ foreach my $product ({
                       description => 'my desc 2',
                       images => [ 'http://example.org/pluto.jpg' ],
                       category_code => '111111',
-                      category => 'CE',
-                      subcategory => 'PhoneAccessory',
+                      product_data => { Sports => { ProductType => 'SportingGoods' } },
                       manufacturer_part_number => '4444123412343',
                       inventory => 2,
                       shipping_weight => 0,
@@ -133,11 +131,9 @@ my $exp_product_feed = <<'XML';
         <RecommendedBrowseNode>111111</RecommendedBrowseNode>
       </DescriptionData>
       <ProductData>
-        <CE>
-          <ProductType>
-            <PhoneAccessory/>
-          </ProductType>
-        </CE>
+        <Sports>
+          <ProductType>SportingGoods</ProductType>
+        </Sports>
       </ProductData>
     </Product>
   </Message>

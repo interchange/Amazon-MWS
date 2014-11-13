@@ -39,13 +39,35 @@ revision of the product.
 
 =item category_code
 
-=item category
+=item product_data
 
-To be used, both category and subcategory must be set.
+This accessor should contain category-specific structures. This
+appears to be needed when creating a product which is not present on
+Amazon.
 
-=item subcategory
+Example values:
 
-To be used, both category and subcategory must be set.
+  { CE => { ProductType  => { PhoneAccessory => {} } } }
+
+  { Sports => { ProductType => 'SportingGoods' } }
+
+The exect structure to pass can be determined only looking at the
+specific xsd file.
+
+Please keep in mind that the category_code has nothing to do with this
+structure, and doesn't even exist an exact mapping between these
+categories and the listing categories.
+
+Documentation from Amazon:
+
+Section containing category-specific information such as variations.
+Reference one or more of the following XSDs to complete the
+ProductData section (only one category can be used for a given item).
+
+Keep in mind that some of these product categories might not be
+available for merchants on some Amazon websites. If a product category
+is available to merchants on a particular Amazon website, then the XSD
+files for that category are valid for that Amazon website as well.
 
 =item inventory
 
@@ -160,11 +182,10 @@ has condition_note => (
                              if length($_[0]) > 2000 },
                       );
 has category_code => (is => 'ro');
+has product_data => (is => 'ro');
 has manufacturer_part_number => (is => 'ro');
 has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
 has features => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
-has category => (is => 'ro');
-has subcategory => (is => 'ro');
 
 sub _check_units {
     my $unit = $_[0];
@@ -368,9 +389,8 @@ sub as_product_hash {
                                                     };
     }
 
-    if ($self->category && $self->subcategory) {
-        # suspicious structure
-        $data->{ProductData}->{$self->category}->{ProductType}->{$self->subcategory} = {};
+    if (my $product_data = $self->product_data) {
+        $data->{ProductData} = $product_data;
     }
     return $data;
 }
