@@ -3,12 +3,13 @@
 use strict;
 use warnings;
 use Amazon::MWS::Uploader;
+use Data::Dumper;
 use Test::More;
 
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 3;
+    plan tests => 8;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -39,5 +40,47 @@ $uploader = Amazon::MWS::Uploader->new(%constructor,
 
 is($uploader->_unique_shop_id, 'shoppe');
 
+eval {
+    $uploader = Amazon::MWS::Uploader->new(%constructor,
+                                           reset_errors => '! 2341 , 1234 , 1234 ,'
+                                           );
+};
+ok (!$@, "No exception");
 
+is_deeply($uploader->_reset_error_structure,
+          {
+           negate => 1,
+           codes => {
+                     2341 => 1,
+                     1234 => 1,
+                    }
+          }, "reset error structure ok")
+  or diag Dumper($uploader->_reset_error_structure);
+
+eval {
+    $uploader = Amazon::MWS::Uploader->new(%constructor,
+                                           reset_errors => '2341 , 1234 , 1234 ,'
+                                           );
+};
+ok (!$@, "No exception");
+
+
+is_deeply($uploader->_reset_error_structure,
+          {
+           negate => 0,
+           codes => {
+                     2341 => 1,
+                     1234 => 1,
+                    }
+          }, "reset error structure ok (no negate)")
+  or diag Dumper($uploader->_reset_error_structure);
+
+
+
+eval {
+    $uploader = Amazon::MWS::Uploader->new(%constructor,
+                                           reset_errors => 'balklasdfl'
+                                          );
+};
+ok ($@, "Found exception") and diag $@;
 

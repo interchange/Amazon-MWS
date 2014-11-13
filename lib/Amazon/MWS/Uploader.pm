@@ -153,14 +153,66 @@ C<amazon_mws_products> table. Default to false.
 has purge_missing_products => (is => 'ro');
 
 
-=item reset_errors
+=item reset_all_errors
 
 If set to a true value, don't skip previously failed items and
-effectively reset (all of) them.
+effectively reset all of them.
 
 =cut
 
-has reset_errors => (is => 'ro');
+has reset_all_errors => (is => 'ro');
+
+=item reset_errors
+
+A string containing a comma separated list of error codes, optionally
+prefixed with a "!" (to reverse its meaning).
+
+Example:
+
+  "!6024,6023"
+
+Meaning: reupload all the products whose error code is B<not> 6024 or
+6023.
+
+  "6024,6023"
+
+Meaning: reupload the products whose error code was 6024 or 6023
+
+=cut
+
+has reset_errors => (is => 'ro',
+                     isa => sub {
+                         my $string = $_[0];
+                         # undef/0/'' is fine
+                         if ($string) {
+                             die "reset_errors must be a comma separated list of error code, optionally prefixed by a '!' to negate its meaning"
+                               if $string !~ m/^\s*!?\s*(([0-9]+)(\s*,\s*)?)+/;
+                         }
+                     });
+
+
+has _reset_error_structure => (is => 'lazy');
+
+sub _build__reset_error_structure {
+    my $self = shift;
+    my $reset_string = $self->reset_errors || '';
+    $reset_string =~ s/^\s*//;
+    $reset_string =~ s/\s*$//;
+    return unless $reset_string;
+
+    my $negate = 0;
+    if ($reset_string =~ m/^\s*!\s*(.+)/) {
+        $reset_string = $1;
+        $negate = 1;
+    }
+    my %codes = map { $_ => 1 } grep { $_ } split(/\s*,\s*/, $reset_string);
+    return unless %codes;
+    return {
+            negate => $negate,
+            codes  => \%codes,
+           };
+}
+
 
 =item force
 
@@ -298,6 +350,7 @@ sub _build_existing_products {
     my $sth = $self->_exe_query($self->sqla->select(amazon_mws_products => [qw/sku
                                                                                timestamp_string
                                                                                status
+                                                                               error_code
                                                                               /],
                                                     {
                                                      shop_id => $self->_unique_shop_id,
@@ -336,8 +389,23 @@ sub _build_products_to_upload {
                 print "Redoing $sku\n";
             }
             elsif ($status eq 'failed') {
-                if ($self->reset_errors || $self->_force_hashref->{$sku}) {
+                if ($self->reset_all_errors || $self->_force_hashref->{$sku}) {
                     print "Resetting error for $sku\n";
+                }
+                elsif (my $reset = $self->_reset_error_structure) {
+                    # option for this error was passed.
+                    my $error = $exists->{error_code};
+                    my $match = $reset->{codes}->{$error};
+                    if (($match && $reset->{negate}) or
+                        (!$match && !$reset->{negate})) {
+                        # was passed !this error or !random , so do not reset
+                        print "Skipping failed item $sku with error code $error\n";
+                        next;
+                    }
+                    else {
+                        # otherwise reset
+                        print "Resetting error for $sku with error code $error\n";
+                    }
                 }
                 else {
                     print "Skipping failed item $sku\n";
