@@ -101,6 +101,30 @@ has db_options => (is => 'ro',
                    });
 has dbh => (is => 'lazy');
 
+
+=item shop_id
+
+You can pass an arbitrary identifier to the constructor which will be
+used to keep the database records separated if you have multiple
+amazon accounts. If not provided, the merchant id will be used, which
+will work, but it's harder (for the humans) to spot and debug.
+
+=cut
+
+has shop_id => (is => 'ro');
+
+has _unique_shop_id => (is => 'lazy');
+
+sub _build__unique_shop_id {
+    my $self = shift;
+    if (my $id = $self->shop_id) {
+        return $id;
+    }
+    else {
+        return $self->merchant_id;
+    }
+}
+
 has debug => (is => 'ro');
 
 has logfile => (is => 'ro');
