@@ -16,6 +16,14 @@ our $VERSION = '0.111';
 
 See L<Amazon::MWS::Client>
 
+=head1 MWS in practice
+
+Every product uploaded needs a price of 0.01 or higher, otherwise you
+get the following error:
+
+    0.00 price (standard or sales) will not be accepted.
+    Please ensure that every SKU in your feed has a price at least equal to or greater than 0.01
+
 =head1 XML Modules
 
 =over 4
