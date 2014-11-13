@@ -24,6 +24,10 @@ get the following error:
     0.00 price (standard or sales) will not be accepted.
     Please ensure that every SKU in your feed has a price at least equal to or greater than 0.01
 
+=head1 Uploader Module
+
+L<Amazon::MWS::Uploader> is an upload agent for Amazon::MWS.
+
 =head1 XML Modules
 
 =over 4
