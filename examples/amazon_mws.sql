@@ -3,16 +3,20 @@ DROP TABLE IF EXISTS amazon_mws_feeds;
 DROP TABLE IF EXISTS amazon_mws_products;
 
 CREATE TABLE amazon_mws_jobs (
-      amws_job_id VARCHAR(64) NOT NULL PRIMARY KEY,
+      amws_job_id VARCHAR(64) NOT NULL,
+      shop_id VARCHAR(64) NOT NULL,
       task VARCHAR(64) NOT NULL,
       -- if complete one or those has to be set.
       aborted BOOLEAN NOT NULL DEFAULT FALSE,
       success BOOLEAN NOT NULL DEFAULT FALSE,
-      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (amws_job_id, shop_id)
 ); 
 
 CREATE TABLE amazon_mws_feeds (
        amws_feed_pk SERIAL NOT NULL PRIMARY KEY,
+       -- not strictly needed, but helpful anyway
+       shop_id VARCHAR(64) NOT NULL,
        amws_job_id VARCHAR(64) NOT NULL REFERENCES amazon_mws_jobs(amws_job_id),
        feed_id VARCHAR(64) UNIQUE, -- populated when we get the id
        feed_name VARCHAR(255) NOT NULL,
@@ -29,7 +33,8 @@ CREATE TABLE amazon_mws_feeds (
 
 CREATE TABLE amazon_mws_products (
        -- don't enforce the sku format
-       sku VARCHAR(255) NOT NULL PRIMARY KEY,
+       sku VARCHAR(255) NOT NULL,
+       shop_id VARCHAR(64) NOT NULL,
        -- given that we just test for equality, don't enforce a type.
        -- So an epoch will do just fine, as it would be a random date,
        -- as long as the script sends consistent data
@@ -41,6 +46,7 @@ CREATE TABLE amazon_mws_products (
        error_msg TEXT,
        listed_date DATETIME,
        -- our update
-       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       PRIMARY KEY (sku, shop_id)
 );
 
