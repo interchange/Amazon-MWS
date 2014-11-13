@@ -935,14 +935,15 @@ sub register_errors {
     my @products = $self->skus_in_job($job_id);
     my $errors = $result->skus_errors;
     # turn it into an hash
-    my %errs = map { $_->{sku} => "$job_id $_->{code} $_->{error}" } @$errors;
+    my %errs = map { $_->{sku} => {job_id => $job_id, code => $_->{code}, error => $_->{error}} } @$errors;
 
     foreach my $sku (@products) {
         if ($errs{$sku}) {
             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                   {
                                                    status => 'failed',
-                                                   error_msg => $errs{$sku}
+                                                   error_code => $errs{$sku}->{code},
+                                                   error_msg => "$errs{$sku}->{job_id} $errs{$sku}->{code} $errs{$sku}->{error}",
                                                   },
                                                   { sku => $sku }));
         }
