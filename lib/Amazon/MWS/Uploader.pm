@@ -298,7 +298,10 @@ sub _build_existing_products {
     my $sth = $self->_exe_query($self->sqla->select(amazon_mws_products => [qw/sku
                                                                                timestamp_string
                                                                                status
-                                                                              /])),
+                                                                              /],
+                                                    {
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
     my %uploaded;
     while (my $row = $sth->fetchrow_hashref) {
         $row->{timestamp_string} ||= 0;
@@ -369,7 +372,10 @@ sub _build_products_to_upload {
             $self->delete_skus(@deletions);
             # delete locally
             $self->_exe_query($self->sqla->delete('amazon_mws_products',
-                                                  { sku => { -in => \@deletions } }));
+                                                  {
+                                                   sku => { -in => \@deletions },
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
         }
     }
     return \@todo;
@@ -435,16 +441,29 @@ Return the job id
 
 =cut
 
+sub _feed_job_dir {
+    my ($self, $job_id) = @_;
+    die unless $job_id;
+    my $shop_id = $self->_unique_shop_id;
+    $shop_id =~ s/[^0-9A-Za-z_-]//g;
+    die "The shop id without word characters results in an empty string"
+      unless $shop_id;
+    my $feed_root = File::Spec->catdir($self->feed_dir,
+                                       $shop_id);
+    mkdir $feed_root unless -d $feed_root;
+
+    my $feed_subdir = File::Spec->catdir($feed_root,
+                                         $job_id);
+    mkdir $feed_subdir unless -d $feed_subdir;
+    return $feed_subdir;
+}
+
 sub _feed_file_for_method {
     my ($self, $job_id, $feed_type) = @_;
     die unless $job_id && $feed_type;
-    my $feed_subdir = File::Spec->catdir($self->feed_dir,
-                                         $job_id);
-    unless ( -d $feed_subdir) {
-        mkdir $feed_subdir;
-    }
+    my $feed_subdir = $self->_feed_job_dir($job_id);
     my $file = File::Spec->catfile($feed_subdir, $feed_type . '.xml');
-    return File::Spec->rel2abs($file)
+    return File::Spec->rel2abs($file);
 }
 
 sub _slurp_file {
@@ -497,7 +516,10 @@ sub _remove_products_from_table {
     my @skus = map { $_->sku } @products;
     # delete those skus from the db, we will insert them again aftward
     $self->_exe_query($self->sqla->delete('amazon_mws_products',
-                                          { sku => { -in => \@skus } }));
+                                          {
+                                           sku => { -in => \@skus },
+                                           shop_id => $self->_unique_shop_id,
+                                          }));
 }
 
 sub _mark_products_as_pending {
@@ -509,6 +531,7 @@ sub _mark_products_as_pending {
                                                                       amws_job_id => $job_id,
                                                                       sku => $p->sku,
                                                                       status => 'pending',
+                                                                      shop_id => $self->_unique_shop_id,
                                                                       timestamp_string => $p->timestamp_string,
                                                                      }));
     }
@@ -523,6 +546,7 @@ sub prepare_feeds {
     $self->_exe_query($self->sqla
                       ->insert(amazon_mws_jobs => {
                                                    amws_job_id => $job_id,
+                                                   shop_id => $self->_unique_shop_id,
                                                    task => $task,
                                                   }));
 
@@ -550,6 +574,7 @@ sub prepare_feeds {
                              feed_name => $name,
                              feed_file => $file,
                              amws_job_id => $job_id,
+                             shop_id => $self->_unique_shop_id,
                             };
             $self->_exe_query($self->sqla
                               ->insert(amazon_mws_feeds => $insertion));
@@ -564,16 +589,22 @@ sub resume {
     my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', {
                                                                      aborted => 0,
                                                                      success => 0,
+                                                                     shop_id => $self->_unique_shop_id,
                                                                     });
     my $pending = $self->_exe_query($stmt, @bind);
     while (my $row = $pending->fetchrow_hashref) {
         # check if the job dir exists
-        if (-d File::Spec->catdir($self->feed_dir, $row->{amws_job_id})) {
+        if (-d $self->_feed_job_dir($row->{amws_job_id})) {
             $self->process_feeds($row);
         }
         else {
+            warn "No directory " . $self->_feed_job_dir($row->{amws_job_id}) .
+              " found, removing job id $row->{amws_job_id}\n";
             my ($del_stmt, @del_bind) = $self->sqla
-              ->delete(amazon_mws_jobs => { amws_job_id => $row->{amws_job_id} });
+              ->delete(amazon_mws_jobs => {
+                                           amws_job_id => $row->{amws_job_id},
+                                           shop_id => $self->_unique_shop_id,
+                                          });
             $self->_exe_query($del_stmt, @del_bind);
         }
     }
@@ -599,6 +630,7 @@ sub process_feeds {
                                              amws_job_id => $job_id,
                                              aborted => 0,
                                              success => 0,
+                                             shop_id => $self->_unique_shop_id,
                                             },
                                             ['amws_feed_pk']);
 
@@ -611,6 +643,7 @@ sub process_feeds {
 
     ($stmt, @bind) = $self->sqla->select(amazon_mws_feeds => '*',
                                          {
+                                          shop_id => $self->_unique_shop_id,
                                           amws_job_id => $job_id,
                                          });
 
@@ -640,7 +673,10 @@ sub process_feeds {
             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                   { status => 'ok',
                                                     listed_date => DateTime->now},
-                                                  { amws_job_id => $job_id }));
+                                                  {
+                                                   amws_job_id => $job_id,
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
         }
     }
     else {
@@ -650,6 +686,7 @@ sub process_feeds {
         $self->_exe_query($self->sqla->update(amazon_mws_jobs => $update,
                                               {
                                                amws_job_id => $job_id,
+                                               shop_id => $self->_unique_shop_id,
                                               }));
     }
 }
@@ -717,6 +754,7 @@ sub upload_feed {
                               ->update(amazon_mws_feeds => $record,
                                        {
                                         amws_feed_pk => $record->{amws_feed_pk},
+                                        shop_id => $self->_unique_shop_id,
                                        }));
         }
         else {
@@ -732,7 +770,10 @@ sub upload_feed {
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        { processing_complete => 1 },
-                                       { feed_id => $feed_id }));
+                                       {
+                                        feed_id => $feed_id,
+                                        shop_id => $self->_unique_shop_id,
+                                       }));
         }
         else {
             print "Still processing\n";
@@ -748,7 +789,10 @@ sub upload_feed {
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        { success => 1 },
-                                       { feed_id => $feed_id }));
+                                       {
+                                        feed_id => $feed_id,
+                                        shop_id => $self->_unique_shop_id,
+                                       }));
             # if we have a success, print the warnings on the stderr.
             # if we have a failure, the warnings will just confuse us.
             if (my $warn = $result->warnings) {
@@ -764,7 +808,10 @@ sub upload_feed {
                                         aborted => 1,
                                         errors => $result->errors,
                                        },
-                                       { feed_id => $feed_id }));
+                                       {
+                                        feed_id => $feed_id,
+                                        shop_id => $self->_unique_shop_id,
+                                       }));
             $self->register_errors($job_id, $result);
             # and we stop this job, has errors
             return 0;
@@ -969,7 +1016,10 @@ sub register_errors {
                                                    error_code => $errs{$sku}->{code},
                                                    error_msg => "$errs{$sku}->{job_id} $errs{$sku}->{code} $errs{$sku}->{error}",
                                                   },
-                                                  { sku => $sku }));
+                                                  {
+                                                   sku => $sku,
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
         }
         else {
             # this is good, mark it to be redone
@@ -977,7 +1027,10 @@ sub register_errors {
                                                   {
                                                    status => 'redo',
                                                   },
-                                                  { sku => $sku }));
+                                                  {
+                                                   sku => $sku,
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
             print "Scheduling $sku for redoing\n";
         }
     }
@@ -987,7 +1040,10 @@ sub skus_in_job {
     my ($self, $job_id) = @_;
     my $sth = $self->_exe_query($self->sqla->select('amazon_mws_products',
                                                     [qw/sku/],
-                                                    { amws_job_id => $job_id }));
+                                                    {
+                                                     amws_job_id => $job_id,
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
     my @skus;
     while (my $row = $sth->fetchrow_hashref) {
         push @skus, $row->{sku};
