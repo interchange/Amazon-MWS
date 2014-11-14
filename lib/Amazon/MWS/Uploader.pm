@@ -782,6 +782,7 @@ sub upload_feed {
                  image => '_POST_PRODUCT_IMAGE_DATA_',
                  variants => '_POST_PRODUCT_RELATIONSHIP_DATA_',
                  order_ack => '_POST_ORDER_ACKNOWLEDGEMENT_DATA_',
+                 shipping_confirmation => '_POST_ORDER_FULFILLMENT_DATA_',
                 );
 
     die "Unrecognized type $type" unless $names{$type};
@@ -1261,5 +1262,24 @@ sub shipping_confirmation_feed {
     return $feeder->create_feed(OrderFulfillment => [ $message ]);
 
 }
+
+=head2 send_shipping_confirmation($shipped_order)
+
+Schedule the shipped order (an L<Amazon::MWS::XML::ShippedOrder>
+object) for the uploading.
+
+=cut
+
+sub send_shipping_confirmation {
+    my ($self, $order) = @_;
+    my $feed_content = $self->shipping_confirmation_feed($order);
+    # here we have only one feed to upload and check
+    $self->prepare_feeds(shipping_confirmation => [{
+                                                    name => 'shipping_confirmation',
+                                                    content => $feed_content,
+                                                   }]);
+}
+
+
 
 1;
