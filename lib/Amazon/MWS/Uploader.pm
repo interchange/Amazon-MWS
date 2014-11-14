@@ -1075,8 +1075,9 @@ sub register_errors {
     # just mark them as redo and wait for the next cron call.
     my @products = $self->skus_in_job($job_id);
     my $errors = $result->skus_errors;
+    my @errors_with_sku = grep { $_->{sku} } @$errors;
     # turn it into an hash
-    my %errs = map { $_->{sku} => {job_id => $job_id, code => $_->{code}, error => $_->{error}} } @$errors;
+    my %errs = map { $_->{sku} => {job_id => $job_id, code => $_->{code}, error => $_->{error}} } @errors_with_sku;
 
     foreach my $sku (@products) {
         if ($errs{$sku}) {
