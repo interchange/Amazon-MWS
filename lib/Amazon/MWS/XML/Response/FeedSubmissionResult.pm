@@ -87,6 +87,12 @@ sub _parse_results {
                                    code => $res->{ResultMessageCode} || '',
                                   };
                 }
+                else {
+                    push @msgs, {
+                                 error => $res->{ResultDescription} || '',
+                                 code => $res->{ResultMessageCode} || '',
+                                };
+                }
             }
         }
     }
@@ -125,8 +131,16 @@ sub errors {
 sub _format_msgs {
     my ($self, $list) = @_;
     if ($list && @$list) {
-        return join("\n", map
-                    { "$_->{sku}: $_->{error} ($_->{code})" } @$list) . "\n";
+        my @errors;
+        foreach my $err (@$list) {
+            if ($err->{sku}) {
+                push @errors, "$err->{sku}: $err->{error} ($err->{code})";
+            }
+            else {
+                push @errors, "$err->{error} ($err->{code})";
+            }
+        }
+        return join("\n", @errors);
     }
     return;
 }

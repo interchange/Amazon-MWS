@@ -7,7 +7,7 @@ use Data::Dumper;
 use Test::More;
 
 if (-d 'schemas') {
-    plan tests => 16;
+    plan tests => 20;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -151,3 +151,42 @@ ok($result->skus_warnings); #  and diag Dumper($result->skus_warnings);
 ok(!$result->skus_errors); #  and diag Dumper($result->skus_warnings);
 is_deeply([ $result->failed_skus ], []);
 is_deeply([ $result->skus_with_warnings ], [ qw/16446/ ]);
+
+
+$xml = <<'XML';
+<?xml version="1.0" encoding="UTF-8"?>
+<AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amzn-envelope.xsd">
+        <Header>
+                <DocumentVersion>1.02</DocumentVersion>
+                <MerchantIdentifier>__MERCHANT__ID_</MerchantIdentifier>
+        </Header>
+        <MessageType>ProcessingReport</MessageType>
+        <Message>
+                <MessageID>1</MessageID>
+                <ProcessingReport>
+                        <DocumentTransactionID>12341234</DocumentTransactionID>
+                        <StatusCode>Complete</StatusCode>
+                        <ProcessingSummary>
+                                <MessagesProcessed>1</MessagesProcessed>
+                                <MessagesSuccessful>0</MessagesSuccessful>
+                                <MessagesWithError>1</MessagesWithError>
+                                <MessagesWithWarning>0</MessagesWithWarning>
+                        </ProcessingSummary>
+                        <Result>
+                                <MessageID>1</MessageID>
+                                <ResultCode>Error</ResultCode>
+                                <ResultMessageCode>18028</ResultMessageCode>
+                                <ResultDescription>Your order cannot be found using Merchant ID __MERCHANT__ID_ and Merchant Order 8888888. Enter the correct order ID and then resubmit your feed.</ResultDescription>
+                        </Result>
+                </ProcessingReport>
+        </Message>
+</AmazonEnvelope>
+XML
+
+$result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
+                                                                   schema_dir => 'schemas',
+                                                                  );
+ok($result, "Result loaded");
+ok(!$result->is_success, "Is not a success");
+ok($result->errors, "Got the error " . $result->errors) or diag Dumper($result);
+ok(!$result->warnings, "No warnings");
