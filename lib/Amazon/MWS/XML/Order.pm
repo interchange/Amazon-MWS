@@ -183,4 +183,17 @@ sub _kinda_equal {
     return abs($_[0] - $_[1]) < 0.01;
 }
 
+=head2 reported_order_number
+
+If the order was acknowlegded, we should find our order number in this
+method (read-only, use the C<order_number> setter if you need to
+ackwnoledge.
+
+=cut
+
+sub reported_order_number {
+    return shift->order->{SellerOrderId};
+}
+
+
 1;
