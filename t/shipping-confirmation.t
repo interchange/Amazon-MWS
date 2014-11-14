@@ -3,10 +3,21 @@
 use utf8;
 use strict;
 use warnings;
-use Test::More tests => 2;
+use Test::More;
 use Amazon::MWS::XML::ShippedOrder;
+use Amazon::MWS::Uploader;
 use DateTime;
 
+
+my $test_extended;
+my $schema_dir = 'schemas';
+if (-d $schema_dir) {
+    plan tests => 5;
+    $test_extended = 1;
+}
+else {
+    plan tests => 2;
+}
 
 my %shipped = (
                # amazon_order_id => '12341234',
@@ -70,3 +81,80 @@ is_deeply($shipped_order->as_shipping_confirmation_hashref,
           },
           "Structure appears ok");
 
+exit unless $test_extended;
+
+my $feed_dir = 't/feeds';
+
+my $uploader = Amazon::MWS::Uploader->new(
+                                          merchant_id => 'My Store',
+                                          access_key_id => '12341234',
+                                          secret_key => '123412341234',
+                                          marketplace_id => '123412341234',
+                                          endpoint => 'https://mws-eu.amazonservices.com',
+                                          feed_dir => $feed_dir,
+                                          schema_dir => $schema_dir,
+                                          );
+ok($uploader, "Uploader ok");
+
+my $feed = $uploader->shipping_confirmation_feed($shipped_order);
+ok($feed, "Can create the feed and validates against the schema"); # and diag $feed;
+
+# test against the example provided in the documentation
+
+
+my $expected = <<'XML';
+<?xml version="1.0" encoding="UTF-8"?>
+<AmazonEnvelope>
+  <Header>
+    <DocumentVersion>1.1</DocumentVersion>
+    <MerchantIdentifier>My Store</MerchantIdentifier>
+  </Header>
+  <MessageType>OrderFulfillment</MessageType>
+  <Message>
+    <MessageID>1</MessageID>
+    <OrderFulfillment>
+      <MerchantOrderID>1234567</MerchantOrderID>
+      <MerchantFulfillmentID>1234567</MerchantFulfillmentID>
+      <FulfillmentDate>2002-05-01T15:36:33-08:00</FulfillmentDate>
+      <FulfillmentData>
+        <CarrierCode>UPS</CarrierCode>
+        <ShippingMethod>Second Day</ShippingMethod>
+        <ShipperTrackingNumber>1234567890</ShipperTrackingNumber>
+      </FulfillmentData>
+      <Item>
+        <MerchantOrderItemID>1234567</MerchantOrderItemID>
+        <MerchantFulfillmentItemID>1234567</MerchantFulfillmentItemID>
+        <Quantity>2</Quantity>
+      </Item>
+    </OrderFulfillment>
+  </Message>
+</AmazonEnvelope>
+XML
+
+%shipped = (
+            merchant_order_id => 1234567,
+            merchant_fulfillment_id => 1234567,
+            fulfillment_date => DateTime->new(year => 2002,
+                                              month => 5,
+                                              day => 1,
+                                              hour => 15,
+                                              minute => 36,
+                                              second => 33,
+                                              time_zone => '-08:00',
+                                              ),
+            carrier => 'UPS',
+            shipping_method => 'Second Day',
+            shipping_tracking_number => 1234567890,
+            items => [
+                      {
+                       merchant_order_item_code => 1234567,
+                       merchant_fulfillment_item_id => 1234567,
+                       quantity => 2,
+                      },
+                     ],
+           );
+
+$shipped_order = Amazon::MWS::XML::ShippedOrder->new(%shipped);
+is_deeply ([ split(/\n/, $uploader->shipping_confirmation_feed($shipped_order)) ],
+           [ split(/\n/, $expected) ],
+           "Feed looks ok");

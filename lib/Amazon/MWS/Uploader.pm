@@ -1242,7 +1242,24 @@ sub get_lowest_price_for_asin {
     return $lowest;
 }
 
+=head2 shipping_confirmation_feed($shipped_order)
 
+Return a feed string with the shipping confirmation. A
+L<Amazon::MWS::XML::ShippedOrder> object must be passed.
 
+=cut
+
+sub shipping_confirmation_feed {
+    my ($self, $shipped_order) = @_;
+    die "Missing Amazon::MWS::XML::ShippedOrder argument" unless $shipped_order;
+    my $feeder = $self->generic_feeder;
+    my $data = $shipped_order->as_shipping_confirmation_hashref;
+    my $message = {
+                   MessageID => 1,
+                   OrderFulfillment => $data, 
+                  };
+    return $feeder->create_feed(OrderFulfillment => [ $message ]);
+
+}
 
 1;
