@@ -1031,8 +1031,8 @@ sub get_orders {
 }
 
 sub acknowledge_successful_order {
-    my ($self, $order) = @_;
-    my $feed_content = $self->acknowledge_feed($order);
+    my ($self, @orders) = @_;
+    my $feed_content = $self->acknowledge_feed(Success => @orders);
     # here we have only one feed to upload and check
     $self->prepare_feeds(order_ack => [{
                                         name => 'order_ack',
@@ -1041,19 +1041,23 @@ sub acknowledge_successful_order {
 }
 
 sub acknowledge_feed {
-    my ($self, $order, $status) = @_;
-    die "Missing order" unless $order;
-    $status ||= 'Success';
+    my ($self, $status, @orders) = @_;
+    die "Missing status" unless $status;
+    die "Missing orders" unless @orders;
+
     my $feeder = $self->generic_feeder;
 
-    my $data = $order->as_ack_order_hashref;
-    $data->{StatusCode} = $status;
-
-    my $message = {
-                   MessageID => 1,
-                   OrderAcknowledgement => $data,
-                  };
-    return $feeder->create_feed(OrderAcknowledgement => [ $message ]);
+    my $counter = 1;
+    my @messages;
+    foreach my $order (@orders) {
+        my $data = $order->as_ack_order_hashref;
+        $data->{StatusCode} = $status;
+        push @messages, {
+                         MessageID => $counter++,
+                         OrderAcknowledgement => $data,
+                        };
+    }
+    return $feeder->create_feed(OrderAcknowledgement => \@messages);
 }
 
 sub delete_skus {
