@@ -1265,36 +1265,39 @@ sub get_lowest_price_for_asin {
     return $lowest;
 }
 
-=head2 shipping_confirmation_feed($shipped_order)
+=head2 shipping_confirmation_feed(@shipped_orders)
 
-Return a feed string with the shipping confirmation. A
+Return a feed string with the shipping confirmation. A list of
 L<Amazon::MWS::XML::ShippedOrder> object must be passed.
 
 =cut
 
 sub shipping_confirmation_feed {
-    my ($self, $shipped_order) = @_;
-    die "Missing Amazon::MWS::XML::ShippedOrder argument" unless $shipped_order;
+    my ($self, @shipped_orders) = @_;
+    die "Missing Amazon::MWS::XML::ShippedOrder argument" unless @shipped_orders;
     my $feeder = $self->generic_feeder;
-    my $data = $shipped_order->as_shipping_confirmation_hashref;
-    my $message = {
-                   MessageID => 1,
-                   OrderFulfillment => $data, 
-                  };
-    return $feeder->create_feed(OrderFulfillment => [ $message ]);
+    my $counter = 1;
+    my @messages;
+    foreach my $order (@shipped_orders) {
+        push @messages, {
+                         MessageID => $counter++,
+                         OrderFulfillment => $order->as_shipping_confirmation_hashref,
+                        };
+    }
+    return $feeder->create_feed(OrderFulfillment => \@messages);
 
 }
 
-=head2 send_shipping_confirmation($shipped_order)
+=head2 send_shipping_confirmation($shipped_orders)
 
-Schedule the shipped order (an L<Amazon::MWS::XML::ShippedOrder>
+Schedule the shipped orders (an L<Amazon::MWS::XML::ShippedOrder>
 object) for the uploading.
 
 =cut
 
 sub send_shipping_confirmation {
-    my ($self, $order) = @_;
-    my $feed_content = $self->shipping_confirmation_feed($order);
+    my ($self, @orders) = @_;
+    my $feed_content = $self->shipping_confirmation_feed(@orders);
     # here we have only one feed to upload and check
     $self->prepare_feeds(shipping_confirmation => [{
                                                     name => 'shipping_confirmation',
