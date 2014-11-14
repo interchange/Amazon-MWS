@@ -102,6 +102,23 @@ has db_options => (is => 'ro',
 has dbh => (is => 'lazy');
 
 
+=item order_days_range
+
+When calling get_orders, check the orders for the last X days. It
+accepts an integer which should be in the range 1-30. Defaults to 30.
+
+=cut
+
+has order_days_range => (is => 'rw',
+                         default => sub { 30 },
+                         isa => sub {
+                             my $days = $_[0];
+                             die "Not an integer"
+                               unless $days eq int($days);
+                             die "$days is out of range 1-30"
+                               unless $days > 0 && $days < 31;
+                         });
+
 =item shop_id
 
 You can pass an arbitrary identifier to the constructor which will be
@@ -974,7 +991,7 @@ sub get_orders {
     my ($self, $from_date) = @_;
     unless ($from_date) {
         $from_date = DateTime->now;
-        $from_date->subtract(days => 7);
+        $from_date->subtract(days => $self->order_days_range);
     }
     my $res;
     eval {
