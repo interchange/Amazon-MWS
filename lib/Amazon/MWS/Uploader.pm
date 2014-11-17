@@ -453,14 +453,7 @@ sub _build_products_to_upload {
             values %$existing;
         if (@deletions) {
             print "Purging missing items " . join(" ", @deletions) . "\n";
-            # delete remotely
             $self->delete_skus(@deletions);
-            # delete locally
-            $self->_exe_query($self->sqla->delete('amazon_mws_products',
-                                                  {
-                                                   sku => { -in => \@deletions },
-                                                   shop_id => $self->_unique_shop_id,
-                                                  }));
         }
     }
     return \@todo;
@@ -1068,6 +1061,12 @@ sub delete_skus {
                                                name => 'product',
                                                content => $feed_content,
                                               }] );
+    # delete the skus locally
+    $self->_exe_query($self->sqla->delete('amazon_mws_products',
+                                          {
+                                           sku => { -in => \@deletions },
+                                           shop_id => $self->_unique_shop_id,
+                                          }));
 }
 
 sub delete_skus_feed {
