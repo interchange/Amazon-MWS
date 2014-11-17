@@ -1064,7 +1064,7 @@ sub delete_skus {
     # delete the skus locally
     $self->_exe_query($self->sqla->delete('amazon_mws_products',
                                           {
-                                           sku => { -in => \@deletions },
+                                           sku => { -in => \@skus },
                                            shop_id => $self->_unique_shop_id,
                                           }));
 }
