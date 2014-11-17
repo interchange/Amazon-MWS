@@ -172,7 +172,7 @@ sub total_cost {
         return $total_cost;
     }
     else {
-        die "$subtotal + $shipping is not $total_cost\n";
+        die "subtotal $subtotal + shipping $shipping is not $total_cost\n";
     }
 }
 

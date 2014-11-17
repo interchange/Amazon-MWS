@@ -64,9 +64,25 @@ sub currency {
     return shift->ItemPrice->{CurrencyCode};
 }
 
+=head2 price
+
+Amazon report the item price's as the sum of the items, not the
+individual price. So we have to do a division for what we know as the
+item's price. This looks ugly anyway.
+
+From
+L<http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_ListOrderItems.html>:
+
+The selling price of the order item. Note that an order item is an
+item and a quantity. This means that the value of ItemPrice is equal
+to the selling price of the item multiplied by the quantity ordered.
+Note that ItemPrice excludes ShippingPrice and GiftWrapPrice.
+
+=cut
+
 sub price {
-    my $price = shift->ItemPrice->{Amount} || 0;
-    return sprintf('%.2f', $price);
+    my $self = shift;
+    return sprintf('%.2f', $self->subtotal / $self->quantity);
 }
 
 sub shipping {
@@ -91,8 +107,7 @@ sub name {
 
 sub subtotal {
     my $self = shift;
-    # and possibly others...
-    return sprintf('%.2f', $self->price * $self->quantity);
+    return $self->ItemPrice->{Amount} || 0;
 }
 
 sub as_ack_orderline_item_hashref {
