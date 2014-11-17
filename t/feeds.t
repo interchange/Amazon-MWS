@@ -10,7 +10,7 @@ use Test::More;
 # testing requires a directory with the schema
 
 if (-d 'schemas') {
-    plan tests => 8;
+    plan tests => 9;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -27,6 +27,7 @@ foreach my $product ({
                       images => [ 'http://example.org/pippo.jpg' ],
                       category_code => '111111',
                       product_data => { CE => { ProductType  => { PhoneAccessory => {} } } },
+                      manufacturer => 'A manufacturer',
                       manufacturer_part_number => '1234123412343',
                       condition => 'Refurbished',
                       condition_note => 'Looks like new',
@@ -94,6 +95,7 @@ my $exp_product_feed = <<'XML';
         <BulletPoint>f5</BulletPoint>
         <PackageWeight unitOfMeasure="GR">290</PackageWeight>
         <ShippingWeight unitOfMeasure="GR">5</ShippingWeight>
+        <Manufacturer>A manufacturer</Manufacturer>
         <MfrPartNumber>1234123412343</MfrPartNumber>
         <SearchTerms>a</SearchTerms>
         <SearchTerms>b</SearchTerms>
@@ -261,3 +263,21 @@ eval { $test = Amazon::MWS::XML::Product->new(
                                               ); };
 
 like $@, qr/condition/, "Found exception for garbage in condition";
+
+eval { $test = Amazon::MWS::XML::Product->new(
+                                              sku => '3333',
+                                              ean => '4444123412343',
+                                              brand => 'brand',
+                                              title => 'title2',
+                                              price => '12.00',
+                                              description => 'my desc 2',
+                                              images => [ 'http://example.org/pluto.jpg' ],
+                                              category_code => '111111',
+                                              category => 'CE',
+                                              subcategory => 'PhoneAccessory',
+                                              manufacturer_part_number => '4444123412343',
+                                              inventory => 2,
+                                              manufacturer => 'abc' x 50,
+                                              ); };
+
+like $@, qr/Max 50/, "Found exception when manufacturer is too long";

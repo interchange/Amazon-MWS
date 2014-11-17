@@ -140,6 +140,10 @@ Defaults to C<New>
 An arbitrary string shorter than 2000 characters with comments about
 the condition.
 
+=item manufacturer
+
+Maker of the product (max 50 chars)
+
 =item manufacturer_part_number
 
 Part number manufacturer.
@@ -184,6 +188,13 @@ has condition_note => (
 has category_code => (is => 'ro');
 has product_data => (is => 'ro');
 has manufacturer_part_number => (is => 'ro');
+has manufacturer => (is => 'ro',
+                     isa => sub {
+                         if (my $manufacturer = $_[0]) {
+                             die "Max 50 chars" if length($manufacturer) > 50;
+                         }
+                     });
+
 has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
 has features => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
 
@@ -351,6 +362,10 @@ sub as_product_hash {
     if (my $cat = $self->category_code) {
         $data->{DescriptionData}->{RecommendedBrowseNode} = $cat;
     }
+    if (my $manufacturer = $self->manufacturer) {
+        $data->{DescriptionData}->{Manufacturer} = $manufacturer;
+    }
+
     if (my $manufacturer_part = $self->manufacturer_part_number) {
         $data->{DescriptionData}->{MfrPartNumber} = $manufacturer_part;
     }
