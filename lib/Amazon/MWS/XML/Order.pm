@@ -145,6 +145,23 @@ sub subtotal {
     return sprintf('%.2f', $total);
 }
 
+=head2 number_of_items
+
+Total number of items ordered.
+
+=cut
+
+sub number_of_items {
+    my $self = shift;
+    my @items = $self->items;
+    my $total = 0;
+    foreach my $i (@items) {
+        $total += $i->quantity;
+    }
+    return $total;
+}
+
+
 sub total_cost {
     my $self = shift;
     my $total_cost = sprintf('%.2f', $self->order->{OrderTotal}->{Amount});
