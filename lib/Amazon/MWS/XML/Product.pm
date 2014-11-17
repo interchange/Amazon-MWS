@@ -262,9 +262,11 @@ has ship_in_days => (is => 'ro',
                      default => sub { '2' });
 
 has price => (is => 'ro',
+              required => 1,
               isa => sub {
                   die "Not a price"
                     unless $_[0] =~ m/^[0-9]+(\.[0-9][0-9]?)?$/;
+                  die "Zero priced product!" unless $_[0] > 0;
               });
 
 has sale_price => (is => 'ro',

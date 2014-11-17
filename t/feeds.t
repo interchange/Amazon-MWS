@@ -239,6 +239,7 @@ is ($feeder->variants_feed, $exp_variants_feed, "variants feed ok (undef)");
 
 
 my $test = Amazon::MWS::XML::Product->new(sku => '12345',
+                                          price => '10',
                                           ean => '4444123412343',
                                           condition => 'UsedAcceptable');
 
