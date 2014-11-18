@@ -44,6 +44,7 @@ WriteMakefile(
 
 
         'Moo' => 0,
+        'MooX::Types::MooseLike' => 0,
         'DBI' => 0,
         'DateTime' => 0,
         'SQL::Abstract' => 0,

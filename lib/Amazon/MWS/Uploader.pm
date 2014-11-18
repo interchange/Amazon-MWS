@@ -15,6 +15,7 @@ use SQL::Abstract;
 use Try::Tiny;
 
 use Moo;
+use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
 our $VERSION = '0.01';
@@ -96,9 +97,8 @@ has db_dsn => (is => 'ro');
 has db_password => (is => 'ro');
 has db_username => (is => 'ro');
 has db_options => (is => 'ro',
-                   isa => sub {
-                       die "Not an hashref" unless ref($_[0]) eq 'HASH';
-                   });
+                   isa => AnyOf[Undef,HashRef],
+                  );
 has dbh => (is => 'lazy');
 
 
@@ -114,7 +114,7 @@ has order_days_range => (is => 'rw',
                          isa => sub {
                              my $days = $_[0];
                              die "Not an integer"
-                               unless $days eq int($days);
+                               unless is_Int($days);
                              die "$days is out of range 1-30"
                                unless $days > 0 && $days < 31;
                          });
@@ -239,9 +239,8 @@ expected here with the B<skus>.
 =cut
 
 has force => (is => 'ro',
-              isa => sub {
-                  die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
-              });
+              isa => ArrayRef,
+             );
 
 
 has _force_hashref => (is => 'lazy');
@@ -263,8 +262,7 @@ to 0 will disable it.
 =cut
 
 has limit_inventory => (is => 'ro',
-                        isa => sub { die "Not an integer"
-                                       unless $_[0] eq int($_[0]) });
+                        isa => Int);
 
 =item schema_dir
 
@@ -349,9 +347,7 @@ Lazy attribute to hold the C<SQL::Abstract> object.
 =cut
 
 has products => (is => 'rw',
-                 isa => sub {
-                     die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
-                 });
+                 isa => ArrayRef);
 
 has sqla => (
              is => 'ro',

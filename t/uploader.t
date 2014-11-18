@@ -9,7 +9,7 @@ use Test::More;
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 8;
+    plan tests => 9;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -83,4 +83,11 @@ eval {
                                           );
 };
 ok ($@, "Found exception") and diag $@;
+
+eval {
+    $uploader = Amazon::MWS::Uploader->new(%constructor,
+                                           db_options => undef);
+};
+
+ok (!$@, "undef as db_options is fine") and diag $@;
 
