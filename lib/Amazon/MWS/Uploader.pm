@@ -944,7 +944,7 @@ sub _check_processing_complete {
             # there is a remote possibility that in it in another
             # page, but it should be very unlikely, as we block the
             # process when the first one is not complete
-            warn "$feed_id not found in submission list\n";
+            print "$feed_id not found in submission list\n";
             return;
         }
     }
