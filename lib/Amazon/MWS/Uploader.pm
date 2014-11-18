@@ -875,6 +875,13 @@ sub upload_feed {
                                        }));
             # if we have a success, print the warnings on the stderr.
             # if we have a failure, the warnings will just confuse us.
+
+            if ($type eq 'order_ack') {
+                # flip the confirmation bit
+                $self->_exe_query($self->sqla->update(amazon_mws_orders => { confirmed => 1 },
+                                                      { amws_job_id => $job_id,
+                                                        shop_id => $self->_unique_shop_id }));
+            }
             if (my $warn = $result->warnings) {
                 warn "$warn\n";
             }
@@ -893,6 +900,13 @@ sub upload_feed {
                                         shop_id => $self->_unique_shop_id,
                                        }));
             $self->register_errors($job_id, $result);
+            
+            if ($type eq 'order_ack') {
+                $self->_exe_query($self->sqla->update(amazon_mws_orders => { error_msg => $result->errors },
+                                                      { amws_job_id => $job_id,
+                                                        shop_id => $self->_unique_shop_id }));
+            }
+            
             # and we stop this job, has errors
             return 0;
         }
@@ -1023,14 +1037,69 @@ sub get_orders {
     return @orders;
 }
 
+=head2 order_already_registered($order)
+
+Check in the amazon_mws_orders table if we already registered this
+order.
+
+Return the row for this table (as an hashref) if present, nothing
+underwise.
+
+=cut
+
+sub order_already_registered {
+    my ($self, $order) = @_;
+    die "Bad usage, missing order" unless $order;
+    my $sth = $self->_exe_query($self->sqla->select(amazon_mws_orders => '*',
+                                                    {
+                                                     amazon_order_id => $order->amazon_order_number,
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
+    if (my $exists = $sth->fetchrow_hashref) {
+        $sth->finish;
+        return $exists;
+    }
+    else {
+        return;
+    }
+}
+
 sub acknowledge_successful_order {
     my ($self, @orders) = @_;
-    my $feed_content = $self->acknowledge_feed(Success => @orders);
+    my @orders_to_register;
+    foreach my $ord (@orders) {
+        if (my $existing = $self->order_already_registered($ord)) {
+            if ($existing->{confirmed}) {
+                print "Skipping already confirmed order $existing->{amazon_order_id} => $existing->{shop_order_id}\n";
+            }
+            else {
+                # it's not complete, so print out diagnostics
+                warn "Order $existing->{amazon_order_id} uncompletely registered with id $existing->{shop_order_id}, please indagate why (skipping)\n" . Dumper($existing);
+            }
+        }
+        else {
+            push @orders_to_register, $ord;
+        }
+    }
+    return unless @orders_to_register;
+
+    my $feed_content = $self->acknowledge_feed(Success => @orders_to_register);
     # here we have only one feed to upload and check
-    $self->prepare_feeds(order_ack => [{
-                                        name => 'order_ack',
-                                        content => $feed_content,
-                                       }]);
+    my $job_id = $self->prepare_feeds(order_ack => [{
+                                                     name => 'order_ack',
+                                                     content => $feed_content,
+                                                    }]);
+    # store the pairing amazon order id / shop order id in our table
+    foreach my $order (@orders_to_register) {
+        my %order_pairs = (
+                           shop_id => $self->_unique_shop_id,
+                           amazon_order_id => $order->amazon_order_number,
+                           # this will die if we try to insert an undef order_number
+                           shop_order_id => $order->order_number,
+                           amws_job_id => $job_id,
+                          );
+        $self->_exe_query($self->sqla->insert(amazon_mws_orders => \%order_pairs));
+    }
 }
 
 sub acknowledge_feed {

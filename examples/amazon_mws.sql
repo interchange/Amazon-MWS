@@ -50,3 +50,14 @@ CREATE TABLE amazon_mws_products (
        PRIMARY KEY (sku, shop_id)
 );
 
+CREATE TABLE amazon_mws_orders (
+       shop_id         VARCHAR(64) NOT NULL,
+       amazon_order_id VARCHAR(64) NOT NULL,
+       shop_order_id   VARCHAR(64) NOT NULL,
+       amws_job_id     VARCHAR(64) REFERENCES amazon_mws_jobs(amws_job_id),
+       error_code INTEGER NOT NULL DEFAULT 0,
+       error_msg TEXT,
+       confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       PRIMARY KEY (shop_id, amazon_order_id)
+);
