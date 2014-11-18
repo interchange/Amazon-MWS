@@ -61,3 +61,8 @@ CREATE TABLE amazon_mws_orders (
        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
        PRIMARY KEY (shop_id, amazon_order_id)
 );
+
+ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_job_id VARCHAR(64) REFERENCES amazon_mws_jobs(amws_job_id);
+ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_ok BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_error TEXT;
+

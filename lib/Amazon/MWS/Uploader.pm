@@ -878,6 +878,11 @@ sub upload_feed {
                                                       { amws_job_id => $job_id,
                                                         shop_id => $self->_unique_shop_id }));
             }
+            elsif ($type eq 'shipping_confirmation') {
+                $self->_exe_query($self->sqla->update(amazon_mws_orders => { shipping_confirmation_ok => 1 },
+                                                      { shipping_confirmation_job_id => $job_id,
+                                                        shop_id => $self->_unique_shop_id }));
+            }
             if (my $warn = $result->warnings) {
                 warn "$warn\n";
             }
@@ -900,6 +905,11 @@ sub upload_feed {
             if ($type eq 'order_ack') {
                 $self->_exe_query($self->sqla->update(amazon_mws_orders => { error_msg => $result->errors },
                                                       { amws_job_id => $job_id,
+                                                        shop_id => $self->_unique_shop_id }));
+            }
+            elsif ($type eq 'shipping_confirmation') {
+                $self->_exe_query($self->sqla->update(amazon_mws_orders => { shipping_confirmation_error => $result->errors },
+                                                      { shipping_confirmation_job_id => $job_id,
                                                         shop_id => $self->_unique_shop_id }));
             }
             
@@ -1357,18 +1367,87 @@ sub shipping_confirmation_feed {
 Schedule the shipped orders (an L<Amazon::MWS::XML::ShippedOrder>
 object) for the uploading.
 
+=head2 order_already_shipped($shipped_order)
+
+Check if the shipped orders (an L<Amazon::MWS::XML::ShippedOrder> was
+already notified as shipped looking into our table, returning the row
+with the order.
+
+To see the status, check shipping_confirmation_ok (already done),
+shipping_confirmation_error (faulty), shipping_confirmation_job_id (pending).
+
 =cut
+
+sub order_already_shipped {
+    my ($self, $order) = @_;
+    my $condition = $self->_condition_for_shipped_orders($order);
+    my $sth = $self->_exe_query($self->sqla->select(amazon_mws_orders => '*', $condition));
+    if (my $row = $sth->fetchrow_hashref) {
+        die "Multiple results found in amazon_mws_orders for " . Dumper($condition)
+          if $sth->fetchrow_hashref;
+        return $row;
+    }
+    else {
+        return;
+    }
+}
 
 sub send_shipping_confirmation {
     my ($self, @orders) = @_;
-    my $feed_content = $self->shipping_confirmation_feed(@orders);
+    my @orders_to_notify;
+    foreach my $ord (@orders) {
+        if (my $report = $self->order_already_shipped($ord)) {
+            if ($report->{shipping_confirmation_ok}) {
+                print "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id}: already notified\n";
+            }
+            elsif (my $error = $report->{shipping_confirmation_error}) {
+                warn "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id} with error $error\n";
+            }
+            elsif ($report->{shipping_confirmation_job_id}) {
+                print "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id}: pending\n";
+            }
+            else {
+                push @orders_to_notify, $ord;
+            }
+        }
+        else {
+            die "It looks like you are trying to send a shipping confirmation "
+              . " without prior order acknowlegdement. "
+                . "At least in the amazon_mws_orders there is no trace of "
+                  . "$report->{amazon_order_id} $report->{shop_order_id}";
+        }
+    }
+    return unless @orders_to_notify;
+    my $feed_content = $self->shipping_confirmation_feed(@orders_to_notify);
     # here we have only one feed to upload and check
-    $self->prepare_feeds(shipping_confirmation => [{
-                                                    name => 'shipping_confirmation',
-                                                    content => $feed_content,
-                                                   }]);
+    my $job_id = $self->prepare_feeds(shipping_confirmation => [{
+                                                                 name => 'shipping_confirmation',
+                                                                 content => $feed_content,
+                                                                }]);
+    # and store the job id in the table
+    foreach my $ord (@orders_to_notify) {
+        $self->_exe_query($self->sqla->update(amazon_mws_orders => {
+                                                                    shipping_confirmation_job_id => $job_id,
+                                                                   },
+                                              $self->_condition_for_shipped_orders($ord)));
+    }
 }
 
+sub _condition_for_shipped_orders {
+    my ($self, $order) = @_;
+    die "Missing order" unless $order;
+    my %condition = (shop_id => $self->_unique_shop_id);
+    if (my $amazon_order_id = $order->amazon_order_id) {
+        $condition{amazon_order_id} = $amazon_order_id;
+    }
+    elsif (my $order_id = $order->merchant_order_id) {
+        $condition{shop_order_id} = $order_id;
+    }
+    else {
+        die "Missing amazon_order_id or merchant_order_id";
+    }
+    return \%condition;
+}
 
 
 1;
