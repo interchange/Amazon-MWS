@@ -1450,4 +1450,33 @@ sub _condition_for_shipped_orders {
 }
 
 
+=head2 orders_waiting_for_shipping
+
+Return a list of hashref with two keys, C<amazon_order_id> and
+C<shop_order_id> for each order which is waiting confirmation.
+
+This is implemented looking into amazon_mws_orders where there is no
+shipping confirmation job id but there is the confirmed flag (which
+means we acknowledged the order).
+
+=cut
+
+sub orders_waiting_for_shipping {
+    my $self = shift;
+    my $sth = $self->_exe_query($self->sqla->select('amazon_mws_orders',
+                                                    [qw/amazon_order_id
+                                                        shop_order_id/],
+                                                    {
+                                                     shop_id => $self->_unique_shop_id,
+                                                     shipping_confirmation_job_id => undef,
+                                                     confirmed => 1,
+                                                    }));
+    my @out;
+    while (my $row = $sth->fetchrow_hashref) {
+        push @out, $row;
+    }
+    return @out;
+}
+
+
 1;
