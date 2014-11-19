@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Moo;
+use MooX::Types::MooseLike::Base qw(:all);
 
 =head1 NAME
 
@@ -195,8 +196,8 @@ has manufacturer => (is => 'ro',
                          }
                      });
 
-has search_terms => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
-has features => (is => 'ro', isa => sub { die unless ref($_[0]) eq 'ARRAY' });
+has search_terms => (is => 'ro', isa => ArrayRef);
+has features => (is => 'ro', isa => ArrayRef);
 
 sub _check_units {
     my $unit = $_[0];
@@ -251,14 +252,10 @@ has shipping_weight_unit => (is => 'ro',
 
 has inventory => (is => 'rw',
                   default => sub { '0' },
-                  isa => sub {
-                      die "Not an integer" unless $_[0] eq int($_[0]);
-                  });
+                  isa => Int);
 
 has ship_in_days => (is => 'ro',
-                     isa => sub {
-                         die "Not an integer" unless $_[0] eq int($_[0]);
-                     },
+                     isa => Int,
                      default => sub { '2' });
 
 has price => (is => 'ro',
@@ -296,14 +293,10 @@ has currency => (is => 'ro',
                  default => sub { 'EUR' });
 
 has images => (is => 'ro',
-               isa => sub {
-                   die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
-               });
+               isa => ArrayRef);
 
 has children => (is => 'ro',
-                 isa => sub {
-                     die "Not an arrayref" unless ref($_[0]) eq 'ARRAY';
-                 });
+                 isa => ArrayRef);
 
 
 # has restock_date => (is => 'ro');
