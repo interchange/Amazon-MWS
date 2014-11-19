@@ -18,6 +18,11 @@ use Amazon::MWS::Feeds;
 use Amazon::MWS::Products;
 use Data::Dumper;
 
+sub agent {
+    return shift->{agent};
+}
+
+
 1;
 
 __END__
@@ -96,6 +101,12 @@ available at $e->errors, and the entire xml response is available at $e->xml.
 
 If Amazon sends the 'Content-MD5' header and it does not match the content,
 this exception will be thrown.  The response can be found in $e->response.
+
+=head1 INTERNAL METHODS
+
+=head2 agent
+
+The LWP::UserAgent object used to send the requests to Amazon.
 
 =head1 API METHODS
 

@@ -9,7 +9,7 @@ use Test::More;
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 9;
+    plan tests => 11;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -34,6 +34,11 @@ my %constructor = (
 my $uploader = Amazon::MWS::Uploader->new(%constructor);
 
 ok($uploader);
+ok($uploader->client->can('agent'), "Client can call agent");
+ok($uploader->client->agent->isa('LWP::UserAgent'));
+
+
+
 is($uploader->_unique_shop_id, $constructor{merchant_id});
 $uploader = Amazon::MWS::Uploader->new(%constructor,
                                        shop_id => 'shoppe');

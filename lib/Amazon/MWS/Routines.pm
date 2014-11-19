@@ -116,7 +116,7 @@ sub define_api_method {
             $request->content_type($args->{content_type}||'application/x-www-form-urlencoded');
             my $signature = $self->sign_request($request, %form);
 
-            $response = $self->{agent}->request($request);
+            $response = $self->agent->request($request);
             $content  = $response->content;
         } elsif ($body) {
 	    $request->uri($uri);
@@ -127,7 +127,7 @@ sub define_api_method {
 
    	    $self->sign_request($request, %form);
             $request->content($body);
-            $response = $self->{agent}->request($request);
+            $response = $self->agent->request($request);
             $content = $response->content;
         } else {
             $uri->query_form(\%form);
@@ -136,7 +136,7 @@ sub define_api_method {
 
             $self->sign_request($request);
           
-            $response = $self->{agent}->request($request);
+            $response = $self->agent->request($request);
             $content  = $response->content;
 
         }

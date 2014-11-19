@@ -9,6 +9,7 @@ use Test::MockObject;
 use HTTP::Response;
 use Test::More tests => 4;
 use DateTime;
+use Data::Dumper;
 
 my $client = Amazon::MWS::Client->new(
     access_key_id  => 'foo',
@@ -33,7 +34,9 @@ $client = Test::MockObject::Extends->new($client)->mock(
     agent => sub { $agent }
 );
 
-my $response = $client->SubmitFeed(
+my $response;
+eval {
+$response = $client->SubmitFeed(
     content_type    => 'text/xml; charset=utf-8',
     FeedType        => _POST_ORDER_FULFILLMENT_DATA_,
     PurgeAndReplace => 0,
@@ -81,6 +84,9 @@ my $response = $client->SubmitFeed(
 </AmazonEnvelope>
 FEED_CONTENT
 );
+};
+
+diag Dumper($@) if $@;
 
 is $response->{FeedProcessingStatus}, _SUBMITTED_;
 is $response->{FeedSubmissionId}, '11223344';
