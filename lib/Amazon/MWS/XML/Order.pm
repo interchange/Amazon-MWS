@@ -212,5 +212,27 @@ sub reported_order_number {
     return shift->order->{SellerOrderId};
 }
 
+=head2 order_is_shipped
+
+Return true if the order is marked as shipped by Amazon
+
+=cut
+
+sub order_is_shipped {
+    my $self = shift;
+    my $status = $self->order_status;
+    $status eq 'Shipped' ? return 1 : return;
+}
+
+=head2 order_status
+
+Shortcut to orders' OrderStatus
+
+=cut
+
+sub order_status {
+    return shift->order->{OrderStatus};
+}
+
 
 1;

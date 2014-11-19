@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 use Amazon::MWS::XML::Order;
 
@@ -92,3 +92,4 @@ my $order = Amazon::MWS::XML::Order->new(order => $order_data,
 is($order->subtotal, "119.80");
 my @items = $order->items;
 is($items[0]->price, "59.90");
+ok ($order->order_is_shipped, "It is shipped");
