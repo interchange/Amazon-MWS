@@ -48,9 +48,13 @@ has ConditionSubtypeId => (is => 'ro');
 has QuantityShipped => (is => 'ro');
 has QuantityOrdered => (is => 'ro');
 
+=head2 amazon_order_item
+
+The amazon id for the given item (read-only)
+
 =head2 merchant_order_item
 
-Our id
+Our id (read-write).
 
 =cut
 
