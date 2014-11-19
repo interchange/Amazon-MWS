@@ -295,7 +295,7 @@ has currency => (is => 'ro',
 has images => (is => 'ro',
                isa => ArrayRef);
 
-has children => (is => 'ro',
+has children => (is => 'rw',
                  isa => ArrayRef);
 
 
