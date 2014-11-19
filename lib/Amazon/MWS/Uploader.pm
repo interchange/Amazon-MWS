@@ -439,6 +439,19 @@ sub _build_products_to_upload {
                 $product->inventory($limit);
             }
         }
+        if (my $children = $product->children) {
+            my @good_children;
+            foreach my $child (@$children) {
+                if ($existing->{$child} and
+                    $existing->{$child}->{status} eq 'failed') {
+                    print "Ignoring failed variant $child\n";
+                }
+                else {
+                    push @good_children, $child;
+                }
+            }
+            $product->children(\@good_children);
+        }
         push @todo, $product;
     }
     if ($self->purge_missing_products) {

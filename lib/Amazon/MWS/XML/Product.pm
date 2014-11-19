@@ -509,7 +509,7 @@ Return a structure suitable for the Relationship feed.
 sub as_variants_hash {
     my $self = shift;
     my $children = $self->children;
-    return unless $children;
+    return unless $children && @$children;
     my $data = { ParentSKU => $self->sku,
                  Relation => [] };
     foreach my $child (@$children) {
