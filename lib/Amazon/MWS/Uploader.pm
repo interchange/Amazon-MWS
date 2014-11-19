@@ -981,7 +981,13 @@ sub submission_result {
         $xml = $self->client
           ->GetFeedSubmissionResult(FeedSubmissionId => $feed_id);
     } catch {
-        warn $_->xml;
+        my $exception = $_;
+        if (ref($exception) && $exception->can('xml')) {
+            warn "submission result error: " . $exception->xml;
+        }
+        else {
+            warn "submission result error: " . Dumper($exception);
+        }
     };
     die unless $xml;
     return Amazon::MWS::XML::Response::FeedSubmissionResult->new(
