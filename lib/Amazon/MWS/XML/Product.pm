@@ -324,6 +324,24 @@ sub price_is_zero {
     }
 }
 
+=head2 is_inactive
+
+Return true if price is 0 or inventory is 0. Inactive items will not
+get a price, variants, image feed output.
+
+=cut
+
+sub is_inactive {
+    my $self = shift;
+    if ($self->price_is_zero or $self->inventory < 1) {
+        return 1;
+    }
+    else {
+        return;
+    }
+}
+
+
 =head2 as_product_hash
 
 Return a data structure suitable to feed the Product slot in a Product
@@ -333,14 +351,14 @@ feed.
 
 Return a data structure suitable to feed the Inventory slot in a
 Inventory feed. Negative quantities will be normalized to 0.
-Zero-priced products will get a quantity of 0.
+Inactive products will get a quantity of 0.
 
 =head2 as_price_hash
 
 Return a data structure suitable to feed the Price slot in a Price
-feed. If it's a zero-priced product, return nothing so there is a
+feed. If it's a inactive product, return nothing so there is a
 chance that we don't need the price feed at all (if all products are
-zero-priced).
+inactive).
 
 =cut
 
@@ -431,7 +449,7 @@ sub as_product_hash {
 sub as_inventory_hash {
     my $self = shift;
     my $quantity = $self->inventory;
-    if ($quantity < 0 or $self->price_is_zero) {
+    if ($self->is_inactive) {
         $quantity = 0;
     }
     return {
@@ -443,7 +461,7 @@ sub as_inventory_hash {
 
 sub as_price_hash {
     my $self = shift;
-    return if $self->price_is_zero;
+    return if $self->is_inactive;
     my $price = $self->price;
     my $data = {
                 SKU => $self->sku,
@@ -472,7 +490,7 @@ sub as_price_hash {
 Return a data structure suitable to feed the ProductImage slot in a
 Image feed.
 
-No output if the price is zero.
+No output if the product is inactive.
 
 =over 4
 
@@ -504,7 +522,7 @@ stored with a secured URL (https) so be sure to use http instead.
 
 sub as_images_array {
     my $self = shift;
-    return if $self->price_is_zero;
+    return if $self->is_inactive;
     return unless $self->images;
     my $sku = $self->sku;
     # here we assign the first as the main one, the others as alternate.
@@ -528,13 +546,13 @@ sub as_images_array {
 =head2 as_variants_hash
 
 Return a structure suitable for the Relationship feed. No output if
-the price is zero.
+the product is inactive.
 
 =cut
 
 sub as_variants_hash {
     my $self = shift;
-    return if $self->price_is_zero;
+    return if $self->is_inactive;
     my $children = $self->children;
     return unless $children && @$children;
     my $data = { ParentSKU => $self->sku,
