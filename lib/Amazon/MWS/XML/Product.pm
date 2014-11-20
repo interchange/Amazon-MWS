@@ -90,7 +90,10 @@ default of 2 here.
 
 =item price
 
-The standard price of the item.
+The standard price of the item. If the price is zero, it is assumed to
+be a product which should be set as inactive without removing it,
+flipping the inventory to zero and refraining to do pass
+images/variants/price feeds.
 
 =item currency
 
@@ -260,17 +263,17 @@ has ship_in_days => (is => 'ro',
 
 has price => (is => 'ro',
               required => 1,
-              isa => sub {
-                  die "Not a price"
-                    unless $_[0] =~ m/^[0-9]+(\.[0-9][0-9]?)?$/;
-                  die "Zero priced product!" unless $_[0] > 0;
-              });
+              isa => \&_validate_price);
+
+sub _validate_price {
+    my ($price) = @_;
+    die "$price is not a number" unless is_Num($price);
+    die "$price is negative" if $price < 0;
+}
+
 
 has sale_price => (is => 'ro',
-                   isa => sub {
-                       die "Not a price: $_[0]"
-                         unless $_[0] =~ m/^[0-9]+(\.[0-9][0-9]?)?$/;
-                   });
+                   isa => \&_validate_price);
 
 has sale_start => (is => 'ro',
                    isa => sub {
@@ -304,6 +307,23 @@ has children => (is => 'rw',
 
 =head1 METHODS
 
+=head2 price_is_zero
+
+Return true if the price is 0.
+
+=cut
+
+sub price_is_zero {
+    my $self = shift;
+    my $price = $self->price;
+    if ($price > 0) {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
 =head2 as_product_hash
 
 Return a data structure suitable to feed the Product slot in a Product
@@ -313,11 +333,14 @@ feed.
 
 Return a data structure suitable to feed the Inventory slot in a
 Inventory feed. Negative quantities will be normalized to 0.
+Zero-priced products will get a quantity of 0.
 
 =head2 as_price_hash
 
-Return a data structure suitable to feed the Price slot in a
-Price feed.
+Return a data structure suitable to feed the Price slot in a Price
+feed. If it's a zero-priced product, return nothing so there is a
+chance that we don't need the price feed at all (if all products are
+zero-priced).
 
 =cut
 
@@ -408,7 +431,7 @@ sub as_product_hash {
 sub as_inventory_hash {
     my $self = shift;
     my $quantity = $self->inventory;
-    if ($quantity < 0) {
+    if ($quantity < 0 or $self->price_is_zero) {
         $quantity = 0;
     }
     return {
@@ -420,8 +443,8 @@ sub as_inventory_hash {
 
 sub as_price_hash {
     my $self = shift;
+    return if $self->price_is_zero;
     my $price = $self->price;
-    die $self->sku . " has price lesser than 0: $price\n" if $price < 0;
     my $data = {
                 SKU => $self->sku,
                 StandardPrice => { currency => $self->currency,
@@ -448,6 +471,8 @@ sub as_price_hash {
 
 Return a data structure suitable to feed the ProductImage slot in a
 Image feed.
+
+No output if the price is zero.
 
 =over 4
 
@@ -479,7 +504,7 @@ stored with a secured URL (https) so be sure to use http instead.
 
 sub as_images_array {
     my $self = shift;
-    # for now just push the main image
+    return if $self->price_is_zero;
     return unless $self->images;
     my $sku = $self->sku;
     # here we assign the first as the main one, the others as alternate.
@@ -502,12 +527,14 @@ sub as_images_array {
 
 =head2 as_variants_hash
 
-Return a structure suitable for the Relationship feed.
+Return a structure suitable for the Relationship feed. No output if
+the price is zero.
 
 =cut
 
 sub as_variants_hash {
     my $self = shift;
+    return if $self->price_is_zero;
     my $children = $self->children;
     return unless $children && @$children;
     my $data = { ParentSKU => $self->sku,

@@ -10,7 +10,7 @@ use Test::More;
 # testing requires a directory with the schema
 
 if (-d 'schemas') {
-    plan tests => 9;
+    plan tests => 20;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -282,3 +282,44 @@ eval { $test = Amazon::MWS::XML::Product->new(
                                               ); };
 
 like $@, qr/Max 50/, "Found exception when manufacturer is too long";
+
+
+$test = Amazon::MWS::XML::Product->new(sku => '12345',
+                                       price => '10',
+                                       ean => '4444123412343',
+                                       condition => 'UsedAcceptable');
+
+ok(!$test->price_is_zero);
+
+eval {
+    $test = Amazon::MWS::XML::Product->new(sku => '12345',
+                                           price => '-10',
+                                           ean => '4444123412343',
+                                           condition => 'UsedAcceptable');
+};
+like $@, qr/is negative/, "Exception with negative price: $@";
+
+$test = Amazon::MWS::XML::Product->new(sku => '12345',
+                                       price => '0.000000',
+                                       ean => '4444123412343',
+                                       inventory => 10,
+                                       images => ['a.jpg'],
+                                       children => ['123414-XXL'],
+                                       condition => 'New');
+
+ok($test->price_is_zero);
+is($test->as_price_hash, undef, "zero priced item gets no price feed");
+is($test->inventory, 10);
+is($test->as_inventory_hash->{Quantity}, 0,
+   "zero priced items get an inventory of 0");
+is($test->as_images_array, undef, "zero priced items gets no image feed");
+is($test->as_variants_hash, undef, "zero priced items gets no variant feed");
+
+$feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
+                                      schema_dir => 'schemas',
+                                      merchant_id => '__MERCHANT_ID__',
+                                      );
+
+ok(!$feeder->price_feed, "No price feed");
+ok(!$feeder->image_feed, "No image feed");
+ok(!$feeder->variants_feed, "No variant feed");
