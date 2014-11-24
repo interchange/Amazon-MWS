@@ -7,8 +7,11 @@ use strict;
 use warnings;
 use DateTime;
 use DateTime::Format::ISO8601;
+use Data::Dumper;
 
 use Moo;
+use MooX::Types::MooseLike::Base qw(:all);
+use namespace::clean;
 
 =head1 NAME
 
@@ -57,15 +60,11 @@ Shipping address as C<Amazon::MWS::Client::Address> object.
 
 has order => (is => 'rw',
               required => 1,
-              isa => sub {
-                  die unless ref($_[0]) eq 'HASH';
-              });
+              isa => HashRef);
 
 has orderline => (is => 'rw',
                   required => 1,
-                  isa => sub {
-                      die unless ref($_[0]) eq 'ARRAY';
-                  });
+                  isa => ArrayRef);
 
 has order_number => (is => 'rw');
 
@@ -165,7 +164,8 @@ sub number_of_items {
 sub total_cost {
     my $self = shift;
     my $total_cost = sprintf('%.2f', $self->order->{OrderTotal}->{Amount});
-    die "Couldn't retrieve the OrderTotal/Amount" unless defined $total_cost;
+    die "Couldn't retrieve the OrderTotal/Amount " . Dumper($self->order)
+      unless defined $total_cost;
     my $subtotal = $self->subtotal;
     my $shipping = $self->shipping_cost;
     if (_kinda_equal($subtotal + $shipping, $total_cost)) {
@@ -179,7 +179,8 @@ sub total_cost {
 sub currency {
     my $self = shift;
     my $currency = $self->order->{OrderTotal}->{CurrencyCode}; 
-    die "Couldn't find OrderTotal/Currency" unless $currency;
+    die "Couldn't find OrderTotal/Currency " . Dumper($self->order)
+      unless $currency;
     return $currency;
 }
 
