@@ -390,59 +390,25 @@ sub _build_products_to_upload {
         if (my $exists = $existing->{$sku}) {
             # mark the item as visited
             $exists->{_examined} = 1;
-            # skip already uploaded products with the same timestamp string.
-            my $status = $exists->{status} || '';
-            if ($status eq 'ok') {
-                if ($exists->{timestamp_string} eq ($product->timestamp_string || 0)) {
-                    print "Skipping already uploaded item $sku \n";
-                    next;
-                }
-            }
-            elsif ($status eq 'redo') {
-                print "Redoing $sku\n";
-            }
-            elsif ($status eq 'failed') {
-                if ($self->reset_all_errors || $self->_force_hashref->{$sku}) {
-                    print "Resetting error for $sku\n";
-                }
-                elsif (my $reset = $self->_reset_error_structure) {
-                    # option for this error was passed.
-                    my $error = $exists->{error_code};
-                    my $match = $reset->{codes}->{$error};
-                    if (($match && $reset->{negate}) or
-                        (!$match && !$reset->{negate})) {
-                        # was passed !this error or !random , so do not reset
-                        print "Skipping failed item $sku with error code $error\n";
-                        next;
-                    }
-                    else {
-                        # otherwise reset
-                        print "Resetting error for $sku with error code $error\n";
-                    }
-                }
-                else {
-                    print "Skipping failed item $sku\n";
-                    next;
-                }
-            }
-            elsif ($status) {
-                # something else is going on. Pending or failed
-                print "Skipping $exists->{status} item $sku\n";
-                next;
-            }
         }
+        print "Checking $sku\n" if $self->debug;
+        next unless $self->product_needs_upload($product->sku, $product->timestamp_string);
+
         print "Scheduling product " . $product->sku . " for upload\n";
         if (my $limit = $self->limit_inventory) {
             my $real = $product->inventory;
             if ($real > $limit) {
-                print "Limiting the $sku inventory from $real to $limit\n";
+                print "Limiting the $sku inventory from $real to $limit\n" if $self->debug;
                 $product->inventory($limit);
             }
         }
         if (my $children = $product->children) {
             my @good_children;
             foreach my $child (@$children) {
+                # skip failed children, but if the current status of
+                # parent is failed, and we reached this point, retry.
                 if ($existing->{$child} and
+                    $existing->{$sku}->{status} ne 'failed' and
                     $existing->{$child}->{status} eq 'failed') {
                     print "Ignoring failed variant $child\n";
                 }
@@ -1496,6 +1462,85 @@ sub orders_waiting_for_shipping {
     }
     return @out;
 }
+
+=head2 product_needs_upload($sku, $timestamp)
+
+Lookup the product $sku with timestamp $timestamp and return the sku
+if the product needs to be uploaded or can be safely skipped. This
+method is stateless and doesn't alter anything.
+
+=cut
+
+sub product_needs_upload {
+    my ($self, $sku, $timestamp) = @_;
+    my $debug = $self->debug;
+    return unless $sku;
+
+    my $forced = $self->_force_hashref;
+    # if it's forced, we have nothing to check, just pass it.
+    if ($forced->{$sku}) {
+        print "Forcing $sku as requested\n" if $debug;
+        return $sku;
+    }
+
+    $timestamp ||= 0;
+    my $existing = $self->existing_products;
+
+    if (exists $existing->{$sku}) {
+        if (my $exists = $existing->{$sku}) {
+
+            my $status = $exists->{status} || '';
+
+            if ($status eq 'ok') {
+                if ($exists->{timestamp_string} eq $timestamp) {
+                    return;
+                }
+                else {
+                    return $sku;
+                }
+            }
+            elsif ($status eq 'redo') {
+                return $sku;
+            }
+            elsif ($status eq 'failed') {
+                if ($self->reset_all_errors) {
+                    return $sku;
+                }
+                elsif (my $reset = $self->_reset_error_structure) {
+                    # option for this error was passed.
+                    my $error = $exists->{error_code};
+                    my $match = $reset->{codes}->{$error};
+                    if (($match && $reset->{negate}) or
+                        (!$match && !$reset->{negate})) {
+                        # was passed !this error or !random , so do not reset
+                        print "Skipping failed item $sku with error code $error\n" if $debug;
+                        return;
+                    }
+                    else {
+                        # otherwise reset
+                        print "Resetting error for $sku with error code $error\n" if $debug;
+                        return $sku;
+                    }
+                }
+                else {
+                    print "Skipping failed item $sku\n" if $debug;
+                    return;
+                }
+            }
+            elsif ($status eq 'pending') {
+                print "Skipping pending item $sku\n" if $debug;
+                return;
+            }
+            die "I shouldn't have reached this point with status <$status>";
+        }
+    }
+    print "$sku wasn't uploaded so far, scheduling it\n" if $debug;
+    return $sku;
+}
+
+
+
+
 
 
 1;
