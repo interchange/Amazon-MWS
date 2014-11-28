@@ -47,6 +47,15 @@ sub name {
     return shift->Name;
 }
 
+sub address1 {
+    return shift->AddressLine1;
+}
+
+sub address2 {
+    return shift->AddressLine2;
+}
+
+
 sub address_line {
     my $self = shift;
     my $line = $self->AddressLine1 || '';
