@@ -913,11 +913,12 @@ sub _check_processing_complete {
     try {
         $res = $self->client->GetFeedSubmissionList;
     } catch {
-        if (ref($_)) {
-            warn $_->xml;
+        my $exception = $_;
+        if (ref($exception) && $exception->can('xml')) {
+            warn "checking processing complete error: " . $exception->xml;
         }
         else {
-            warn $_;
+            warn "checking processing complete: " . Dumper($exception);
         }
     };
     die unless $res;
