@@ -10,7 +10,7 @@ use Test::More;
 # testing requires a directory with the schema
 
 if (-d 'schemas') {
-    plan tests => 35;
+    plan tests => 36;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -281,7 +281,25 @@ eval { $test = Amazon::MWS::XML::Product->new(
                                               manufacturer => 'abc' x 50,
                                               ); };
 
-like $@, qr/Max 50/, "Found exception when manufacturer is too long";
+like $@, qr/Max characters is 50/, "Found exception when manufacturer is too long";
+
+eval { $test = Amazon::MWS::XML::Product->new(
+                                              sku => '3333',
+                                              ean => '4444123412343',
+                                              brand => 'brand',
+                                              title => 'title2',
+                                              price => '12.00',
+                                              description => 'my desc 2',
+                                              images => [ 'http://example.org/pluto.jpg' ],
+                                              category_code => '111111',
+                                              category => 'CE',
+                                              subcategory => 'PhoneAccessory',
+                                              manufacturer_part_number => '4444123412343',
+                                              inventory => 2,
+                                              manufacturer => '',
+                                              ); };
+
+like $@, qr/Min characters is 1/, "Found exception when manufacturer is too short";
 
 
 $test = Amazon::MWS::XML::Product->new(sku => '12345',

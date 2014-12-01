@@ -160,9 +160,15 @@ has sku => (is => 'ro', required => 1);
 has timestamp_string => (is => 'ro',
                          default => sub { '0' });
 has ean => (is => 'ro');
-has title => (is => 'ro');
-has description => (is => 'ro');
-has brand => (is => 'ro');
+has title => (is => 'ro',
+              isa => sub { _check_length($_[0], 1, 500) },
+             );
+has description => (is => 'ro',
+                    isa => sub { _check_length($_[0], 0, 2000) },
+                   );
+has brand => (is => 'ro',
+              isa => sub { _check_length($_[0], 1, 50) },
+             );
 has condition => (is => 'ro',
                   default => sub { 'New' },
                   isa => sub {
@@ -185,22 +191,26 @@ has condition => (is => 'ro',
                   });
 has condition_note => (
                        is => 'ro',
-                       isa => sub {
-                           die "Max lenght is 2000"
-                             if length($_[0]) > 2000 },
+                       isa => sub { _check_length($_[0], 0, 2000) },
                       );
 has category_code => (is => 'ro');
 has product_data => (is => 'ro');
-has manufacturer_part_number => (is => 'ro');
+has manufacturer_part_number => (is => 'ro',
+                                 isa => sub { _check_length($_[0], 1, 40) }
+                                );
 has manufacturer => (is => 'ro',
-                     isa => sub {
-                         if (my $manufacturer = $_[0]) {
-                             die "Max 50 chars" if length($manufacturer) > 50;
-                         }
-                     });
+                     isa => sub { _check_length($_[0], 1, 50) });
 
 has search_terms => (is => 'ro', isa => ArrayRef);
 has features => (is => 'ro', isa => ArrayRef);
+
+sub _check_length {
+    my ($value, $min, $max) = @_;
+    if (defined $value) {
+        die "Max characters is $max" if length($value) > $max;
+        die "Min characters is $min" if length($value) < $min;
+    }
+}
 
 sub _check_units {
     my $unit = $_[0];
