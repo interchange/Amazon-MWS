@@ -7,7 +7,7 @@ use Data::Dumper;
 use Test::More;
 
 if (-d 'schemas') {
-    plan tests => 20;
+    plan tests => 24;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -190,3 +190,85 @@ ok($result, "Result loaded");
 ok(!$result->is_success, "Is not a success");
 ok($result->errors, "Got the error " . $result->errors) or diag Dumper($result);
 ok(!$result->warnings, "No warnings");
+
+
+
+$xml = <<'XML';
+<?xml version="1.0" encoding="UTF-8"?>
+<AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amzn-envelope.xsd">
+        <Header>
+                <DocumentVersion>1.02</DocumentVersion>
+                <MerchantIdentifier>__MERCHANT_ID__</MerchantIdentifier>
+        </Header>
+        <MessageType>ProcessingReport</MessageType>
+        <Message>
+                <MessageID>1</MessageID>
+                <ProcessingReport>
+                        <DocumentTransactionID>123412341234</DocumentTransactionID>
+                        <StatusCode>Complete</StatusCode>
+                        <ProcessingSummary>
+                                <MessagesProcessed>4</MessagesProcessed>
+                                <MessagesSuccessful>1</MessagesSuccessful>
+                                <MessagesWithError>3</MessagesWithError>
+                                <MessagesWithWarning>0</MessagesWithWarning>
+                        </ProcessingSummary>
+                        <Result>
+                                <MessageID>1</MessageID>
+                                <ResultCode>Error</ResultCode>
+                                <ResultMessageCode>18028</ResultMessageCode>
+                                <ResultDescription>The data you submitted is incomplete or invalid. For help fixing this, see http://sellercentral-europe.amazon.com/gp/help/30721</ResultDescription>
+                                <AdditionalInfo>
+                                        <AmazonOrderID>302-6666666-6666666</AmazonOrderID>
+                                </AdditionalInfo>
+                        </Result>
+                        <Result>
+                                <MessageID>2</MessageID>
+                                <ResultCode>Error</ResultCode>
+                                <ResultMessageCode>18028</ResultMessageCode>
+                                <ResultDescription>The data you submitted is incomplete or invalid. For help fixing this, see http://sellercentral-europe.amazon.com/gp/help/30721</ResultDescription>
+                                <AdditionalInfo>
+                                        <AmazonOrderID>302-5555555-5555555</AmazonOrderID>
+                                </AdditionalInfo>
+                        </Result>
+                        <Result>
+                                <MessageID>4</MessageID>
+                                <ResultCode>Error</ResultCode>
+                                <ResultMessageCode>18028</ResultMessageCode>
+                                <ResultDescription>The data you submitted is incomplete or invalid. For help fixing this, see http://sellercentral-europe.amazon.com/gp/help/30721</ResultDescription>
+                                <AdditionalInfo>
+                                        <AmazonOrderID>305-4444444-4444444</AmazonOrderID>
+                                </AdditionalInfo>
+                        </Result>
+                </ProcessingReport>
+        </Message>
+</AmazonEnvelope>
+XML
+
+$result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
+                                                                   schema_dir => 'schemas',
+                                                                  );
+ok($result, "object ok");
+
+ok(!$result->orders_warnings, "No warnings");
+is_deeply($result->orders_errors,
+          [
+           {
+            'error' => 'The data you submitted is incomplete or invalid. For help fixing this, see http://sellercentral-europe.amazon.com/gp/help/30721',
+            'order_id' => '302-6666666-6666666',
+            'code' => '18028'
+           },
+           {
+            'error' => 'The data you submitted is incomplete or invalid. For help fixing this, see http://sellercentral-europe.amazon.com/gp/help/30721',
+            'order_id' => '302-5555555-5555555',
+            'code' => '18028'
+           },
+           {
+            'error' => 'The data you submitted is incomplete or invalid. For help fixing this, see http://sellercentral-europe.amazon.com/gp/help/30721',
+            'order_id' => '305-4444444-4444444',
+            'code' => '18028'
+           }
+          ]);
+
+is_deeply([$result->failed_orders], ['302-6666666-6666666',
+                                     '302-5555555-5555555',
+                                     '305-4444444-4444444' ]);

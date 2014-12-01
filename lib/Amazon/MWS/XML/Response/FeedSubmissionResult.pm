@@ -60,28 +60,45 @@ sub _build_structure {
 
 has skus_errors => (is => 'lazy');
 has skus_warnings => (is => 'lazy');
+has orders_errors => (is => 'lazy');
+has orders_warnings => (is => 'lazy');
 
 sub _build_skus_errors {
     my $self = shift;
-    return $self->_parse_results('Error');
+    return $self->_parse_results(sku => 'Error');
 }
 
 sub _build_skus_warnings {
     my $self = shift;
-    return $self->_parse_results('Warning');
+    return $self->_parse_results(sku => 'Warning');
 }
 
+sub _build_orders_errors {
+    my $self = shift;
+    return $self->_parse_results(order_id => 'Error');
+}
+
+sub _build_orders_warnings {
+    my $self = shift;
+    return $self->_parse_results(order_id => 'Warning');
+}
+
+
 sub _parse_results {
-    my ($self, $code) = @_;
+    my ($self, $type, $code) = @_;
     die unless ($code eq 'Error' or $code eq 'Warning');
     my $struct = $self->structure;
     my @msgs;
+    my %map = (sku => 'SKU',
+               order_id => 'AmazonOrderID');
+
+    my $key = $map{$type} or die "Bad type $type";
     if ($struct->{Result}) {
         foreach my $res (@{ $struct->{Result} }) {
             if ($res->{ResultCode} and $res->{ResultCode} eq $code) {
-                if (my $sku = $res->{AdditionalInfo}->{SKU}) {
+                if (my $value = $res->{AdditionalInfo}->{$key}) {
                     push @msgs, {
-                                   sku => $sku,
+                                   $type => $value,
                                    # this is a bit misnamed, but not too much
                                    error => $res->{ResultDescription} || '',
                                    code => $res->{ResultMessageCode} || '',
@@ -134,7 +151,10 @@ sub _format_msgs {
         my @errors;
         foreach my $err (@$list) {
             if ($err->{sku}) {
-                push @errors, "$err->{sku}: $err->{error} ($err->{code})";
+                push @errors, "SKU $err->{sku}: $err->{error} ($err->{code})";
+            }
+            elsif ($err->{order_id}) {
+                push @errors, "Order $err->{order_id}: $err->{error} ($err->{code})";
             }
             else {
                 push @errors, "$err->{error} ($err->{code})";
@@ -147,18 +167,30 @@ sub _format_msgs {
 
 sub failed_skus {
     my ($self) = @_;
-    return $self->_list_faulty_skus($self->skus_errors);
+    return $self->_list_faulty(sku => $self->skus_errors);
 }
 
 sub skus_with_warnings {
     my ($self) = @_;
-    return $self->_list_faulty_skus($self->skus_warnings);
+    return $self->_list_faulty(sku => $self->skus_warnings);
 }
 
-sub _list_faulty_skus {
-    my ($self, $list) = @_;
+sub failed_orders {
+    my ($self) = @_;
+    return $self->_list_faulty(order_id => $self->orders_errors);
+}
+
+sub orders_with_warnings {
+    my ($self) = @_;
+    return $self->_list_faulty(order_id => $self->orders_warnings);
+}
+
+
+sub _list_faulty {
+    my ($self, $what, $list) = @_;
+    die unless $what;
     if ($list && @$list) {
-        return map { $_->{sku} } @$list;
+        return map { $_->{$what} } @$list;
     }
     else {
         return;
