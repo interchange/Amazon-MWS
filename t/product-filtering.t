@@ -3,10 +3,18 @@
 use strict;
 use warnings;
 use utf8;
-use Test::More tests => 8;
+use Test::More;
 use Amazon::MWS::Uploader;
 use Amazon::MWS::XML::Product;
 use Data::Dumper;
+
+if (-d 'schemas') {
+    plan tests => 8;
+}
+else {
+    plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
+}
+
 
 my $existing_products = {
                          1234 => {
