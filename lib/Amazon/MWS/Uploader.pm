@@ -887,9 +887,7 @@ sub upload_feed {
                                                         shop_id => $self->_unique_shop_id }));
             }
             elsif ($type eq 'shipping_confirmation') {
-                $self->_exe_query($self->sqla->update(amazon_mws_orders => { shipping_confirmation_error => $result->errors },
-                                                      { shipping_confirmation_job_id => $job_id,
-                                                        shop_id => $self->_unique_shop_id }));
+                $self->register_ship_order_errors($job_id, $result);
             }
             
             # and we stop this job, has errors
@@ -903,7 +901,12 @@ sub _exe_query {
     my ($self, $stmt, @bind) = @_;
     my $sth = $self->dbh->prepare($stmt);
     # print $stmt, Dumper(\@bind);
-    $sth->execute(@bind);
+    eval {
+        $sth->execute(@bind);
+    };
+    if ($@) {
+        die "Failed to execute $stmt with params" . Dumper(\@bind);
+    }
     return $sth;
 }
 
@@ -1147,6 +1150,43 @@ sub delete_skus_feed {
     }
     return $feeder->create_feed(Product => \@messages);
 }
+
+sub register_ship_order_errors {
+    my ($self, $job_id, $result) = @_;
+    # here we get the amazon ids,
+    my @orders = $self->orders_in_shipping_job($job_id);
+    my $errors = $result->orders_errors;
+    # filter
+    my @errors_with_order = grep { $_->{order_id} } @$errors;
+    my %errs = map { $_->{order_id} => {job_id => $job_id, code => $_->{code}, error => $_->{error}} } @errors_with_order;
+
+    foreach my $ord (@orders) {
+        if (my $fault = $errs{$ord}) {
+            $self->_exe_query($self->sqla->update('amazon_mws_orders',
+                                                  {
+                                                   shipping_confirmation_error => "$fault->{code} $fault->{error}",
+                                                  },
+                                                  {
+                                                   amazon_order_id => $ord,
+                                                   shipping_confirmation_job_id => $job_id,
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
+        }
+        else {
+            # this looks good
+            $self->_exe_query($self->sqla->update('amazon_mws_orders',
+                                                  {
+                                                   shipping_confirmation_ok => 1,
+                                                  },
+                                                  {
+                                                   amazon_order_id => $ord,
+                                                   shipping_confirmation_job_id => $job_id,
+                                                   shop_id => $self->_unique_shop_id
+                                                  }));
+        }
+    }
+}
+
 
 sub register_errors {
     my ($self, $job_id, $result) = @_;
@@ -1537,6 +1577,21 @@ sub product_needs_upload {
     }
     print "$sku wasn't uploaded so far, scheduling it\n" if $debug;
     return $sku;
+}
+
+sub orders_in_shipping_job {
+    my ($self, $job_id) = @_;
+    die unless $job_id;
+    my $sth = $self->_exe_query($self->sqla->select(amazon_mws_orders => [qw/amazon_order_id/],
+                                                    {
+                                                     shipping_confirmation_job_id => $job_id,
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
+    my @orders;
+    while (my $row = $sth->fetchrow_hashref) {
+        push @orders, $row->{amazon_order_id};
+    }
+    return @orders;
 }
 
 
