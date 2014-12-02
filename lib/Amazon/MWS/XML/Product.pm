@@ -95,6 +95,8 @@ be a product which should be set as inactive without removing it,
 flipping the inventory to zero and refraining to do pass
 images/variants/price feeds.
 
+The price is rounded via sprintf '%.2f' by the module.
+
 =item currency
 
 Default to EUR. Valid values are: AUD BRL CAD CNY DEFAULT EUR GBP INR
