@@ -299,8 +299,13 @@ eval { $test = Amazon::MWS::XML::Product->new(
                                               manufacturer => '',
                                               ); };
 
-like $@, qr/Min characters is 1/, "Found exception when manufacturer is too short";
-
+$feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
+                                      schema_dir => 'schemas',
+                                      merchant_id => '__MERCHANT_ID__',
+                                      );
+unlike($feeder->product_feed, qr/<Manufacturer>/,
+       "No manufacturer found in the feed");
+diag $feeder->product_feed;
 
 $test = Amazon::MWS::XML::Product->new(sku => '12345',
                                        price => '10',

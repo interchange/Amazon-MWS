@@ -167,7 +167,7 @@ has description => (is => 'ro',
                     isa => sub { _check_length($_[0], 0, 2000) },
                    );
 has brand => (is => 'ro',
-              isa => sub { _check_length($_[0], 1, 50) },
+              isa => sub { _check_length($_[0], 0, 50) },
              );
 has condition => (is => 'ro',
                   default => sub { 'New' },
@@ -196,10 +196,10 @@ has condition_note => (
 has category_code => (is => 'ro');
 has product_data => (is => 'ro');
 has manufacturer_part_number => (is => 'ro',
-                                 isa => sub { _check_length($_[0], 1, 40) }
+                                 isa => sub { _check_length($_[0], 0, 40) }
                                 );
 has manufacturer => (is => 'ro',
-                     isa => sub { _check_length($_[0], 1, 50) });
+                     isa => sub { _check_length($_[0], 0, 50) });
 
 has search_terms => (is => 'ro', isa => ArrayRef);
 has features => (is => 'ro', isa => ArrayRef);
