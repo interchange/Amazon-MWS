@@ -13,6 +13,7 @@ use File::Spec;
 use DateTime;
 use SQL::Abstract;
 use Try::Tiny;
+use Scalar::Util qw/blessed/;
 
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
@@ -1023,12 +1024,18 @@ sub get_orders {
 
         # get the orderline
         my $orderline;
-        eval {
+        try {
             $orderline = $self->client->ListOrderItems(AmazonOrderId => $amws_id);
-        };
-        if (my $err = $@) {
-            die Dumper($err);
         }
+        catch {
+            my $err = $_;
+            if (blessed($err) && $err->isa('Amazon::MWS::Exception::Throttled')) {
+                die "Request is throttled. Consider to adjust order_days_range as documented at https://metacpan.org/pod/Amazon::MWS::Uploader#ACCESSORS";
+            }
+            else {
+                die Dumper($err);
+            }
+        };
         die "tokens not implemented, fix the code"
           if $orderline->{HasNext} || $orderline->{NextToken};
 
