@@ -105,12 +105,20 @@ has dbh => (is => 'lazy');
 =item order_days_range
 
 When calling get_orders, check the orders for the last X days. It
-accepts an integer which should be in the range 1-30. Defaults to 30.
+accepts an integer which should be in the range 1-30. Defaults to 7.
+
+Keep in mind that if you change the default and you have a lot of
+orders, you will get throttled because for each order we retrieve the
+orderline as well.
+
+DEVEL NOTE: a possible smart fix would be to store this object in the
+order (or into a closure) and make the orderline a lazy attribute
+which will call C<ListOrderItems>.
 
 =cut
 
 has order_days_range => (is => 'rw',
-                         default => sub { 30 },
+                         default => sub { 7 },
                          isa => sub {
                              my $days = $_[0];
                              die "Not an integer"
