@@ -17,6 +17,23 @@ Amazon::MWS::XML::Address
 
 Name of customer for this address.
 
+=item AddressLine1
+=item address1
+
+This is a field where Amazon stores the company name, or the c/o, or
+postal boxes, etc. It appears as the first line of the address, but
+you can't be sure what exactly it is (save you don't want to lose it).
+
+Sometimes the street address is here, sometimes is empty.
+
+=item AddressLine2
+=item address2
+
+This appears to be the regular street/number address line, sometimes.
+Sometimes is in the address1. You just can't know, so you have to use
+some euristics, like checking if they are both set, otherwise choosing
+the first available to use as street address.
+
 =item PostalCode
 
 Postal code for this address.
