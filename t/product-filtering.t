@@ -9,7 +9,7 @@ use Amazon::MWS::XML::Product;
 use Data::Dumper;
 
 if (-d 'schemas') {
-    plan tests => 8;
+    plan tests => 10;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -70,3 +70,17 @@ $uploader = Amazon::MWS::Uploader->new(%constructor);
 ok($uploader->product_needs_upload(1234 => '2014-11-11'));
 
 ok(scalar(@{ $uploader->products_to_upload }), "Found the product to upload");
+
+eval { Amazon::MWS::XML::Product->new(sku => '1234',
+                                      price => '10',
+                                      ean => '4444123412343',
+                                      images => [ "http://test.org/hello there.jpg" ]) };
+ok $@, "unescaped url found:" . $@;
+
+eval { Amazon::MWS::XML::Product->new(sku => '1234',
+                                      price => '10',
+                                      ean => '4444123412343',
+                                      images => [ "http://test.org/hello%20there.jpg" ]) };
+ok (!$@, "Escaped url are fine")
+
+

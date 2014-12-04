@@ -3,6 +3,7 @@ package Amazon::MWS::XML::Product;
 use strict;
 use warnings;
 
+use URI;
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 
@@ -308,8 +309,15 @@ has currency => (is => 'ro',
                  default => sub { 'EUR' });
 
 has images => (is => 'ro',
-               isa => ArrayRef);
-
+               isa => sub {
+                   die "Not an arrayref" unless is_ArrayRef($_[0]);
+                   foreach my $url (@{ $_[0] }) {
+                       my $check = URI->new($url)->as_string;
+                       die "Non-URI character in url $url (should be $check)"
+                         if $check ne $url;
+                   }
+               });
+               
 has children => (is => 'rw',
                  isa => ArrayRef);
 
