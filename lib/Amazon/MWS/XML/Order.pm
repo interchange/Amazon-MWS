@@ -42,6 +42,10 @@ parsed from the output of L<Amazon::MWS::Client>.
 It should be the output of C<ListOrders> or C<GetOrder> without the
 root, e.g. C<$response->{Orders}->{Order}->[0]>
 
+Field description:
+
+http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_GetOrder.html
+
 =head2 orderline
 
 It should be the output of C<ListOrderItems> without the root, like
@@ -235,5 +239,22 @@ sub order_status {
     return shift->order->{OrderStatus};
 }
 
+=head2 can_be_imported
+
+Return false if the status is Pending or Canceled.
+
+=cut
+
+sub can_be_imported {
+    my $self = shift;
+    my $status = $self->order_status;
+    if ($status eq 'Pending' or
+        $status eq 'Canceled') {
+        return;
+    }
+    else {
+        return 1;
+    }
+}
 
 1;
