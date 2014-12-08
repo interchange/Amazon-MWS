@@ -1304,10 +1304,15 @@ found.
 
 sub get_asin_for_eans {
     my ($self, @eans) = @_;
+    return $self->_get_asin_for_type(EAN => @eans);
+}
+
+sub _get_asin_for_type {
+    my ($self, $type, @list) = @_;
+    die "Max 5 products to get the asin for $type!" if @list > 5;
     my $client = $self->client;
-    die "too many eans passed (max 5)" if @eans > 5;
-    my $res = $client->GetMatchingProductForId(IdType => 'EAN',
-                                               IdList => \@eans,
+    my $res = $client->GetMatchingProductForId(IdType => $type,
+                                               IdList => \@list,
                                                MarketplaceId => $self->marketplace_id);
     my %ids;
     if ($res && @$res) {
