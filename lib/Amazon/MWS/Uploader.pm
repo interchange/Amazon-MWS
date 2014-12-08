@@ -174,9 +174,13 @@ If true, the first time C<products_to_upload> is called, products not
 passed to the C<products> constructor will be purged from the
 C<amazon_mws_products> table. Default to false.
 
+This setting is DEPRECATED because can have some unwanted
+side-effects. You are recommended to delete the obsoleted products
+yourself.
+
 =cut
 
-has purge_missing_products => (is => 'ro');
+has purge_missing_products => (is => 'rw');
 
 
 =item reset_all_errors
@@ -436,7 +440,6 @@ sub _build_products_to_upload {
           grep { !$_->{_examined} }
             values %$existing;
         if (@deletions) {
-            print "Purging missing items " . join(" ", @deletions) . "\n";
             $self->delete_skus(@deletions);
         }
     }
@@ -1135,6 +1138,32 @@ sub acknowledge_feed {
 sub delete_skus {
     my ($self, @skus) = @_;
     return unless @skus;
+    print "Trying to purge missing items " . join(" ", @skus) . "\n";
+
+    # delete only products which are not in pending or failed status
+    my $check = $self
+      ->_exe_query($self->sqla
+                   ->select('amazon_mws_products', [qw/sku/],
+                            {
+                             sku => { -in => \@skus },
+                             shop_id => $self->_unique_shop_id,
+                             status => { -not_in => [
+                                                     qw/pending
+                                                        failed/
+                                                    ],
+                                       },
+                            }));
+    @skus = ();
+    while (my $p = $check->fetchrow_hashref) {
+        push @skus, $p->{sku};
+    }
+
+    unless (@skus) {
+        print "Not purging anything, items in pending or failed status\n";
+        return;
+    }
+    print "Actually purging items " . join(" ", @skus) . "\n";
+
     my $feed_content = $self->delete_skus_feed(@skus);
     $self->prepare_feeds(product_deletion => [{
                                                name => 'product',
@@ -1609,9 +1638,51 @@ sub orders_in_shipping_job {
     return @orders;
 }
 
+=head2 put_product_on_error(sku => $sku, timestamp_string => $timestamp, error_code => $error_code, error_msg => $error)
+
+Register a custom error for the product $sku with error $error and
+$timestamp as the timestamp string. The error is optional, and will be
+"shop error" if not provided. The error code will be 1 if not provided.
+
+=cut
+
+sub put_product_on_error {
+    my ($self, %product) = @_;
+    die "Missing sku" unless $product{sku};
+    die "Missing timestamp" unless defined $product{timestamp_string};
+
+    my %identifier = (
+                      shop_id => $self->_unique_shop_id,
+                      sku => $product{sku},
+                     );
+    my %errors = (
+                  status => 'failed',
+                  error_msg => $product{error_msg} || 'shop error',
+                  error_code => $product{error_code} || 1,
+                  timestamp_string => $product{timestamp_string},
+                 );
 
 
-
+    # check if we have it
+    my $sth = $self->_exe_query($self->sqla
+                                ->select('amazon_mws_products',
+                                         [qw/sku/],  { %identifier }));
+    if ($sth->fetchrow_hashref) {
+        $sth->finish;
+        print "Updating $product{sku} with error $product{error_msg}\n";
+        $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                              \%errors, \%identifier));
+    }
+    else {
+        print "Inserting $identifier{sku} with error $errors{error_msg}\n";
+        $self->_exe_query($self->sqla
+                          ->insert('amazon_mws_products',
+                                   {
+                                    %identifier,
+                                    %errors,
+                                   }));
+    }
+}
 
 
 1;
