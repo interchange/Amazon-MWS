@@ -875,7 +875,19 @@ sub upload_feed {
                                                         shop_id => $self->_unique_shop_id }));
             }
             if (my $warn = $result->warnings) {
-                warn "$warn\n";
+                if (my $warns = $result->skus_warnings) {
+                    foreach my $w (@$warns) {
+                        if ($w->{code} eq '8008') {
+                            print "$w->{sku}: $w->{error} ($w->{code})\n";
+                        }
+                        else {
+                            warn "$w->{sku}: $w->{error} ($w->{code})\n";
+                        }
+                    }
+                }
+                else {
+                    warn "$warn\n";
+                }
             }
             return 1;
         }
