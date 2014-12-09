@@ -1723,4 +1723,68 @@ sub put_product_on_error {
 }
 
 
+=head2 cancel_feed($feed_id)
+
+Call the CancelFeedSubmissions API and abort the feed and the
+belonging job if found in the list. Return the response, which
+probably is not even meaningful. It is a big FeedSubmissionInfo with
+the past feed submissions.
+
+=cut
+
+sub cancel_feed {
+    my ($self, $feed) = @_;
+    die "Missing feed id argument" unless $feed;
+    # do the api call
+    my $sth = $self->_exe_query($self->sqla
+                                ->select(amazon_mws_feeds => [qw/amws_job_id/],
+                                         {
+                                          shop_id => $self->_unique_shop_id,
+                                          feed_id => $feed,
+                                          aborted => 0,
+                                          success => 0,
+                                          processing_complete => 0,
+                                         }));
+    my $feed_record = $sth->fetchrow_hashref;
+    if ($feed_record) {
+        $sth->finish;
+        print "Found $feed in pending state\n";
+        # abort it on our side
+        $self->_exe_query($self->sqla
+                          ->update('amazon_mws_feeds',
+                                   {
+                                    aborted => 1,
+                                    errors => "Canceled by shop action",
+                                   },
+                                   {
+                                    feed_id => $feed,
+                                    shop_id => $self->_unique_shop_id,
+                                   }));
+        # and abort the job as well
+        $self->_exe_query($self->sqla
+                          ->update('amazon_mws_jobs',
+                                   {
+                                    aborted => 1,
+                                   },
+                                   {
+                                    amws_job_id => $feed_record->{amws_job_id},
+                                    shop_id => $self->_unique_shop_id,
+                                   }));
+        # and set the belonging products to redo
+        $self->_exe_query($self->sqla
+                          ->update('amazon_mws_products',
+                                   {
+                                    status => 'redo',
+                                   },
+                                   {
+                                    amws_job_id => $feed_record->{amws_job_id},
+                                    shop_id => $self->_unique_shop_id,
+                                   }));
+    }
+    else {
+        warn "No $feed found in pending list, trying to cancel anyway\n";
+    }
+    return $self->client->CancelFeedSubmissions(IdList => [ $feed ]);
+}
+
 1;
