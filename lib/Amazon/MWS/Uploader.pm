@@ -1295,12 +1295,21 @@ marketplace. Max EANs: 5.x
 
 http://docs.developer.amazonservices.com/en_US/products/Products_GetMatchingProductForId.html
 
+=head2 get_asin_for_skus(@skus)
+
+Same as above (with the same limit of 5 items), but for SKUs.
+
 =head2 get_asin_for_ean($ean)
 
 Same as above, but for a single ean. Return the ASIN or undef if not
 found.
 
 =cut
+
+sub get_asin_for_skus {
+    my ($self, @skus) = @_;
+    return $self->_get_asin_for_type(SellerSKU => @skus);
+}
 
 sub get_asin_for_eans {
     my ($self, @eans) = @_;
@@ -1333,6 +1342,18 @@ sub get_asin_for_ean {
         return;
     }
 }
+
+sub get_asin_for_sku {
+    my ($self, $sku) = @_;
+    my $res = $self->get_asin_for_skus($sku);
+    if ($res && $res->{$sku}) {
+        return $res->{$sku};
+    }
+    else {
+        return;
+    }
+}
+
 
 =head2 get_product_categories($ean)
 

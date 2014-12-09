@@ -33,6 +33,8 @@ revision of the product.
 
 =item ean
 
+=item asin
+
 =item title
 
 =item description
@@ -163,6 +165,9 @@ has sku => (is => 'ro', required => 1);
 has timestamp_string => (is => 'ro',
                          default => sub { '0' });
 has ean => (is => 'ro');
+
+has asin => (is => 'ro');
+
 has title => (is => 'ro',
               isa => sub { _check_length($_[0], 1, 500) },
              );
