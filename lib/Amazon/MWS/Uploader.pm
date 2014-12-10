@@ -421,6 +421,7 @@ sub _build_products_to_upload {
                 # skip failed children, but if the current status of
                 # parent is failed, and we reached this point, retry.
                 if ($existing->{$child} and
+                    $existing->{$sku} and
                     $existing->{$sku}->{status} ne 'failed' and
                     $existing->{$child}->{status} eq 'failed') {
                     print "Ignoring failed variant $child\n";
