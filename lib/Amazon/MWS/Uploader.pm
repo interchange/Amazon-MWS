@@ -1357,9 +1357,13 @@ sub _get_asin_for_type {
     my ($self, $type, @list) = @_;
     die "Max 5 products to get the asin for $type!" if @list > 5;
     my $client = $self->client;
-    my $res = $client->GetMatchingProductForId(IdType => $type,
-                                               IdList => \@list,
-                                               MarketplaceId => $self->marketplace_id);
+    my $res;
+    try {
+        $res = $client->GetMatchingProductForId(IdType => $type,
+                                                IdList => \@list,
+                                                MarketplaceId => $self->marketplace_id);
+    }
+    catch { die Dumper($_) };
     my %ids;
     if ($res && @$res) {
         foreach my $product (@$res) {
@@ -1453,13 +1457,17 @@ sub get_lowest_price_for_ean {
 sub get_lowest_price_for_asin {
     my ($self, $asin, $condition) = @_;
     die "Wrong usage, missing argument asin" unless $asin;
-    my $listing = $self->client
+    my $listing;
+    try { $listing = $self->client
       ->GetLowestOfferListingsForASIN(
                                       ASINList => [ $asin ],
                                       MarketplaceId => $self->marketplace_id,
                                       ExcludeMe => 1,
                                       ItemCondition => $condition || 'New',
                                      );
+    }
+    catch { die Dumper($_) };
+
     return unless $listing && @$listing;
     my $lowest;
     foreach my $item (@$listing) {
