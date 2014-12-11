@@ -1020,21 +1020,30 @@ sub get_orders {
         $from_date = DateTime->now;
         $from_date->subtract(days => $self->order_days_range);
     }
+    my @order_structs;
     my $res;
-    eval {
+    try {
         $res = $self->client->ListOrders(
                                          MarketplaceId => [$self->marketplace_id],
                                          CreatedAfter  => $from_date,
                                         );
+        push @order_structs, @{ $res->{Orders}->{Order} };
+    }
+    catch {
+        die Dumper($_);
     };
-    if (my $err = $@) {
-        die Dumper($err);
+    while (my $next_token = $res->{NextToken}) {
+        # print "Found next token!\n";
+        try {
+            $res = $self->client->ListOrdersByNextToken(NextToken => $next_token);
+            push @order_structs, @{ $res->{Orders}->{Order} };
+        }
+        catch {
+            die Dumper($_);
+        };
     }
     my @orders;
-    # TODO: there could be a next token thing to parse.
-    die "tokens not implemented, fix the code"
-      if $res->{HasNext} || $res->{NextToken};
-    foreach my $order (@{ $res->{Orders}->{Order} }) {
+    foreach my $order (@order_structs) {
         my $amws_id = $order->{AmazonOrderId};
         die "Missing amazon AmazonOrderId?!" unless $amws_id;
 

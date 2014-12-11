@@ -30,7 +30,8 @@ define_api_method ListOrders =>
         CreatedAfter            => { type => 'datetime' },
         CreatedBefore           => { type => 'datetime' },
         LastUpdatedAfter        => { type => 'datetime' },
-        LastUpdatedBefore       => { type => 'datetime' }
+        LastUpdatedBefore       => { type => 'datetime' },
+        MaxResultsPerPage       => { type => 'nonNegativeInteger' },
     },
     respond => sub {
 	my $root = shift;
@@ -40,6 +41,7 @@ define_api_method ListOrders =>
 
 define_api_method ListOrdersByNextToken =>
     service => "$orders_service",
+    version => $version,
     parameters => {
        NextToken => {
             type     => 'string',
