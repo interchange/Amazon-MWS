@@ -1050,8 +1050,10 @@ sub get_orders {
         my $get_orderline = sub {
         # begin of the closure
         my $orderline;
+        my @items;
         try {
             $orderline = $self->client->ListOrderItems(AmazonOrderId => $amws_id);
+            push @items, @{ $orderline->{OrderItems}->{OrderItem} };
         }
         catch {
             my $err = $_;
@@ -1062,10 +1064,17 @@ sub get_orders {
                 die Dumper($err);
             }
         };
-        die "tokens not implemented, fix the code"
-          if $orderline->{HasNext} || $orderline->{NextToken};
-
-        return $orderline->{OrderItems}->{OrderItem};
+        while (my $next = $orderline->{NextToken}) {
+            try {
+                $orderline =
+                  $self->client->ListOrderItemsByNextToken(NextToken  => $next);
+                push @items, @{ $orderline->{OrderItems}->{OrderItem} };
+            }
+            catch {
+                die Dumper($_);
+            };
+        }
+        return \@items;
         # end of the closure
         };
 

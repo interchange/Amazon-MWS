@@ -86,6 +86,7 @@ define_api_method ListOrderItems =>
 
 define_api_method ListOrderItemsByNextToken =>
     service => "$orders_service",
+    version => $version,
     parameters => {
        NextToken => {
             type     => 'string',
