@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 8;
 
 use Amazon::MWS::XML::Order;
 
@@ -91,5 +91,28 @@ my $order = Amazon::MWS::XML::Order->new(order => $order_data,
 
 is($order->subtotal, "119.80");
 my @items = $order->items;
+is($items[0]->price, "59.90");
+ok ($order->order_is_shipped, "It is shipped");
+
+my $global = 0;
+
+my $get_orderline = sub {
+    diag "Retrieving orderline";
+    $global++;
+    return $orderline_data;
+};
+
+$order = Amazon::MWS::XML::Order->new(order => $order_data,
+                                      retrieve_orderline_sub => $get_orderline);
+
+my $amazon_order_number = $order->amazon_order_number;
+
+is $global, 0, "No get_orderline called yet";
+
+my @newitems = $order->items;
+
+is $global, 1, "get_orderline called";
+
+is_deeply(\@newitems, \@items);
 is($items[0]->price, "59.90");
 ok ($order->order_is_shipped, "It is shipped");

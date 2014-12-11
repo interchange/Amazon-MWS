@@ -1038,7 +1038,8 @@ sub get_orders {
         my $amws_id = $order->{AmazonOrderId};
         die "Missing amazon AmazonOrderId?!" unless $amws_id;
 
-        # get the orderline
+        my $get_orderline = sub {
+        # begin of the closure
         my $orderline;
         try {
             $orderline = $self->client->ListOrderItems(AmazonOrderId => $amws_id);
@@ -1055,10 +1056,12 @@ sub get_orders {
         die "tokens not implemented, fix the code"
           if $orderline->{HasNext} || $orderline->{NextToken};
 
-        my $items = $orderline->{OrderItems}->{OrderItem};
+        return $orderline->{OrderItems}->{OrderItem};
+        # end of the closure
+        };
 
         push @orders, Amazon::MWS::XML::Order->new(order => $order,
-                                                   orderline => $items);
+                                                   retrieve_orderline_sub => $get_orderline);
     }
     return @orders;
 }

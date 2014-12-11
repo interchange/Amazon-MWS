@@ -51,6 +51,13 @@ http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_GetOrder
 It should be the output of C<ListOrderItems> without the root, like
 C<$response->{OrderItems}->{OrderItem}>.
 
+=head2 retrieve_orderline_sub
+
+If you want to save API calls, instead of initialize the orderline,
+you may want to pass a subroutine (which will accept no arguments, so
+it should be a closure) to the constructor instead, which will be
+called lazily if the object needs to access the orderline.
+
 =head2 order_number
 
 Our order ID.
@@ -66,9 +73,19 @@ has order => (is => 'rw',
               required => 1,
               isa => HashRef);
 
-has orderline => (is => 'rw',
-                  required => 1,
+has orderline => (is => 'lazy',
                   isa => ArrayRef);
+
+has retrieve_orderline_sub => (is => 'ro',
+                               isa => CodeRef);
+
+
+sub _build_orderline {
+    my $self = shift;
+    my $sub = $self->retrieve_orderline_sub;
+    die "Missing retrieve_orderline_sub" unless $sub;
+    return $sub->();
+}
 
 has order_number => (is => 'rw');
 
