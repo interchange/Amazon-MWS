@@ -379,6 +379,7 @@ sub _build_existing_products {
                                                                                error_code
                                                                               /],
                                                     {
+                                                     status => { -not_in => [qw/deleted/] },
                                                      shop_id => $self->_unique_shop_id,
                                                     }));
     my %uploaded;
@@ -1183,6 +1184,7 @@ sub delete_skus {
                              shop_id => $self->_unique_shop_id,
                              status => { -not_in => [
                                                      qw/pending
+                                                        deleted
                                                         failed/
                                                     ],
                                        },
@@ -1193,7 +1195,7 @@ sub delete_skus {
     }
 
     unless (@skus) {
-        print "Not purging anything, items in pending or failed status\n";
+        print "Not purging anything, items in pending or failed status or already deleted\n";
         return;
     }
     print "Actually purging items " . join(" ", @skus) . "\n";
@@ -1204,7 +1206,8 @@ sub delete_skus {
                                                content => $feed_content,
                                               }] );
     # delete the skus locally
-    $self->_exe_query($self->sqla->delete('amazon_mws_products',
+    $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                          { status => 'deleted' },
                                           {
                                            sku => { -in => \@skus },
                                            shop_id => $self->_unique_shop_id,
