@@ -76,7 +76,7 @@ accessed read-only:
 The DBI handle. If not provided will be built using the following
 self-describing accessor:
 
-=item db_dns
+=item db_dsn
 
 =item db_username
 
