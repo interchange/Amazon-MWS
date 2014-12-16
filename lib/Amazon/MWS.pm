@@ -18,11 +18,23 @@ See L<Amazon::MWS::Client>
 
 =head1 MWS in practice
 
+=head2 Product price
+
 Every product uploaded needs a price of 0.01 or higher, otherwise you
 get the following error:
 
     0.00 price (standard or sales) will not be accepted.
     Please ensure that every SKU in your feed has a price at least equal to or greater than 0.01
+
+=head2 Multiple marketplaces
+
+You can use this module and the uploader for multiple Amazon marketplaces.
+
+For marketplaces with a different currency you need to convert your price first.
+
+The list of marketplaces can be found at:
+
+L<http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
 
 =head1 Uploader Module
 
