@@ -329,7 +329,7 @@ Provided by Amazon.
 
 =item marketplace_id
 
-http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html
+L<http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
 
 =item endpoint
 
