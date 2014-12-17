@@ -29,6 +29,7 @@ get the following error:
 =head2 Multiple marketplaces
 
 You can use this module and the uploader for multiple Amazon marketplaces.
+Please make sure that you disable Amazon's synchronisation between marketplaces.
 
 For marketplaces with a different currency you need to convert your price first.
 
