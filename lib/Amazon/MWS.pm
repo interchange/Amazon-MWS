@@ -26,6 +26,13 @@ get the following error:
     0.00 price (standard or sales) will not be accepted.
     Please ensure that every SKU in your feed has a price at least equal to or greater than 0.01
 
+=head2 Shipping costs
+
+You need to configure the shipping costs in Amazon Seller Central, you can't pass them
+through MWS:
+
+L<https://sellercentral.amazon.com/gp/shipping/dispatch.html>
+
 =head2 Stuck uploads
 
 There is no guarantee that Amazon finishes your uploads at all. We had uploads
