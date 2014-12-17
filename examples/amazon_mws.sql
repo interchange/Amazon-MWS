@@ -65,4 +65,4 @@ CREATE TABLE amazon_mws_orders (
 ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_job_id VARCHAR(64) REFERENCES amazon_mws_jobs(amws_job_id);
 ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_ok BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_error TEXT;
-
+ALTER TABLE amazon_mws_jobs   ADD COLUMN job_started_epoch INTEGER;

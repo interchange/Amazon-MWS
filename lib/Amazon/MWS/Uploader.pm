@@ -272,7 +272,18 @@ sub _build__force_hashref {
 If set to an integer, limit the inventory to this value. Setting this
 to 0 will disable it.
 
+=item job_hours_timeout
+
+If set to an integer, abort the job after X hours are elapsed since
+the job was started. Default to 3 hours. Set to 0 to disable (not
+recommended).
+
 =cut
+
+has job_hours_timeout => (is => 'ro',
+                          isa => Int,
+                          default => sub { 3 });
+
 
 has limit_inventory => (is => 'ro',
                         isa => Int);
@@ -608,13 +619,15 @@ sub _mark_products_as_pending {
 sub prepare_feeds {
     my ($self, $task, $feeds) = @_;
     die "Missing task ($task) and feeds ($feeds)" unless $task && $feeds;
-    my $job_id = $task . "-" . DateTime->now->strftime('%F-%H-%M');
+    my $job_id = $task . "-" . DateTime->now->strftime('%F-%H-%M-%S');
+    my $job_started_epoch = time();
 
     $self->_exe_query($self->sqla
                       ->insert(amazon_mws_jobs => {
                                                    amws_job_id => $job_id,
                                                    shop_id => $self->_unique_shop_id,
                                                    task => $task,
+                                                   job_started_epoch => $job_started_epoch,
                                                   }));
 
     # to complete the process, we need to fill out these five
@@ -662,20 +675,58 @@ sub resume {
     while (my $row = $pending->fetchrow_hashref) {
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {
+            if (my $timeout = $self->job_hours_timeout) {
+                if (my $started = $row->{job_started_epoch}) {
+                    my $now = time();
+                    if (($now - $started) > ($timeout * 60 * 60)) {
+                        warn "Timeout reached for $row->{amws_job_id}, aborting\n";
+                        $self->cancel_job($row->{task}, $row->{amws_job_id});
+                        next;
+                    }
+                }
+            }
             $self->process_feeds($row);
         }
         else {
             warn "No directory " . $self->_feed_job_dir($row->{amws_job_id}) .
               " found, removing job id $row->{amws_job_id}\n";
-            my ($del_stmt, @del_bind) = $self->sqla
-              ->delete(amazon_mws_jobs => {
-                                           amws_job_id => $row->{amws_job_id},
-                                           shop_id => $self->_unique_shop_id,
-                                          });
-            $self->_exe_query($del_stmt, @del_bind);
+            $self->cancel_job($row->{task}, $row->{amws_job_id});
         }
     }
 }
+
+sub cancel_job {
+    my ($self, $task, $job_id) = @_;
+    $self->_exe_query($self->sqla->update('amazon_mws_jobs',
+                                          {
+                                           aborted => 1,
+                                          },
+                                          {
+                                           amws_job_id => $job_id,
+                                           shop_id => $self->_unique_shop_id,
+                                          }));
+
+    # and revert the products' status
+    my $status;
+    if ($task eq 'product_deletion') {
+        # let's pretend we were deleting good products
+        $status = 'ok';
+    }
+    elsif ($task eq 'upload') {
+        $status = 'redo';
+    }
+    if ($status) {
+        print "Updating product to $status for products with job id $job_id\n";
+        $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                              { status => $status  },
+                                              {
+                                               amws_job_id => $job_id,
+                                               shop_id => $self->_unique_shop_id,
+                                              }));
+    }
+}
+
+
 
 =head2 process_feeds(\%job_row)
 
@@ -1178,36 +1229,50 @@ sub delete_skus {
     # delete only products which are not in pending or failed status
     my $check = $self
       ->_exe_query($self->sqla
-                   ->select('amazon_mws_products', [qw/sku/],
+                   ->select('amazon_mws_products', [qw/sku status/],
                             {
                              sku => { -in => \@skus },
                              shop_id => $self->_unique_shop_id,
-                             status => { -not_in => [
-                                                     qw/pending
-                                                        deleted
-                                                        failed/
-                                                    ],
-                                       },
                             }));
-    @skus = ();
+    my %our_skus;
     while (my $p = $check->fetchrow_hashref) {
-        push @skus, $p->{sku};
+        $our_skus{$p->{sku}} = $p->{status};
     }
+    my @checked;
+    while (@skus) {
+        my $sku = shift @skus;
+        if (my $status = $our_skus{$sku}) {
+            if ($status eq 'pending' or
+                $status eq 'deleted' or
+                $status eq 'failed') {
+                print "Skipping $sku deletion, in status $status\n";
+                next;
+            }
+        }
+        else {
+            warn "$sku not found in amazon_mws_products, deleting anyway\n";
+        }
+        push @checked, $sku;
+    }
+    @skus = @checked;
 
     unless (@skus) {
-        print "Not purging anything, items in pending or failed status or already deleted\n";
+        print "Not purging anything\n";
         return;
     }
     print "Actually purging items " . join(" ", @skus) . "\n";
 
     my $feed_content = $self->delete_skus_feed(@skus);
-    $self->prepare_feeds(product_deletion => [{
-                                               name => 'product',
-                                               content => $feed_content,
-                                              }] );
+    my $job_id = $self->prepare_feeds(product_deletion => [{
+                                                            name => 'product',
+                                                            content => $feed_content,
+                                                           }] );
     # delete the skus locally
     $self->_exe_query($self->sqla->update('amazon_mws_products',
-                                          { status => 'deleted' },
+                                          {
+                                           status => 'deleted',
+                                           amws_job_id => $job_id,
+                                          },
                                           {
                                            sku => { -in => \@skus },
                                            shop_id => $self->_unique_shop_id,
