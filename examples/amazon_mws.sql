@@ -66,3 +66,4 @@ ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_job_id VARCHAR(64
 ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_ok BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_error TEXT;
 ALTER TABLE amazon_mws_jobs   ADD COLUMN job_started_epoch INTEGER;
+ALTER TABLE amazon_mws_jobs   ADD COLUMN status VARCHAR(255);

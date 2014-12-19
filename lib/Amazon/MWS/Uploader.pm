@@ -520,7 +520,7 @@ Return the job id
 =cut
 
 sub _feed_job_dir {
-    my ($self, $job_id) = @_;
+    my ($self, $job_id, $create) = @_;
     die unless $job_id;
     my $shop_id = $self->_unique_shop_id;
     $shop_id =~ s/[^0-9A-Za-z_-]//g;
@@ -528,18 +528,22 @@ sub _feed_job_dir {
       unless $shop_id;
     my $feed_root = File::Spec->catdir($self->feed_dir,
                                        $shop_id);
-    mkdir $feed_root unless -d $feed_root;
+    if ($create) {
+        mkdir $feed_root unless -d $feed_root;
+    }
 
     my $feed_subdir = File::Spec->catdir($feed_root,
                                          $job_id);
-    mkdir $feed_subdir unless -d $feed_subdir;
+    if ($create) {
+        mkdir $feed_subdir unless -d $feed_subdir;
+    }
     return $feed_subdir;
 }
 
 sub _feed_file_for_method {
     my ($self, $job_id, $feed_type) = @_;
     die unless $job_id && $feed_type;
-    my $feed_subdir = $self->_feed_job_dir($job_id);
+    my $feed_subdir = $self->_feed_job_dir($job_id, "create");
     my $file = File::Spec->catfile($feed_subdir, $feed_type . '.xml');
     return File::Spec->rel2abs($file);
 }
@@ -680,7 +684,8 @@ sub resume {
                     my $now = time();
                     if (($now - $started) > ($timeout * 60 * 60)) {
                         warn "Timeout reached for $row->{amws_job_id}, aborting\n";
-                        $self->cancel_job($row->{task}, $row->{amws_job_id});
+                        $self->cancel_job($row->{task}, $row->{amws_job_id},
+                                          "Job timed out after $timeout hours");
                         next;
                     }
                 }
@@ -690,16 +695,18 @@ sub resume {
         else {
             warn "No directory " . $self->_feed_job_dir($row->{amws_job_id}) .
               " found, removing job id $row->{amws_job_id}\n";
-            $self->cancel_job($row->{task}, $row->{amws_job_id});
+            $self->cancel_job($row->{task}, $row->{amws_job_id},
+                              "Job canceled due to missing feed directory");
         }
     }
 }
 
 sub cancel_job {
-    my ($self, $task, $job_id) = @_;
+    my ($self, $task, $job_id, $reason) = @_;
     $self->_exe_query($self->sqla->update('amazon_mws_jobs',
                                           {
                                            aborted => 1,
+                                           status => $reason,
                                           },
                                           {
                                            amws_job_id => $job_id,
@@ -779,7 +786,10 @@ sub process_feeds {
     # a job was aborted
     my $update;
     if ($aborted) {
-        $update = { aborted => 1 };
+        $update = {
+                   aborted => 1,
+                   status => 'Feed error',
+                  };
         warn "Job $job_id aborted!\n";
     }
     elsif ($success == $total) {
@@ -1863,6 +1873,7 @@ sub cancel_feed {
                           ->update('amazon_mws_jobs',
                                    {
                                     aborted => 1,
+                                    status => "Job aborted by cancel_feed",
                                    },
                                    {
                                     amws_job_id => $feed_record->{amws_job_id},
