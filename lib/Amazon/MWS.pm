@@ -49,6 +49,47 @@ The list of marketplaces can be found at:
 
 L<http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
 
+=head2 Throttling and Quota
+
+With Amazon MWS you have to deal with Amazon throttling your uploads and
+imposing quotas.
+
+Possible reasons:
+
+=over 4
+
+=item Upload too often
+
+=item Stuck uploads
+
+=item Orders with orderlines
+
+=back
+
+=head3 Throttle Reponse
+
+    <?xml version="1.0"?>
+    <ErrorResponse xmlns="http://mws.amazonaws.com/doc/2009-01-01/">
+      <Error>
+      <Type></Type>
+      <Code>RequestThrottled</Code>
+      <Message>Request is throttled</Message>
+    </Error>
+    <RequestID>a7b39ee6-4f76-48ee-92f1-43bc54f693df</RequestID>
+    </ErrorResponse>
+
+=head3 Quota Exceeded Error Response
+
+    <?xml version="1.0"?>
+    <ErrorResponse xmlns="http://mws.amazonaws.com/doc/2009-01-01/">
+      <Error>
+        <Type></Type>
+        <Code>QuotaExceeded</Code>
+        <Message>You exceeded your quota of 80.0 requests per 1 hour for operation Feeds/2009-01-01/GetFeedSubmissionList.  Your quota will reset on Thu Dec 18 07:39:00 UTC 2014</Message>
+      </Error>
+      <RequestID>5115e00d-35a8-4589-8083-f0ef998f76ef</RequestID>
+    </ErrorResponse>
+
 =head1 Uploader Module
 
 L<Amazon::MWS::Uploader> is an upload agent for Amazon::MWS.
