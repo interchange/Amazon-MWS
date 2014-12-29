@@ -102,6 +102,34 @@ has db_options => (is => 'ro',
                   );
 has dbh => (is => 'lazy');
 
+=item skus_warnings_modes
+
+Determines how to treat SKU warnings. This is a hash reference with
+the code of the warning as key and one of the following modes
+as value:
+
+=over 4
+
+=item warn
+
+Prints warning from Amazon with C<warn> function (default mode).
+
+=item print
+
+Prints warning from Amazon with C<print> function (default mode).
+
+=item skip
+
+Ignores warning from Amazon.
+
+=back
+
+=cut
+
+has skus_warnings_modes => (is => 'rw',
+                   isa => HashRef,
+                   default => sub {{}},
+               );
 
 =item order_days_range
 
@@ -940,11 +968,23 @@ sub upload_feed {
             if (my $warn = $result->warnings) {
                 if (my $warns = $result->skus_warnings) {
                     foreach my $w (@$warns) {
-                        if ($w->{code} eq '8008') {
+                        my $mode = 'warn';
+
+                        if (exists $self->skus_warnings_modes->{$w->{code}}) {
+                            $mode = $self->skus_warnings_modes->{$w->{code}};
+                        }
+
+                        if ($mode eq 'print' || $w->{code} eq '8008') {
                             print "$w->{sku}: $w->{error} ($w->{code})\n";
                         }
-                        else {
+                        elsif ($mode eq 'warn') {
                             warn "$w->{sku}: $w->{error} ($w->{code})\n";
+                        }
+                        elsif ($mode eq 'skip') {
+                            # ignore SKU warning
+                        }
+                        else {
+                            warn "$w->{sku}: Invalid mode $mode for SKU warning $w->{code}\n";
                         }
                     }
                 }
