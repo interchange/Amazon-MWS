@@ -995,7 +995,7 @@ sub upload_feed {
             return 1;
         }
         else {
-            warn "Error on feed $feed_id ($type) : " . $result->xml;
+            print "Error on feed $feed_id ($type) : " . $result->xml;
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        {
