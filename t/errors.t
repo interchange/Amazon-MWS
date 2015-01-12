@@ -7,7 +7,7 @@ use Data::Dumper;
 use Test::More;
 
 if (-d 'schemas') {
-    plan tests => 24;
+    plan tests => 26;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -44,7 +44,7 @@ my $xml = <<'XML';
                         <Result>
                                 <MessageID>2</MessageID>
                                 <ResultCode>Error</ResultCode>
-                                <ResultMessageCode>6024</ResultMessageCode>
+                                <ResultMessageCode>6025</ResultMessageCode>
                                 <ResultDescription>Seller is not authorized to list products by this brand name in this product line or category. For more details, see http://sellercentral.amazon.de/gp/errorcode/6024</ResultDescription>
                                 <AdditionalInfo>
                                         <SKU>12110</SKU>
@@ -53,7 +53,7 @@ my $xml = <<'XML';
                         <Result>
                                 <MessageID>3</MessageID>
                                 <ResultCode>Error</ResultCode>
-                                <ResultMessageCode>6024</ResultMessageCode>
+                                <ResultMessageCode>6026</ResultMessageCode>
                                 <ResultDescription>Seller is not authorized to list products by this brand name in this product line or category. For more details, see http://sellercentral.amazon.de/gp/errorcode/6024</ResultDescription>
                                 <AdditionalInfo>
                                         <SKU>12112</SKU>
@@ -93,6 +93,7 @@ XML
 
 my $result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
                                                                    schema_dir => 'schemas',
+                                                                   low_priority_error_codes => [6025, 6026],
                                                                   );
 
 ok($result);
@@ -106,6 +107,12 @@ ok($result->skus_errors, "Error structure found");
 
 is_deeply([ $result->skus_with_warnings ], []);
 is_deeply([ $result->failed_skus ], [qw/16414 12110 12112 14742 12194 16415/]);
+
+is(scalar($result->report_errors), 4, "4 errors in report errors")
+  or diag Dumper([$result->report_errors]);
+is(scalar($result->report_errors_low_priority), 2, "2 errors in report errors")
+  or diag Dumper([$result->report_errors_low_priority]);
+
 
 $xml = <<'XML';
 <?xml version="1.0" encoding="UTF-8"?>

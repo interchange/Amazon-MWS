@@ -54,6 +54,7 @@ The table structure needed is defined and commented in sql/amazon.sql
                                          marketplace_id => 'xxx',
                                          endpoint => 'xxx',
   
+                                         low_priority_error_codes => [6024, 6025],
                                          products => \@products,
                                         );
   
@@ -122,9 +123,19 @@ Prints warning from Amazon with C<print> function (default mode).
 
 Ignores warning from Amazon.
 
+=item low_priority_error_codes
+
+A arrayref of error codes for we we should issue a print (not a warn)
+when reporting a feed error.
+
 =back
 
 =cut
+
+has low_priority_error_codes => (is => 'ro',
+                                 isa => ArrayRef,
+                                 default => sub { [] },
+                                );
 
 has skus_warnings_modes => (is => 'rw',
                    isa => HashRef,
@@ -995,7 +1006,12 @@ sub upload_feed {
             return 1;
         }
         else {
-            print "Error on feed $feed_id ($type) : " . $result->xml;
+            foreach my $error_msg ($result->report_errors) {
+                warn $error_msg . "\n";
+            }
+            foreach my $error_msg ($result->report_errors_low_priority) {
+                print $error_msg . "\n";
+            }
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
                                        {
@@ -1100,10 +1116,12 @@ sub submission_result {
         }
     };
     die unless $xml;
-    return Amazon::MWS::XML::Response::FeedSubmissionResult->new(
-                                                                 xml => $xml,
-                                                                 schema_dir => $self->schema_dir,
-                                                                );
+    return Amazon::MWS::XML::Response::FeedSubmissionResult
+      ->new(
+            xml => $xml,
+            schema_dir => $self->schema_dir,
+            low_priority_error_codes => [ @{$self->low_priority_error_codes} ],
+           );
 }
 
 =head2 get_orders($from_date)
