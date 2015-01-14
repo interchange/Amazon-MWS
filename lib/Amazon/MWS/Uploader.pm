@@ -718,14 +718,17 @@ sub resume {
     while (my $row = $pending->fetchrow_hashref) {
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {
-            if (my $timeout = $self->job_hours_timeout) {
-                if (my $started = $row->{job_started_epoch}) {
-                    my $now = time();
-                    if (($now - $started) > ($timeout * 60 * 60)) {
-                        warn "Timeout reached for $row->{amws_job_id}, aborting\n";
-                        $self->cancel_job($row->{task}, $row->{amws_job_id},
-                                          "Job timed out after $timeout hours");
-                        next;
+            # do not timeout order_ack jobs.
+            if ($row->{task} ne 'order_ack') {
+                if (my $timeout = $self->job_hours_timeout) {
+                    if (my $started = $row->{job_started_epoch}) {
+                        my $now = time();
+                        if (($now - $started) > ($timeout * 60 * 60)) {
+                            warn "Timeout reached for $row->{amws_job_id}, aborting\n";
+                            $self->cancel_job($row->{task}, $row->{amws_job_id},
+                                              "Job timed out after $timeout hours");
+                            next;
+                        }
                     }
                 }
             }
