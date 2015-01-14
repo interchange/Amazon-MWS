@@ -317,6 +317,8 @@ If set to an integer, abort the job after X hours are elapsed since
 the job was started. Default to 3 hours. Set to 0 to disable (not
 recommended).
 
+This doesn't affect jobs for order acknowledgements (C<order_ack>).
+
 =cut
 
 has job_hours_timeout => (is => 'ro',
