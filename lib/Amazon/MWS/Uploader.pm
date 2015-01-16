@@ -54,7 +54,6 @@ The table structure needed is defined and commented in sql/amazon.sql
                                          marketplace_id => 'xxx',
                                          endpoint => 'xxx',
   
-                                         low_priority_error_codes => [6024, 6025],
                                          products => \@products,
                                         );
   
@@ -105,9 +104,8 @@ has dbh => (is => 'lazy');
 
 =item skus_warnings_modes
 
-Determines how to treat SKU warnings. This is a hash reference with
-the code of the warning as key and one of the following modes
-as value:
+Determines how to treat warnings. This is a hash reference with the
+code of the warning as key and one of the following modes as value:
 
 =over 4
 
@@ -123,19 +121,9 @@ Prints warning from Amazon with C<print> function (default mode).
 
 Ignores warning from Amazon.
 
-=item low_priority_error_codes
-
-A arrayref of error codes for we we should issue a print (not a warn)
-when reporting a feed error.
-
 =back
 
 =cut
-
-has low_priority_error_codes => (is => 'ro',
-                                 isa => ArrayRef,
-                                 default => sub { [] },
-                                );
 
 has skus_warnings_modes => (is => 'rw',
                    isa => HashRef,
@@ -984,24 +972,8 @@ sub upload_feed {
             if (my $warn = $result->warnings) {
                 if (my $warns = $result->skus_warnings) {
                     foreach my $w (@$warns) {
-                        my $mode = 'warn';
-
-                        if (exists $self->skus_warnings_modes->{$w->{code}}) {
-                            $mode = $self->skus_warnings_modes->{$w->{code}};
-                        }
-
-                        if ($mode eq 'print' || $w->{code} eq '8008') {
-                            print "$w->{sku}: $w->{error} ($w->{code})\n";
-                        }
-                        elsif ($mode eq 'warn') {
-                            warn "$w->{sku}: $w->{error} ($w->{code})\n";
-                        }
-                        elsif ($mode eq 'skip') {
-                            # ignore SKU warning
-                        }
-                        else {
-                            warn "$w->{sku}: Invalid mode $mode for SKU warning $w->{code}\n";
-                        }
+                        $self->_error_logger(warning => $w->{code},
+                                             "$w->{sku}: $w->{error}");
                     }
                 }
                 else {
@@ -1011,11 +983,10 @@ sub upload_feed {
             return 1;
         }
         else {
-            foreach my $error_msg ($result->report_errors) {
-                warn $error_msg . "\n";
-            }
-            foreach my $error_msg ($result->report_errors_low_priority) {
-                print $error_msg . "\n";
+            foreach my $err ($result->report_errors) {
+                $self->_error_logger($err->{type},
+                                     $err->{code},
+                                     $err->{message});
             }
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
@@ -1125,7 +1096,6 @@ sub submission_result {
       ->new(
             xml => $xml,
             schema_dir => $self->schema_dir,
-            low_priority_error_codes => [ @{$self->low_priority_error_codes} ],
            );
 }
 
@@ -1958,5 +1928,30 @@ sub cancel_feed {
     }
     return $self->client->CancelFeedSubmissions(IdList => [ $feed ]);
 }
+
+sub _error_logger {
+    my ($self, $error_or_warning, $error_code, $message) = @_;
+    my $mode = 'warn';
+    my $modes = $self->skus_warnings_modes;
+    my $out_message = "$error_or_warning: $message ($error_code)\n";
+    # hardcode 8008 as print
+    $modes->{8008} = 'print';
+    if (exists $modes->{$error_code}) {
+        $mode = $modes->{$error_code};
+    }
+    if ($mode eq 'print') {
+        print $out_message;
+    }
+    elsif ($mode eq 'warn') {
+        warn $out_message;
+    }
+    elsif ($mode eq 'skip') {
+        # do nothing
+    }
+    else {
+        warn "Invalid mode $mode for $message\n";
+    }
+}
+
 
 1;

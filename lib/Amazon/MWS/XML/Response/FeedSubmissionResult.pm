@@ -29,10 +29,6 @@ The xml string
 
 Lazy attribute built via parsing the xml string passed at the constructor.
 
-=head2 low_priority_error_codes
-
-An arrayref of error code which are considered to be "low priority"
-
 =head1 METHODS
 
 =head2 is_success
@@ -41,13 +37,17 @@ An arrayref of error code which are considered to be "low priority"
 
 =head2 report_errors
 
-A list of error messages, excluding the ones marked as low priority in
-the constructor.
+A list of error messages, where each element is an hashref with this keys:
 
-=head2 report_errors_low_priority
+=over 4
 
-A list of error messages, only the ones marked as low priority in the
-constructor.
+=item code (numeric)
+
+=item type (warning or error)
+
+=item message (human-readable)
+
+=back
 
 =cut
 
@@ -60,21 +60,6 @@ has schema_dir => (is => 'ro',
 
 
 has structure => (is => 'lazy');
-
-has low_priority_error_codes => (is => 'ro',
-                                 default => sub { return [] },
-                                 isa => ArrayRef);
-
-has _low_priority_error_codes_hashref => (is => 'lazy');
-
-sub _build__low_priority_error_codes_hashref {
-    my $self = shift;
-    my %codes;
-    foreach my $code (@{ $self->low_priority_error_codes }) {
-        $codes{$code} = 1;
-    }
-    return \%codes;
-}
 
 sub _build_structure {
     my $self = shift;
@@ -115,21 +100,15 @@ sub _build_orders_warnings {
 }
 
 sub report_errors {
-    return shift->_report_errors;
-}
-sub report_errors_low_priority {
-    return shift->_report_errors(1);
-}
-
-sub _report_errors {
-    my ($self, $low_priority) = @_;
+    my ($self) = @_;
     my $struct = $self->structure;
     my @output;
     if ($struct->{Result}) {
         foreach my $res (@{ $struct->{Result} }) {
             if (my $type = $res->{ResultCode}) {
                 if ($type eq 'Error' or $type eq 'Warning') {
-                    my (@error_chunks, $error_code);
+                    my @error_chunks;
+                    my $error_code = 0;
                     if (my $details = $res->{AdditionalInfo}) {
                         foreach my $key (keys %$details) {
                             push @error_chunks, "$key: $details->{$key}";
@@ -138,22 +117,15 @@ sub _report_errors {
                     push @error_chunks, $type;
                     if ($res->{ResultMessageCode}) {
                         $error_code = $res->{ResultMessageCode};
-                        push @error_chunks, $error_code;
                     }
                     if ($res->{ResultDescription}) {
                         push @error_chunks, $res->{ResultDescription};
                     }
-
-                    # now the error is probably fully parsed. decide
-                    # where to store it.
-                    if ($self->_low_priority_error_codes_hashref->{$error_code}) {
-                        if ($low_priority) {
-                            push @output, join(' ', @error_chunks);
-                        }
-                    }
-                    elsif (!$low_priority) {
-                        push @output, join(' ', @error_chunks);
-                    }
+                    push @output, {
+                                   code => $error_code,
+                                   type => lc($type),
+                                   message => join(' ', @error_chunks),
+                                  };
                 }
             }
         }

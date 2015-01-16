@@ -7,7 +7,7 @@ use Data::Dumper;
 use Test::More;
 
 if (-d 'schemas') {
-    plan tests => 26;
+    plan tests => 42;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -93,7 +93,6 @@ XML
 
 my $result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
                                                                    schema_dir => 'schemas',
-                                                                   low_priority_error_codes => [6025, 6026],
                                                                   );
 
 ok($result);
@@ -108,10 +107,13 @@ ok($result->skus_errors, "Error structure found");
 is_deeply([ $result->skus_with_warnings ], []);
 is_deeply([ $result->failed_skus ], [qw/16414 12110 12112 14742 12194 16415/]);
 
-is(scalar($result->report_errors), 4, "4 errors in report errors")
-  or diag Dumper([$result->report_errors]);
-is(scalar($result->report_errors_low_priority), 2, "2 errors in report errors")
-  or diag Dumper([$result->report_errors_low_priority]);
+my @errors = $result->report_errors;
+
+foreach my $err (@errors) {
+    foreach my $k (qw/code message type/) {
+        ok ($err->{$k}, "Found $k $err->{$k} in error");
+    }
+}
 
 
 $xml = <<'XML';

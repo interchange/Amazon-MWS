@@ -9,7 +9,7 @@ use Test::More;
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 11;
+    plan tests => 15;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -95,4 +95,29 @@ eval {
 };
 
 ok (!$@, "undef as db_options is fine") and diag $@;
+
+
+$uploader = Amazon::MWS::Uploader->new(%constructor,
+                                       skus_warnings_modes => {
+                                                               8002 => 'warn',
+                                                               8003 => 'print',
+                                                              });
+
+{
+    my @warned;
+    local $SIG{__WARN__} = sub {
+        my ($warn) = @_;
+        like $warn, qr/\(800\d\)/;
+        push @warned, $warn;
+    };
+
+    foreach my $code (qw/8001 8002 8003 8008/) {
+        $uploader->_error_logger(warning => $code => "$code warn");
+    }
+    is (scalar(@warned), 2) or diag Dumper(\@warned);
+    is_deeply(\@warned, [
+                         "warning: 8001 warn (8001)\n",
+                         "warning: 8002 warn (8002)\n",
+                        ]);
+}
 
