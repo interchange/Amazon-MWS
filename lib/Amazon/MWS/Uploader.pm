@@ -1949,7 +1949,7 @@ sub _error_logger {
         # do nothing
     }
     else {
-        warn "Invalid mode $mode for $message\n";
+        warn "Invalid mode $mode for $out_message";
     }
 }
 
