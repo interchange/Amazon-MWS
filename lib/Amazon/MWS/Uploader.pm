@@ -927,7 +927,7 @@ sub upload_feed {
     print "Feed is $feed_id\n";
 
     if (!$record->{processing_complete}) {
-        if ($self->_check_processing_complete($feed_id)) {
+        if ($self->_check_processing_complete($feed_id, $type)) {
             # update the record and set the flag to true
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
@@ -1030,21 +1030,21 @@ sub _exe_query {
 }
 
 sub _check_processing_complete {
-    my ($self, $feed_id) = @_;
+    my ($self, $feed_id, $type) = @_;
     my $res;
     try {
         $res = $self->client->GetFeedSubmissionList;
     } catch {
         my $exception = $_;
         if (ref($exception) && $exception->can('xml')) {
-            warn "checking processing complete error: " . $exception->xml;
+            warn "checking processing complete error for $type $feed_id: " . $exception->xml;
         }
         else {
-            warn "checking processing complete: " . Dumper($exception);
+            warn "checking processing complete for $type $feed_id: " . Dumper($exception);
         }
     };
     die unless $res;
-    print "Checking if the processing is complete\n"; # . Dumper($res);
+    print "Checking if the processing is complete for $type $feed_id\n"; # . Dumper($res);
     my $found;
     if (my $list = $res->{FeedSubmissionInfo}) {
         foreach my $feed (@$list) {
@@ -1059,7 +1059,7 @@ sub _check_processing_complete {
             return 1;
         }
         elsif ($found) {
-            print "Feed $feed_id still $found->{FeedProcessingStatus}\n";
+            print "Feed $type $feed_id still $found->{FeedProcessingStatus}\n";
             return;
         }
         else {
@@ -1071,7 +1071,7 @@ sub _check_processing_complete {
         }
     }
     else {
-        warn "No FeedSubmissionInfo found:" . Dumper($res);
+        warn "No FeedSubmissionInfo found for $type $feed_id:" . Dumper($res);
         return;
     }
 }
