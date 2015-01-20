@@ -1269,7 +1269,7 @@ sub delete_skus {
     return unless @skus;
     print "Trying to purge missing items " . join(" ", @skus) . "\n";
 
-    # delete only products which are not in pending or failed status
+    # delete only products which are not in pending status
     my $check = $self
       ->_exe_query($self->sqla
                    ->select('amazon_mws_products', [qw/sku status/],
@@ -1286,8 +1286,7 @@ sub delete_skus {
         my $sku = shift @skus;
         if (my $status = $our_skus{$sku}) {
             if ($status eq 'pending' or
-                $status eq 'deleted' or
-                $status eq 'failed') {
+                $status eq 'deleted') {
                 print "Skipping $sku deletion, in status $status\n";
                 next;
             }
