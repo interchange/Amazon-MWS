@@ -1,10 +1,14 @@
 #!perl
 
+use utf8;
 use strict;
 use warnings;
 use Amazon::MWS::Uploader;
 use Data::Dumper;
 use Test::More;
+
+binmode STDOUT, ':utf8';
+binmode STDERR, ':utf8';
 
 my $feed_dir = 't/feeds';
 
@@ -112,12 +116,12 @@ $uploader = Amazon::MWS::Uploader->new(%constructor,
         push @warned, $warn;
     };
     foreach my $code (qw/8001 8002 8003 8008/) {
-        $uploader->_error_logger(warning => $code => "$code warn");
+        $uploader->_error_logger(warning => $code => "$code ć warn");
     }
     is (scalar(@warned), 2) or diag Dumper(\@warned);
     is_deeply(\@warned, [
-                         "Invalid mode invalid for warning: 8001 warn (8001)\n",
-                         "warning: 8002 warn (8002)\n",
+                         "Invalid mode invalid for warning: 8001 ć warn (8001)\n",
+                         "warning: 8002 ć warn (8002)\n",
                         ]);
 }
 
