@@ -21,6 +21,9 @@ use namespace::clean;
 
 our $VERSION = '0.01';
 
+use constant {
+    AMW_ORDER_WILDCARD_ERROR => 999999,
+};
 
 =head1 NAME
 
@@ -1001,9 +1004,7 @@ sub upload_feed {
             $self->register_errors($job_id, $result);
             
             if ($type eq 'order_ack') {
-                $self->_exe_query($self->sqla->update(amazon_mws_orders => { error_msg => $result->errors },
-                                                      { amws_job_id => $job_id,
-                                                        shop_id => $self->_unique_shop_id }));
+                $self->register_order_ack_errors($job_id, $result);
             }
             elsif ($type eq 'shipping_confirmation') {
                 $self->register_ship_order_errors($job_id, $result);
@@ -1337,6 +1338,65 @@ sub delete_skus_feed {
                         };
     }
     return $feeder->create_feed(Product => \@messages);
+}
+
+sub register_order_ack_errors {
+    my ($self, $job_id, $result) = @_;
+    my @errors = $result->report_errors;
+    # we hope to have just one error, but in case...
+    my %update;
+    if (@errors > 1) {
+        my @errors_with_code = grep { $_->{code} } @errors;
+        my $error_code = AMW_ORDER_WILDCARD_ERROR;
+        if (@errors_with_code) {
+            # pick just the first, the field is an integer
+            $error_code = $errors_with_code[0]{code};
+        }
+        my $error_msgs  = join('\n', map { $_->{type} . ' ' . $_->{message} . ' ' . $_->{code} } @errors);
+        %update = (
+                   error_msg => $error_msgs,
+                   error_code => $error_code,
+                  );
+    }
+    elsif (@errors) {
+        my $error = shift @errors;
+        %update = (
+                   error_msg => $error->{type} . ' ' . $_->{message} . ' ' . $_->{code},
+                   error_code => $error->{code},
+                  );
+    }
+    else {
+        %update = (
+                   error_msg => $result->errors,
+                   error_code => AMW_ORDER_WILDCARD_ERROR,
+                  );
+    }
+    if (%update) {
+        $self->_exe_query($self->sqla->update('amazon_mws_orders',
+                                              \%update,
+                                              { amws_job_id => $job_id,
+                                                shop_id => $self->_unique_shop_id }));
+    }
+    else {
+        warn "register_order_ack_errors couldn't parse " . Dumper($result);
+    }
+    # then get the amazon order number and recheck
+    my $sth = $self->_exe_query($self->sqla->select('amazon_mws_orders',
+                                                    [qw/amazon_order_id
+                                                        shop_order_id
+                                                       /],
+                                                    {
+                                                     amws_job_id => $job_id,
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
+    my ($amw_order_number, $shop_order_id) = $sth->fetchrow_array;
+    if ($sth->fetchrow_array) {
+        warn "Multiple jobs found for $job_id in amazon_mws_orders!";
+    }
+    $sth->finish;
+    if (my $status = $self->update_amw_order_status($amw_order_number)) {
+        warn "$amw_order_number ($shop_order_id) has now status $status!\n";
+    }
 }
 
 sub register_ship_order_errors {
@@ -1952,5 +2012,47 @@ sub _error_logger {
     }
 }
 
+=head2 update_amw_order_status($amazon_order_number)
+
+Check the order status on Amazon and update the row in the
+amazon_mws_orders table.
+
+=cut
+
+sub update_amw_order_status {
+    my ($self, $order) = @_;
+    # first, check if it exists
+    return unless $order;
+    my $sth = $self->_exe_query($self->sqla->select('amazon_mws_orders',
+                                                    '*',
+                                                    {
+                                                     amazon_order_id => $order,
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
+    my $order_ref = $sth->fetchrow_hashref;
+    die "Multiple rows found for $order!" if $sth->fetchrow_hashref;
+    print Dumper($order_ref);
+    my $res = $self->client->GetOrder(AmazonOrderId => [$order]);
+    my $amazon_order;
+    if ($res && $res->{Orders}->{Order} && @{$res->{Orders}->{Order}}) {
+        if (@{$res->{Orders}->{Order}} > 1) {
+            warn "Multiple results for order $order: " . Dumper($res);
+        }
+        $amazon_order = $res->{Orders}->{Order}->[0];
+    }
+    else {
+        warn "Order $order not found on amazon!"
+    }
+    print Dumper($amazon_order);
+    my $obj = Amazon::MWS::XML::Order->new(order => $amazon_order);
+    my $status = $obj->order_status;
+    $self->_exe_query($self->sqla->update('amazon_mws_orders',
+                                          { status => $status },
+                                          {
+                                           amazon_order_id => $order,
+                                           shop_id => $self->_unique_shop_id,
+                                          }));
+    return $status;
+}
 
 1;

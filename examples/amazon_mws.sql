@@ -67,3 +67,8 @@ ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_ok BOOLEAN NOT NU
 ALTER TABLE amazon_mws_orders ADD COLUMN shipping_confirmation_error TEXT;
 ALTER TABLE amazon_mws_jobs   ADD COLUMN job_started_epoch INTEGER;
 ALTER TABLE amazon_mws_jobs   ADD COLUMN status VARCHAR(255);
+
+-- 2015-01-29
+ALTER TABLE amazon_mws_orders ADD COLUMN status VARCHAR(255);
+
+
