@@ -10,7 +10,7 @@ use Test::More;
 # testing requires a directory with the schema
 
 if (-d 'schemas') {
-    plan tests => 36;
+    plan tests => 37;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -246,44 +246,7 @@ my $test = Amazon::MWS::XML::Product->new(sku => '12345',
 is $test->condition, 'UsedAcceptable';
 is $test->condition_type_for_lowest_price_listing, 'Used';
 
-
-eval { $test = Amazon::MWS::XML::Product->new(
-                                              sku => '3333',
-                                              ean => '4444123412343',
-                                              brand => 'brand',
-                                              title => 'title2',
-                                              price => '12.00',
-                                              description => 'my desc 2',
-                                              images => [ 'http://example.org/pluto.jpg' ],
-                                              category_code => '111111',
-                                              category => 'CE',
-                                              subcategory => 'PhoneAccessory',
-                                              manufacturer_part_number => '4444123412343',
-                                              inventory => 2,
-                                              condition => 'blablabla',
-                                              ); };
-
-like $@, qr/condition/, "Found exception for garbage in condition";
-
-eval { $test = Amazon::MWS::XML::Product->new(
-                                              sku => '3333',
-                                              ean => '4444123412343',
-                                              brand => 'brand',
-                                              title => 'title2',
-                                              price => '12.00',
-                                              description => 'my desc 2',
-                                              images => [ 'http://example.org/pluto.jpg' ],
-                                              category_code => '111111',
-                                              category => 'CE',
-                                              subcategory => 'PhoneAccessory',
-                                              manufacturer_part_number => '4444123412343',
-                                              inventory => 2,
-                                              manufacturer => 'abc' x 50,
-                                              ); };
-
-like $@, qr/Max characters is 50/, "Found exception when manufacturer is too long";
-
-eval { $test = Amazon::MWS::XML::Product->new(
+my %testconstructor = (
                                               sku => '3333',
                                               ean => '4444123412343',
                                               brand => 'brand',
@@ -297,7 +260,27 @@ eval { $test = Amazon::MWS::XML::Product->new(
                                               manufacturer_part_number => '4444123412343',
                                               inventory => 2,
                                               manufacturer => '',
-                                              ); };
+                      );
+
+
+$testconstructor{condition} = 'blablabla';
+
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor); };
+
+like $@, qr/condition/, "Found exception for garbage in condition";
+
+delete $testconstructor{condition};
+$testconstructor{manufacturer} = 'abc' x 50;
+
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor); };
+
+like $@, qr/Max characters is 50/, "Found exception when manufacturer is too long";
+
+delete $testconstructor{manufacturer};
+
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
+
+ok (!$@, "No exception");
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
                                       schema_dir => 'schemas',
