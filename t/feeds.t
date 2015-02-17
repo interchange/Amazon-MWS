@@ -10,7 +10,7 @@ use Test::More;
 # testing requires a directory with the schema
 
 if (-d 'schemas') {
-    plan tests => 37;
+    plan tests => 41;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -278,8 +278,26 @@ like $@, qr/Max characters is 50/, "Found exception when manufacturer is too lon
 
 delete $testconstructor{manufacturer};
 
+$testconstructor{ean} = '1'x 7;
 eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
+like $@, qr/Min characters is 8/, "Found exception when ean is not long enough";
 
+
+$testconstructor{ean} = '1' x 17;
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
+like $@, qr/Max characters is 16/, "Found exception when ean is not long enough";
+
+$testconstructor{ean} = '1' x 8;
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
+ok (!$@, "No exception");
+
+$testconstructor{ean} = '1' x 16;
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
+ok (!$@, "No exception");
+
+
+$testconstructor{ean} = '4444123412343';
+eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
 ok (!$@, "No exception");
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],

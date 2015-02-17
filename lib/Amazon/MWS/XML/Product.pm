@@ -164,7 +164,8 @@ Part number manufacturer.
 has sku => (is => 'ro', required => 1);
 has timestamp_string => (is => 'ro',
                          default => sub { '0' });
-has ean => (is => 'ro');
+has ean => (is => 'ro',
+           isa => sub { _check_length($_[0], 8, 16) });
 
 has asin => (is => 'ro');
 
