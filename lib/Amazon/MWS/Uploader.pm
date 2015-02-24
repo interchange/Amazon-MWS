@@ -2055,4 +2055,28 @@ sub update_amw_order_status {
     return $status;
 }
 
+=head2 get_products_with_error_code($error_code)
+
+Return a list of hashref with the rows from C<amazon_mws_products> for
+the current shop and the error code passed as argument.
+
+=cut
+
+sub get_products_with_error_code {
+    my ($self, $errcode) = @_;
+    die "Bad usage" unless defined $errcode;
+    my $sth = $self->_exe_query($self->sqla
+                                ->select('amazon_mws_products', '*',
+                                         {
+                                          shop_id => $self->_unique_shop_id,
+                                          error_code => $errcode,
+                                         }));
+    my @records;
+    while (my $row = $sth->fetchrow_hashref) {
+        push @records, $row;
+    }
+    return @records;
+}
+
+
 1;
