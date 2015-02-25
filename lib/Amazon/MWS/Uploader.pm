@@ -2078,5 +2078,27 @@ sub get_products_with_error_code {
     return @records;
 }
 
+=head2 mark_failed_products_as_redo(@skus)
+
+Alter the status of the failed skus passed as argument from 'failed'
+to 'redo' to trigger an update.
+
+=cut
+
+sub mark_failed_products_as_redo {
+    my ($self, @skus) = @_;
+    return unless @skus;
+    $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                          {
+                                           status => 'redo',
+                                          },
+                                          {
+                                           shop_id => $self->_unique_shop_id,
+                                           status => 'failed',
+                                           sku => { -in => \@skus },
+                                          }));
+}
+
+
 
 1;
