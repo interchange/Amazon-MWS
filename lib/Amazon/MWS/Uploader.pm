@@ -2099,6 +2099,73 @@ sub mark_failed_products_as_redo {
                                           }));
 }
 
+=head2 get_products_with_amazon_shop_mismatches
+
+Parse the amazon_mws_products and return an hashref where the keys are
+the skus, and the values are hashrefs where the keys are the
+mismatched fields and the values are hashrefs with these keys:
+
+=over 4
+
+=item shop
+
+The value on the shop
+
+=item amazon
+
+The value of the amazon product
+
+=item error_code
+
+The error code
+
+=back
+
+E.g.
+
+ my $mismatches = {12344 => {
+                            part_number => {
+                                            shop => 'XY',
+                                            amazon => 'XYZ',
+                                            error_code => '8541',
+                                           },
+                            item_name => {
+                                            shop => 'ABC',
+                                            amazon => 'DFG',
+                                            error_code => '8541',
+                                           },
+                            },
+                  .....
+                  };
+
+=cut
+
+
+sub get_products_with_amazon_shop_mismatches {
+    my ($self) = @_;
+    # so far only this code is for mismatches
+    my %mismatches;
+    my @faulty = $self->get_products_with_error_code('8541');
+    foreach my $product (@faulty) {
+        my $msg = $product->{error_msg};
+        next if $product->{status} ne 'failed';
+        my $error_code = $product->{error_code};
+        my $sku = $product->{sku};
+        while ($msg =~ m{'(\w+)' Merchant: '(.*?)' / Amazon: '(.*?)'}g) {
+            my $name = $1;
+            my $shop_value = $2;
+            my $amazon_value = $3;
+            if ($shop_value && $amazon_value) {
+                $mismatches{$sku}{$name} = {
+                                            shop => $shop_value,
+                                            amazon => $amazon_value,
+                                            error_code => $error_code,
+                                           };
+            }
+        }
+    }
+    return \%mismatches;
+}
 
 
 1;
