@@ -1590,20 +1590,56 @@ sub get_product_category_data {
 
 =head2 get_product_category_names($ean)
 
+Return a list of arrayrefs with the category paths. Beware that we
+strip the first two parents, which euristically appear meaningless
+(Category/Category).
+
+If this is not a case, please report this as a bug and we'll find a
+solution.
+
+You can call C<get_product_category_data> to inspect the raw response
+yourself.
+
 =cut
 
 sub get_product_category_names {
     my ($self, $ean) = @_;
     my $res = $self->get_product_category_data($ean);
     if ($res) {
-        die "Not implemented yet";
+        my @category_names;
+        foreach my $cat (@$res) {
+            my @list = $self->_parse_amz_cat($cat);
+            if (@list) {
+                push @category_names, \@list;
+            }
+
+        }
+        return @category_names;
     }
     else {
         warn "ASIN exists but no categories found. Bug?\n";
         return;
     }
-
 }
+
+sub _parse_amz_cat {
+    my ($self, $cat) = @_;
+    my @path;
+    while ($cat) {
+        if ($cat->{ProductCategoryName}) {
+            push @path, $cat->{ProductCategoryName};
+        }
+        $cat = $cat->{Parent};
+    }
+    @path = reverse @path;
+
+    # the first two parents are Category/Category.
+    if (@path >= 2) {
+        splice(@path, 0, 2);
+    }
+    return @path;
+}
+
 
 sub get_product_categories {
     my ($self, $ean) = @_;
