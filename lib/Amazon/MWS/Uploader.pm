@@ -1563,6 +1563,11 @@ sub get_asin_for_sku {
 }
 
 
+=head2 get_product_category_data($ean)
+
+Return the deep data structures returned by
+C<GetProductCategoriesForASIN>.
+
 =head2 get_product_categories($ean)
 
 Return a list of category codes (the ones passed to
@@ -1570,7 +1575,7 @@ RecommendedBrowseNode) which exists on amazon.
 
 =cut
 
-sub get_product_categories {
+sub get_product_category_data {
     my ($self, $ean) = @_;
     return unless $ean;
     my $asin = $self->get_asin_for_ean($ean);
@@ -1580,6 +1585,29 @@ sub get_product_categories {
     my $res = $self->client
       ->GetProductCategoriesForASIN(ASIN => $asin,
                                     MarketplaceId => $self->marketplace_id);
+    return $res;
+}
+
+=head2 get_product_category_names($ean)
+
+=cut
+
+sub get_product_category_names {
+    my ($self, $ean) = @_;
+    my $res = $self->get_product_category_data($ean);
+    if ($res) {
+        die "Not implemented yet";
+    }
+    else {
+        warn "ASIN exists but no categories found. Bug?\n";
+        return;
+    }
+
+}
+
+sub get_product_categories {
+    my ($self, $ean) = @_;
+    my $res = $self->get_product_category_data($ean);
     if ($res) {
         my @ids = map { $_->{ProductCategoryId} } @$res;
         return @ids;
