@@ -123,7 +123,7 @@ sub _validate_items {
 
 =head1 METHODS
 
-=head2 has_shipping_confirmation_hashref
+=head2 as_shipping_confirmation_hashref
 
 Return an hashref which can be fed into an Amazon message XSD.
 
