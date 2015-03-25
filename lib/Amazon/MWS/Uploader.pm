@@ -2231,5 +2231,31 @@ sub get_products_with_amazon_shop_mismatches {
     return \%mismatches;
 }
 
+=head2 get_unprocessed_order_report_ids
+
+Return a list of unprocessed (i.e., which weren't acknowledged by us)
+order report ids.
+
+=cut
+
+sub get_unprocessed_order_report_ids {
+    my $self = shift;
+    my $res = $self->client
+      ->GetReportList(Acknowledged => 0,
+                      ReportTypeList => ['_GET_ORDERS_DATA_']);
+    my @reportids;
+
+    # for now, do not ask for the next token, we will process them all
+    # eventually
+
+    if ($res and $res->{ReportInfo}) {
+        foreach my $report (@{$res->{ReportInfo}}) {
+            if (my $id = $report->{ReportId}) {
+                push @reportids, $id;
+            }
+        }
+    }
+    return @reportids;
+}
 
 1;
