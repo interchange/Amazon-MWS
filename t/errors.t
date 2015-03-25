@@ -4,7 +4,9 @@ use strict;
 use warnings;
 use Amazon::MWS::XML::Response::FeedSubmissionResult;
 use Data::Dumper;
+use File::Spec;
 use Test::More;
+use XML::Compile::Schema;
 
 if (-d 'schemas') {
     plan tests => 42;
@@ -12,6 +14,11 @@ if (-d 'schemas') {
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
 }
+
+
+my $reader = XML::Compile::Schema->new([glob File::Spec->catfile('schemas',
+                                                                 '*.xsd')])
+  ->compile(READER => 'AmazonEnvelope');
 
 
 my $xml = <<'XML';
@@ -92,7 +99,7 @@ my $xml = <<'XML';
 XML
 
 my $result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
-                                                                   schema_dir => 'schemas',
+                                                                   xml_reader => $reader,
                                                                   );
 
 ok($result);
@@ -150,8 +157,8 @@ $xml = <<'XML';
 XML
 
 $result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
-                                                                   schema_dir => 'schemas',
-                                                                  );
+                                                                xml_reader => $reader);
+
 ok($result);
 ok($result->is_success, "Is success even with warnings");
 ok(!$result->errors, "No errors");
@@ -192,9 +199,10 @@ $xml = <<'XML';
 </AmazonEnvelope>
 XML
 
-$result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
-                                                                   schema_dir => 'schemas',
-                                                                  );
+$result = Amazon::MWS::XML::Response::FeedSubmissionResult
+  ->new(xml => $xml,
+        xml_reader => $reader);
+
 ok($result, "Result loaded");
 ok(!$result->is_success, "Is not a success");
 ok($result->errors, "Got the error " . $result->errors) or diag Dumper($result);
@@ -253,9 +261,11 @@ $xml = <<'XML';
 </AmazonEnvelope>
 XML
 
-$result = Amazon::MWS::XML::Response::FeedSubmissionResult->new(xml => $xml,
-                                                                   schema_dir => 'schemas',
-                                                                  );
+$result = Amazon::MWS::XML::Response::FeedSubmissionResult
+  ->new(xml => $xml,
+        xml_reader => $reader);
+
+
 ok($result, "object ok");
 
 ok(!$result->orders_warnings, "No warnings");

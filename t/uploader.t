@@ -13,7 +13,7 @@ binmode STDERR, ':utf8';
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 15;
+    plan tests => 19;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -40,8 +40,10 @@ my $uploader = Amazon::MWS::Uploader->new(%constructor);
 ok($uploader);
 ok($uploader->client->can('agent'), "Client can call agent");
 ok($uploader->client->agent->isa('LWP::UserAgent'));
-
-
+ok($uploader->schema, "schema built");
+ok($uploader->xml_reader, "Reader ok");
+ok($uploader->xml_writer, "Writer ok");
+ok($uploader->generic_feeder->xml_writer);
 
 is($uploader->_unique_shop_id, $constructor{merchant_id});
 $uploader = Amazon::MWS::Uploader->new(%constructor,

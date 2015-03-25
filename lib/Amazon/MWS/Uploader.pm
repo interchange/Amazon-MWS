@@ -14,6 +14,7 @@ use DateTime;
 use SQL::Abstract;
 use Try::Tiny;
 use Scalar::Util qw/blessed/;
+use XML::Compile::Schema;
 
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
@@ -335,6 +336,18 @@ C<merchant_id> and C<schema_dir>.
 A working directory where to stash the uploaded feeds for inspection
 if problems are detected.
 
+=item schema
+
+The L<XML::Compile::Schema> object, built lazily from C<feed_dir>
+
+=item xml_writer
+
+The xml writer, built lazily.
+
+=item xml_reader
+
+The xml reader, built lazily.
+
 =cut
 
 has schema_dir => (is => 'ro',
@@ -349,10 +362,34 @@ has feed_dir => (is => 'ro',
                      die "$_[0] is not a directory" unless -d $_[0];
                  });
 
+has schema => (is => 'lazy');
+
+sub _build_schema {
+    my $self = shift;
+    my $files = File::Spec->catfile($self->schema_dir, '*.xsd');
+    my $schema = XML::Compile::Schema->new([glob $files]);
+    return $schema;
+}
+
+has xml_writer => (is => 'lazy');
+
+sub _build_xml_writer {
+    my $self = shift;
+    return $self->schema->compile(WRITER => 'AmazonEnvelope');
+}
+
+has xml_reader => (is => 'lazy');
+
+sub _build_xml_reader {
+    my $self = shift;
+    return $self->schema->compile(READER => 'AmazonEnvelope');
+}
+
+
 sub generic_feeder {
     my $self = shift;
     return Amazon::MWS::XML::GenericFeed->new(
-                                              schema_dir => $self->schema_dir,
+                                              xml_writer => $self->xml_writer,
                                               merchant_id => $self->merchant_id,
                                              );
 }
@@ -603,7 +640,7 @@ sub upload {
     }
     my $feeder = Amazon::MWS::XML::Feed->new(
                                              products => \@products,
-                                             schema_dir => $self->schema_dir,
+                                             xml_writer => $self->xml_writer,
                                              merchant_id => $self->merchant_id,
                                             );
     my @feeds;
@@ -1096,7 +1133,7 @@ sub submission_result {
     return Amazon::MWS::XML::Response::FeedSubmissionResult
       ->new(
             xml => $xml,
-            schema_dir => $self->schema_dir,
+            xml_reader => $self->xml_reader,
            );
 }
 

@@ -52,21 +52,13 @@ A list of error messages, where each element is an hashref with this keys:
 =cut
 
 has xml => (is => 'ro', required => '1');
-has schema_dir => (is => 'ro',
-                   required => 1,
-                   isa => sub {
-                       die "Not a dir" unless -d $_[0];
-                   });
-
-
+has xml_reader => (is => 'ro',
+                   required => 1);
 has structure => (is => 'lazy');
 
 sub _build_structure {
     my $self = shift;
-    my $files = File::Spec->catfile($self->schema_dir, '*.xsd');
-    my $schema = XML::Compile::Schema->new([glob $files]);
-    my $reader = $schema->compile(READER => 'AmazonEnvelope');
-    my $struct = $reader->($self->xml);
+    my $struct = $self->xml_reader->($self->xml);
     die "not a processing report xml" unless $struct->{MessageType} eq 'ProcessingReport';
     if (@{$struct->{Message}} > 1) {
         die $self->xml . " returned more than 1 message!";

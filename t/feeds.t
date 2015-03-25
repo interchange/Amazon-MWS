@@ -5,6 +5,8 @@ use warnings;
 use utf8;
 use Amazon::MWS::XML::Product;
 use Amazon::MWS::XML::Feed;
+use XML::Compile::Schema;
+use File::Spec;
 use Test::More;
 
 # testing requires a directory with the schema
@@ -15,6 +17,11 @@ if (-d 'schemas') {
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
 }
+
+my $writer = XML::Compile::Schema->new([glob File::Spec->catfile('schemas',
+                                                                 '*.xsd')])
+  ->compile(WRITER => 'AmazonEnvelope');
+
 
 my @products;
 foreach my $product ({
@@ -59,7 +66,7 @@ foreach my $product ({
 
 my $feeder = Amazon::MWS::XML::Feed->new(
                                          products => \@products,
-                                         schema_dir => 'schemas',
+                                         xml_writer => $writer,
                                          merchant_id => '__MERCHANT_ID__',
                                         );
 
@@ -301,7 +308,7 @@ eval { $test = Amazon::MWS::XML::Product->new(%testconstructor) };
 ok (!$@, "No exception");
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
-                                      schema_dir => 'schemas',
+                                      xml_writer => $writer,
                                       merchant_id => '__MERCHANT_ID__',
                                       );
 unlike($feeder->product_feed, qr/<Manufacturer>/,
@@ -341,7 +348,7 @@ is($test->as_images_array, undef, "zero priced items gets no image feed");
 is($test->as_variants_hash, undef, "zero priced items gets no variant feed");
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
-                                      schema_dir => 'schemas',
+                                      xml_writer => $writer,
                                       merchant_id => '__MERCHANT_ID__',
                                       );
 
@@ -370,7 +377,7 @@ is($test->as_images_array, undef, "inactive items gets no image feed");
 is($test->as_variants_hash, undef, "inactive items gets no variant feed");
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
-                                      schema_dir => 'schemas',
+                                      xml_writer => $writer,
                                       merchant_id => '__MERCHANT_ID__',
                                       );
 

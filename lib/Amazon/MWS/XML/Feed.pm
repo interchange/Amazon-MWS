@@ -19,14 +19,6 @@ Extends Amazon::MWS::XML::GenericFeed and inherits its accessors/methods.
 
 =head1 ACCESSORS
 
-=head2 schema_dir
-
-The directory with the xsd files from amazon.
-
-=head2 schema
-
-The L<XML::Compile::Schema> object (built lazily).
-
 =head2 merchant_id
 
 Required. The merchant id provided by Amazon.

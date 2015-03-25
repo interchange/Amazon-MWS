@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use utf8;
 
-use XML::Compile::Schema;
 use File::Spec;
 use Data::Dumper;
 
@@ -16,13 +15,13 @@ Amazon::MWS::XML::GenericFeed -- base module to create XML feeds for Amazon MWS
 
 =head1 ACCESSORS
 
-=head2 schema_dir
+=head2 xml_writer
 
-The directory with the xsd files from amazon.
+The L<XML::Compile::Schema> writer object. You can pass this to build
+this object manually (usually it's the Uploader who builds the writer).
 
-=head2 schema
-
-The L<XML::Compile::Schema> object (built lazily).
+    my $writer = XML::Compile::Schema->new([glob '*.xsd'])
+       ->compile(WRITER => 'AmazonEnvelope');
 
 =head2 merchant_id
 
@@ -34,13 +33,7 @@ Whether to enable debugging or not.
 
 =cut
 
-has schema_dir => (is => 'ro',
-                   required => 1,
-                   isa => sub {
-                       die "Not a dir" unless -d $_[0];
-                   });
-
-has schema => (is => 'lazy');
+has xml_writer => (is => 'ro', required => 1);
 
 has debug => (is => 'rw');
 
@@ -49,14 +42,6 @@ has merchant_id => (is => 'ro',
                     isa => sub {
                         die "the merchant id must be a string" unless $_[0];
                     });
-
-sub _build_schema {
-    my $self = shift;
-    my $files = File::Spec->catfile($self->schema_dir, '*.xsd');
-    my $schema = XML::Compile::Schema->new([glob $files]);
-    my $write  = $schema->compile(WRITER => 'AmazonEnvelope');
-    return $write;
-}
 
 =head1 METHODS
 
@@ -84,12 +69,9 @@ sub create_feed {
                 Message => $messages,
                };
     my $doc = XML::LibXML::Document->new('1.0', 'UTF-8');
-    my $xml = $self->schema->($doc, $data);
+    my $xml = $self->xml_writer->($doc, $data);
     $doc->setDocumentElement($xml);
     return $doc->toString(1);
 }
-
-
-
 
 1;
