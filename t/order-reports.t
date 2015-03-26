@@ -10,7 +10,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 13;
+    plan tests => 40;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -241,11 +241,27 @@ foreach my $struct (@orders) {
 
     my $order_date = $order->order_date;
     ok($order_date->isa('DateTime'), "datetime object returned");
+    foreach my $method (qw/name city zip country address_line region/) {
+        ok ($order->shipping_address->$method, "shipping $method ok")
+          and diag $order->shipping_address->$method;
+        # only our example have a billing address
+        if ($count == 1) {
+            ok ($order->billing_address->$method, "billing $method ok")
+              and diag $order->billing_address->$method;
+        }
+        else {
+            ok (!$order->billing_address);
+        }
+    }
+    ok ($order->shipping_address->phone, "phone ok");
 
     # test only the first order for exact match for now
     if ($count == 1) {
         is $order->email, 'asdfalklkasdfdh@marketplace.amazon.de';
         is $order->amazon_order_number, '028-1111111-1111111';
         is $order->order_date->ymd, '2015-03-24';
+        is ($order->billing_address->phone, '07777777777', 'phone matches')
+          or diag Dumper($order->billing_address->phone);
     }
 }
+

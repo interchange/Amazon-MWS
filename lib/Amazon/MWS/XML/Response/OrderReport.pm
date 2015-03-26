@@ -6,6 +6,7 @@ use warnings;
 use DateTime;
 use DateTime::Format::ISO8601;
 use Data::Dumper;
+use Amazon::MWS::XML::Address;
 
 use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
@@ -39,10 +40,40 @@ Mandatory. Must be an hashref.
 
 Our order ID. Read-write.
 
+=head2 shipping_address
+
+An L<Amazon::MWS::XML::Address> instance, lazily built.
+
+=head2 billing_address
+
+An L<Amazon::MWS::XML::Address> instance, lazily built.
+
 =cut
 
 has struct => (is => 'ro', isa => HashRef, required => 1);
 has order_number => (is => 'rw');
+has shipping_address => (is => 'lazy');
+has billing_address => (is => 'lazy');
+
+sub _build_shipping_address {
+    my $self = shift;
+    my $data = $self->struct->{FulfillmentData};
+    # unclear if we want to check the FulfillmentMethod
+    if (my $address = $data->{Address}) {
+        return Amazon::MWS::XML::Address->new(%$address);
+    }
+    return undef;
+}
+
+sub _build_billing_address {
+    my $self = shift;
+    my $data = $self->struct->{BillingData};
+    if (my $address = $data->{Address}) {
+        return Amazon::MWS::XML::Address->new(%$address);
+    }
+    return undef;
+}
+
 
 =head1 METHODS
 
