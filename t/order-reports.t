@@ -10,11 +10,22 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 40;
+    plan tests => 65;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
 }
+
+use_ok('Amazon::MWS::XML::Response::OrderReport::Item');
+
+
+my $test_obj = Amazon::MWS::XML::Response::OrderReport::Item->new;
+ok $test_obj;
+$test_obj = Amazon::MWS::XML::Response::OrderReport::Item->new(AmazonOrderItemCode => '113241234',
+                                                               Title => 'bac');
+is $test_obj->Title, 'bac';
+
+
 
 my %constructor = (
                    merchant_id => '__MERCHANT_ID__',
@@ -262,6 +273,23 @@ foreach my $struct (@orders) {
         is $order->order_date->ymd, '2015-03-24';
         is ($order->billing_address->phone, '07777777777', 'phone matches')
           or diag Dumper($order->billing_address->phone);
+    }
+    my @items = $order->items;
+    foreach my $item (@items) {
+        $item->merchant_order_item('dummy');
+        foreach my $method (qw/price shipping sku quantity name subtotal
+                               as_ack_orderline_item_hashref
+                               merchant_order_item amazon_order_item
+                               currency
+                              /) {
+            ok($item->$method, "$method ok") and diag $item->$method;
+        }
+        if ($count == 1) {
+            is $item->currency, 'EUR';
+        }
+        else {
+            is $item->currency, 'USD';
+        }
     }
 }
 

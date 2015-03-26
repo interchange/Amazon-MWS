@@ -6,10 +6,10 @@ use warnings;
 use DateTime;
 use DateTime::Format::ISO8601;
 use Data::Dumper;
+use Amazon::MWS::XML::Response::OrderReport::Item;
 use Amazon::MWS::XML::Address;
-
 use Moo;
-use MooX::Types::MooseLike::Base qw(:all);
+use MooX::Types::MooseLike::Base qw(HashRef ArrayRef);
 use namespace::clean;
 
 =head1 NAME
@@ -74,6 +74,19 @@ sub _build_billing_address {
     return undef;
 }
 
+has _items_ref => (is => 'lazy');
+
+sub _build__items_ref {
+    my $self = shift;
+    my @items;
+    if (my $list = $self->struct->{Item}) {
+        foreach my $item (@$list) {
+            my $obj = Amazon::MWS::XML::Response::OrderReport::Item->new(%$item);
+            push @items, $obj;
+        }
+    }
+    return \@items;
+}
 
 =head1 METHODS
 
@@ -82,6 +95,16 @@ sub _build_billing_address {
 =head2 email
 
 The buyer email.
+
+=head2 order_date
+
+The date when the order processing was complete or when the order was
+placed as a L<DateTime> object.
+
+=head2 items
+
+Return a list of L<Amazon::MWS::XML::Response::OrderReport::Item>,
+which acts (more or less) like L<Amazon::MWS::XML::OrderlineItem>.
 
 =cut
 
@@ -106,10 +129,14 @@ sub email {
 sub order_date {
     my $self = shift;
     my $struct = $self->struct;
+    # maybe this would need a different method, but we don't know what
+    # to do with it anyway.
     my $date = $struct->{OrderPostedDate} || $struct->{OrderDate};
     return DateTime::Format::ISO8601->parse_datetime($date);
 }
 
-
+sub items {
+    return @{ shift->_items_ref };
+}
 
 1;
