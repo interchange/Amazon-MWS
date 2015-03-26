@@ -54,17 +54,34 @@ All the methods are read only.
 
 =over 4
 
-=item shipping
+=item total_price
+
+The grand total for the item in the given quantity.
 
 =item subtotal
 
-If there are taxes in the amazon price component, they are excluded.
+If there are taxes in the amazon price component, including taxes, but
+without shipping.
+
+=item shipping
+
+The shipping cost including taxes.
 
 =item price
 
-Individual price of a single item.
+Individual price of a single item, including taxes (from the Amazon
+point of view): subtotal / quantity.
 
-=item tax
+=item shipping_netto
+
+The shipping without the taxes (from the Amazon point of view).
+
+=item price_netto
+
+The price without taxes (from the Amazon point of view) for the
+quantity.
+
+=item item_tax
 
 =item shipping_tax
 
@@ -85,22 +102,26 @@ Individual price of a single item.
 has merchant_order_item => (is => 'rw',
                             default => sub { '' });
 
-has shipping => (is => 'lazy');
-has subtotal => (is => 'lazy');
-has tax => (is => 'lazy');
-has shipping_tax => (is => 'lazy');
-has price => (is => 'lazy');
 has total_price => (is => 'lazy');
+has subtotal => (is => 'lazy');
+has price => (is => 'lazy');
+has shipping => (is => 'lazy');
+has shipping_netto => (is => 'lazy');
+has price_netto => (is => 'lazy');
+has item_tax => (is => 'lazy');
+has shipping_tax => (is => 'lazy');
 
-sub _build_shipping {
+
+
+sub _build_shipping_netto {
     return shift->_get_price_component('Shipping');
 }
 
-sub _build_subtotal {
+sub _build_price_netto {
     return shift->_get_price_component('Principal');
 }
 
-sub _build_tax {
+sub _build_item_tax {
     return shift->_get_price_component('Tax');
 }
 
@@ -113,6 +134,17 @@ sub _build_price {
     return sprintf('%.2f', $self->subtotal / $self->quantity);
 }
 
+sub _build_shipping {
+    my $self = shift;
+    return sprintf('%.2f', $self->shipping_netto + $self->shipping_tax);
+}
+
+sub _build_subtotal {
+    my $self = shift;
+    return sprintf('%.2f', $self->price_netto + $self->item_tax);
+}
+
+
 sub _build_total_price {
     my $self = shift;
     my $amount = 0;
@@ -122,7 +154,7 @@ sub _build_total_price {
         }
     }
     my $total_price = sprintf('%.2f', $amount);
-    my $check = $self->subtotal + $self->shipping + $self->shipping_tax + $self->tax;
+    my $check = $self->price_netto + $self->item_tax + $self->shipping_netto + $self->shipping_tax;
     if ($total_price eq sprintf('%.2f', $check)) {
         return $total_price;
     }

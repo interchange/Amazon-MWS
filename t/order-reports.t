@@ -10,7 +10,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 67;
+    plan tests => 85;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -277,7 +277,10 @@ foreach my $struct (@orders) {
     my @items = $order->items;
     foreach my $item (@items) {
         $item->merchant_order_item('dummy');
-        foreach my $method (qw/price shipping sku quantity name subtotal
+        foreach my $method (qw/price shipping subtotal total_price shipping
+                               shipping_netto
+                               price_netto item_tax shipping_tax item_tax
+                               sku quantity name subtotal
                                as_ack_orderline_item_hashref
                                merchant_order_item amazon_order_item
                                currency
@@ -287,10 +290,12 @@ foreach my $struct (@orders) {
         if ($count == 1) {
             is $item->currency, 'EUR';
             is $item->total_price, '17.55';
+            is $item->subtotal, '17.55';
         }
         else {
             is $item->currency, 'USD';
             is $item->total_price, '63.99';
+            is $item->subtotal, '63.99';
         }
     }
 }
