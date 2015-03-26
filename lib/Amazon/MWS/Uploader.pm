@@ -2268,12 +2268,47 @@ sub get_products_with_amazon_shop_mismatches {
     return \%mismatches;
 }
 
-=head2 get_unprocessed_order_report_ids
+
+=head2 Order Report
+
+To get this feature working, you need an C<amzn-envelope.xsd> with
+OrderReport plugged in. Older versions are broken. Newer schema
+versions may have missing Amazon.xsd file. So either you ask amazon to
+give you a B<full set of xsd, which inclused OrderReport in
+amzn-envelope.xsd> or you apply this patch to amzn-envelope.xsd:
+
+  --- a/amzn-envelope.xsd  2014-10-27 10:26:19.000000000 +0100
+  +++ b/amzn-envelope.xsd  2015-03-26 10:56:16.000000000 +0100
+  @@ -23,2 +23,3 @@
+          <xsd:include schemaLocation="Price.xsd"/>
+  +    <xsd:include schemaLocation="OrderReport.xsd"/>
+          <xsd:include schemaLocation="ProcessingReport.xsd"/>
+  @@ -41,2 +42,3 @@
+                                                          <xsd:enumeration value="OrderFulfillment"/>
+  +                            <xsd:enumeration value="OrderReport"/>
+                                                          <xsd:enumeration value="Override"/>
+  @@ -83,2 +85,3 @@
+                                                                  <xsd:element ref="OrderFulfillment"/>
+  +                                <xsd:element ref="OrderReport"/>
+                                                                  <xsd:element ref="Override"/>
+
+=head3 get_unprocessed_orders
+
+Return a list of objects with the orders.
+
+=head3 get_unprocessed_order_report_ids
 
 Return a list of unprocessed (i.e., which weren't acknowledged by us)
 order report ids.
 
 =cut
+
+sub get_unprocessed_orders {
+    my ($self) = @_;
+    my @ids = $self->get_unprocessed_order_report_ids;
+    my @orders = $self->get_order_reports_by_id(@ids);
+    return @orders;
+}
 
 sub get_unprocessed_order_report_ids {
     my $self = shift;
@@ -2293,6 +2328,40 @@ sub get_unprocessed_order_report_ids {
         }
     }
     return @reportids;
+}
+
+
+=head3 get_order_reports_by_id(@id_list)
+
+=cut
+
+sub get_order_reports_by_id {
+    my ($self, @ids) = @_;
+    my @orders;
+    foreach my $id (@ids) {
+        my $xml = $self->client->GetReport(ReportId => $id);
+        if (my @got = $self->_parse_order_reports_xml($xml)) {
+            push @orders, @got;
+        }
+    }
+    return @orders;
+}
+
+sub _parse_order_reports_xml {
+    my ($self, $xml) = @_;
+    my @orders;
+    my $data = $self->xml_reader->($xml);
+    if (my $messages = $data->{Message}) {
+        foreach my $message (@$messages) {
+            if (my $order = $message->{OrderReport}) {
+                push @orders, $order;
+            }
+            else {
+                die "Cannot found expected OrderReport in " . Dumper($message);
+            }
+        }
+    }
+    return @orders;
 }
 
 1;
