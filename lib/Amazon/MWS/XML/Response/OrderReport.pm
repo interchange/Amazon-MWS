@@ -9,7 +9,7 @@ use Data::Dumper;
 use Amazon::MWS::XML::Response::OrderReport::Item;
 use Amazon::MWS::XML::Address;
 use Moo;
-use MooX::Types::MooseLike::Base qw(HashRef ArrayRef);
+use MooX::Types::MooseLike::Base qw(HashRef ArrayRef Str Int);
 use namespace::clean;
 
 =head1 NAME
@@ -137,6 +137,132 @@ sub order_date {
 
 sub items {
     return @{ shift->_items_ref };
+}
+
+sub as_ack_order_hashref {
+    my $self = shift;
+    my @items;
+    foreach my $item ($self->items) {
+        push @items, $item->as_ack_orderline_item_hashref;
+    }
+    return {
+            AmazonOrderID => $self->amazon_order_number,
+            MerchantOrderID => $self->order_number,
+            Item => \@items,
+           };
+}
+
+=head2 can_be_imported
+
+Compatibility method with L<Amazon::MWS::XML::Order>. Given that this
+is a report, the order can be imported right away without checking.
+LFW.
+
+=head2 order_status
+
+Compatibility method.
+
+=cut
+
+sub can_be_imported {
+    # why not?
+    return 1;
+}
+
+sub order_status {
+    return 'Report';
+}
+
+=head2 currency
+
+We check the items currency.
+
+=head2 shipping_cost
+
+The sum of the shipping of all the items (including taxes from the
+Amazon point of view).
+
+=head2 subtotal
+
+The sum of the items' subtotal
+
+=head2 total_cost
+
+The grand total
+
+=head2 total_amazon_fee
+
+The total of the amazon fees.
+
+=head2 number_of_items
+
+Total number of items.
+
+=cut
+
+has currency => (is => 'lazy', isa => Str);
+
+sub _build_currency {
+    my $self = shift;
+    my $currency;
+    foreach my $item ($self->items) {
+        my $item_currency = $item->currency;
+        die "Missign currency on item?" . Dumper($item) unless $item_currency;
+        if ($currency) {
+            if ($currency ne $item_currency) {
+                die "Currency mismatch in the same order, should happen" . Dumper($self);
+            }
+        }
+        else {
+            $currency = $item_currency;
+        }
+    }
+    return $currency;
+}
+
+has shipping_cost => (is => 'lazy', isa => Str);
+
+sub _build_shipping_cost {
+    return shift->_calc_sum_item_method('shipping');
+}
+
+has subtotal => (is => 'lazy', isa => Str);
+
+sub _build_subtotal {
+    return shift->_calc_sum_item_method('subtotal');
+}
+
+has total_cost => (is => 'lazy', isa => Str);
+
+sub _build_total_cost {
+    return shift->_calc_sum_item_method('total_price');
+}
+
+has total_amazon_fee => (is => 'lazy', isa => Str);
+
+sub _build_total_amazon_fee {
+    return shift->_calc_sum_item_method('amazon_fee');
+}
+
+sub _calc_sum_item_method {
+    my ($self, $method) = @_;
+    die unless $method;
+    my $cost = 0;
+    foreach my $item ($self->items) {
+        $cost += $item->$method;
+    }
+    return sprintf ('%.2f', $cost);
+}
+
+has number_of_items => (is => 'lazy', isa => Int);
+
+sub _build_number_of_items {
+    my $self = shift;
+    my $count = 0;
+    foreach my $item ($self->items) {
+        $count += $item->quantity;
+    }
+    return $count;
 }
 
 1;

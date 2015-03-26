@@ -10,7 +10,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 87;
+    plan tests => 106;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -273,6 +273,7 @@ foreach my $struct (@orders) {
         is $order->order_date->ymd, '2015-03-24';
         is ($order->billing_address->phone, '07777777777', 'phone matches')
           or diag Dumper($order->billing_address->phone);
+        is $order->currency, 'EUR';
     }
     my @items = $order->items;
     foreach my $item (@items) {
@@ -300,5 +301,16 @@ foreach my $struct (@orders) {
             is ($item->amazon_fee, '-9.60');
         }
     }
+    $order->order_number('testme');
+    ok $order->as_ack_order_hashref, "Hashref ok";
+    ok $order->can_be_imported;
+    ok $order->order_status;
+    diag Dumper($order->as_ack_order_hashref);
+    ok($order->currency, "currency ok");
+    ok $order->shipping_cost;
+    ok $order->subtotal;
+    ok $order->total_amazon_fee;
+    ok $order->total_cost;
+    is $order->number_of_items, 1, "Only one item";
 }
 
