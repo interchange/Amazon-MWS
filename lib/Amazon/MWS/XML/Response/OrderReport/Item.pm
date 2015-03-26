@@ -85,6 +85,11 @@ quantity.
 
 =item shipping_tax
 
+=item amazon_fee
+
+The price paid to amazon for the given item. It could be a negative
+number.
+
 =item currency
 
 =item name
@@ -110,8 +115,18 @@ has shipping_netto => (is => 'lazy');
 has price_netto => (is => 'lazy');
 has item_tax => (is => 'lazy');
 has shipping_tax => (is => 'lazy');
+has amazon_fee => (is => 'lazy');
 
-
+sub _build_amazon_fee {
+    my $self = shift;
+    my $toll = 0;
+    if (my $fees = $self->ItemFees->{Fee}) {
+        foreach my $fee (@$fees) {
+            $toll += $fee->{Amount}->{_} || 0;
+        }
+    }
+    return sprintf('%.2f', $toll);
+}
 
 sub _build_shipping_netto {
     return shift->_get_price_component('Shipping');
@@ -150,7 +165,7 @@ sub _build_total_price {
     my $amount = 0;
     if (my $components = $self->ItemPrice->{Component}) {
         foreach my $comp (@$components) {
-            $amount += $comp->{Amount}->{_};
+            $amount += $comp->{Amount}->{_} || 0;
         }
     }
     my $total_price = sprintf('%.2f', $amount);
