@@ -10,7 +10,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 65;
+    plan tests => 67;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -286,9 +286,11 @@ foreach my $struct (@orders) {
         }
         if ($count == 1) {
             is $item->currency, 'EUR';
+            is $item->total_price, '17.55';
         }
         else {
             is $item->currency, 'USD';
+            is $item->total_price, '63.99';
         }
     }
 }

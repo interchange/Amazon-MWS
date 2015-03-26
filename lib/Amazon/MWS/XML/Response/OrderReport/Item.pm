@@ -90,6 +90,7 @@ has subtotal => (is => 'lazy');
 has tax => (is => 'lazy');
 has shipping_tax => (is => 'lazy');
 has price => (is => 'lazy');
+has total_price => (is => 'lazy');
 
 sub _build_shipping {
     return shift->_get_price_component('Shipping');
@@ -110,6 +111,24 @@ sub _build_shipping_tax {
 sub _build_price {
     my $self = shift;
     return sprintf('%.2f', $self->subtotal / $self->quantity);
+}
+
+sub _build_total_price {
+    my $self = shift;
+    my $amount = 0;
+    if (my $components = $self->ItemPrice->{Component}) {
+        foreach my $comp (@$components) {
+            $amount += $comp->{Amount}->{_};
+        }
+    }
+    my $total_price = sprintf('%.2f', $amount);
+    my $check = $self->subtotal + $self->shipping + $self->shipping_tax + $self->tax;
+    if ($total_price eq sprintf('%.2f', $check)) {
+        return $total_price;
+    }
+    else {
+        die "There is a bug in the price routine!";
+    }
 }
 
 has currency => (is => 'lazy');
