@@ -106,6 +106,127 @@ my $xml = <<'AMAZONXML';
 
 AMAZONXML
 
-my @orders = $uploader->_parse_order_reports_xml($xml);
+my $xml_doc = <<'AMAZONXML';
+<?xml version="1.0" encoding="UTF-8" ?>
+<AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amzn-
+envelope.xsd">
+<Header>
+<DocumentVersion>1.01</DocumentVersion>
+<MerchantIdentifier>M_IDENTIFIER</MerchantIdentifier>
+</Header>
+<MessageType>OrderReport</MessageType>
+<Message>
+<MessageID>1</MessageID>
+<OrderReport>
+<AmazonOrderID>104-2391705-5555555</AmazonOrderID>
+<AmazonSessionID>104-2391705-5555555</AmazonSessionID>
+<OrderDate>2008-12-30T08:23:23-08:00</OrderDate>
+<OrderPostedDate>2008-12-30T08:23:23-08:00</OrderPostedDate>
+<BillingData>
+<BuyerEmailAddress>testmerchant@gmail.com</BuyerEmailAddress>
+<BuyerName>ABC Limited</BuyerName>
+<BuyerPhoneNumber>407-9999999</BuyerPhoneNumber>
+</BillingData>
+<FulfillmentData>
+<FulfillmentMethod>Ship</FulfillmentMethod>
+<FulfillmentServiceLevel>Standard</FulfillmentServiceLevel>
+<Address>
+<Name>John Doe</Name>
+<AddressFieldOne>John Doe</AddressFieldOne>
+<AddressFieldTwo>4270 Cedar Ave</AddressFieldTwo>
+<City>SUMNER PARK</City>
+<StateOrRegion>FL</StateOrRegion>
+<PostalCode>32091</PostalCode>
+<CountryCode>US</CountryCode>
+<PhoneNumber>407-9999999</PhoneNumber>
+</Address>
+</FulfillmentData>
+<Item>
+<AmazonOrderItemCode>55995643055555</AmazonOrderItemCode>
+<SKU>414070</SKU>
+<Title>Nike Women's Air Pegasus+ 25 ESC Running Shoe (Anthracite/ Grey/ Neutral Grey/ Mandarin) 9</Title>
+<Quantity>1</Quantity>
+<ProductTaxCode>A_GEN_TAX</ProductTaxCode>
+<ItemPrice>
+<Component>
+<Type>Principal</Type>
+<Amount currency="USD">63.99</Amount>
+</Component>
+<Component>
+<Type>Shipping</Type>
+<Amount currency="USD">0.00</Amount>
+</Component>
+<Component>
+<Type>Tax</Type>
+<Amount currency="USD">0.00</Amount>
+</Component>
+<Component>
+<Type>ShippingTax</Type>
+<Amount currency="USD">0.00</Amount>
+</Component>
+</ItemPrice>
+<ItemFees>
+<Fee>
+<Type>Commission</Type>
+<Amount currency="USD">-9.60</Amount>
+</Fee>
+</ItemFees>
+<ItemTaxData>
+<TaxJurisdictions>
+<TaxLocationCode>100951788</TaxLocationCode>
+<City>SUMNER</City>
+<County>BROWARD</County>
+<State>FL</State>
+</TaxJurisdictions>
+<TaxableAmounts>
+<District currency="USD">0.00</District>
+<City currency="USD">0.00</City>
+<County currency="USD">0.00</County>
+<State currency="USD">0.00</State>
+</TaxableAmounts>
+<NonTaxableAmounts>
+<District currency="USD">0.00</District>
+<City currency="USD">0.00</City>
+<County currency="USD">63.99</County>
+<State currency="USD">63.99</State>
+</NonTaxableAmounts>
+<ZeroRatedAmounts>
+<District currency="USD">63.99</District>
+<City currency="USD">63.99</City>
+<County currency="USD">0.00</County>
+<State currency="USD">0.00</State>
+</ZeroRatedAmounts>
+<TaxCollectedAmounts>
+<District currency="USD">0.00</District>
+<City currency="USD">0.00</City>
+<County currency="USD">0.00</County>
+<State currency="USD">0.00</State>
+</TaxCollectedAmounts>
+<TaxRates>
+<District>0.0000</District>
+<City>0.0000</City>
+<County>0.0000</County>
+<State>0.0000</State>
+</TaxRates>
+</ItemTaxData>
+<Promotion>
+<PromotionClaimCode>_SITE_WIDE_</PromotionClaimCode>
+<MerchantPromotionID>FREESHIPPINGOVER25</MerchantPromotionID>
+<Component>
+<Type>Principal</Type>
+<Amount currency="USD">0.00</Amount>
+</Component>
+<Component>
+<Type>Shipping</Type>
+<Amount currency="USD">0.00</Amount>
+</Component>
+</Promotion>
+</Item>
+</OrderReport>
+</Message>
+</AmazonEnvelope>
+AMAZONXML
 
-ok(scalar(@orders), "Got the order");
+my @orders = ($uploader->_parse_order_reports_xml($xml), $uploader->_parse_order_reports_xml($xml_doc));
+
+ok(@orders == 2, "Got the orders");
