@@ -4,12 +4,13 @@ use warnings;
 use utf8;
 
 use Amazon::MWS::Uploader;
+use Amazon::MWS::XML::Response::OrderReport;
 use Test::More;
 use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 2;
+    plan tests => 13;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -230,3 +231,21 @@ AMAZONXML
 my @orders = ($uploader->_parse_order_reports_xml($xml), $uploader->_parse_order_reports_xml($xml_doc));
 
 ok(@orders == 2, "Got the orders");
+my $count = 0;
+foreach my $struct (@orders) {
+    $count++;
+    my $order = Amazon::MWS::XML::Response::OrderReport->new(struct => $struct);
+    ok ($order, "object ok");
+    ok ($order->amazon_order_number, "Got order number")  and diag $order->amazon_order_number;
+    is_deeply($order->struct, $struct, "struct intact, of course");
+
+    my $order_date = $order->order_date;
+    ok($order_date->isa('DateTime'), "datetime object returned");
+
+    # test only the first order for exact match for now
+    if ($count == 1) {
+        is $order->email, 'asdfalklkasdfdh@marketplace.amazon.de';
+        is $order->amazon_order_number, '028-1111111-1111111';
+        is $order->order_date->ymd, '2015-03-24';
+    }
+}
