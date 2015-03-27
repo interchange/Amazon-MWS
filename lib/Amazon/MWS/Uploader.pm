@@ -2382,6 +2382,43 @@ sub _parse_order_reports_xml {
     return @orders;
 }
 
+
+=head2 acknowledge_reports(@ids)
+
+Mark the reports as processed.
+
+=head2 unacknowledge_reports(@ids)
+
+Mark the reports as not processed.
+
+=cut
+
+sub acknowledge_reports {
+    my ($self, @ids) = @_;
+    $self->_toggle_ack_reports(1, @ids);
+}
+
+sub unacknowledge_reports {
+    my ($self, @ids) = @_;
+    $self->_toggle_ack_reports(0, @ids);
+}
+
+sub _toggle_ack_reports {
+    my ($self, $flag, @ids) = @_;
+    return unless @ids;
+    while (@ids) {
+        # max 100 ids per run
+        my @list = splice(@ids, 0, 100);
+        try {
+            $self->client->UpdateReportAcknowledgements(ReportIdList => \@list,
+                                                        Acknowledged => $flag);
+        } catch {
+            _handle_exception($_);
+        };
+    }
+    return;
+}
+
 sub _handle_exception {
     my ($err) = @_;
     if (blessed $err) {
@@ -2390,15 +2427,24 @@ sub _handle_exception {
             $msg = $err->xml;
         }
         elsif ( $err->isa('Amazon::MWS::Exception')) {
-            $msg = $err->error . "\n" . $_->trace->as_string . "\n";
+            if (my $string = $err->error) {
+                $msg = $string;
+            }
+            else {
+                $msg = Dumper($err);
+            }
         }
         else {
             $msg = Dumper($err);
+        }
+        if ( $err->isa('Amazon::MWS::Exception')) {
+            $msg .= "\n" . $err->trace->as_string . "\n";
         }
         die $msg;
     }
     die $err;
 }
+
 
 
 1;
