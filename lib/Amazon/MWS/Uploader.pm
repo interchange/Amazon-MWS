@@ -8,6 +8,7 @@ use Amazon::MWS::XML::Feed;
 use Amazon::MWS::XML::Order;
 use Amazon::MWS::Client;
 use Amazon::MWS::XML::Response::FeedSubmissionResult;
+use Amazon::MWS::XML::Response::OrderReport;
 use Data::Dumper;
 use File::Spec;
 use DateTime;
@@ -2312,9 +2313,15 @@ sub get_unprocessed_orders {
 
 sub get_unprocessed_order_report_ids {
     my $self = shift;
-    my $res = $self->client
-      ->GetReportList(Acknowledged => 0,
-                      ReportTypeList => ['_GET_ORDERS_DATA_']);
+    my $res;
+    try {
+        $res = $self->client
+          ->GetReportList(Acknowledged => 0,
+                          ReportTypeList => ['_GET_ORDERS_DATA_']);
+    } catch {
+        _handle_exception($_);
+    };
+
     my @reportids;
 
     # for now, do not ask for the next token, we will process them all
@@ -2333,15 +2340,25 @@ sub get_unprocessed_order_report_ids {
 
 =head3 get_order_reports_by_id(@id_list)
 
+The GetReport operation has a maximum request quota of 15 and a
+restore rate of one request every minute.
+
 =cut
 
 sub get_order_reports_by_id {
     my ($self, @ids) = @_;
     my @orders;
     foreach my $id (@ids) {
-        my $xml = $self->client->GetReport(ReportId => $id);
-        if (my @got = $self->_parse_order_reports_xml($xml)) {
-            push @orders, @got;
+        my $xml;
+        try {
+            $xml = $self->client->GetReport(ReportId => $id);
+        } catch {
+            _handle_exception($_);
+        };
+        if ($xml) {
+            if (my @got = $self->_parse_order_reports_xml($xml)) {
+                push @orders, @got;
+            }
         }
     }
     return @orders;
@@ -2354,7 +2371,8 @@ sub _parse_order_reports_xml {
     if (my $messages = $data->{Message}) {
         foreach my $message (@$messages) {
             if (my $order = $message->{OrderReport}) {
-                push @orders, $order;
+                my $order_object = Amazon::MWS::XML::Response::OrderReport->new(struct => $order);
+                push @orders, $order_object;
             }
             else {
                 die "Cannot found expected OrderReport in " . Dumper($message);
@@ -2363,5 +2381,24 @@ sub _parse_order_reports_xml {
     }
     return @orders;
 }
+
+sub _handle_exception {
+    my ($err) = @_;
+    if (blessed $err) {
+        my $msg;
+        if ( $err->isa('Amazon::MWS::Exception::Throttled') ) {
+            $msg = $err->xml;
+        }
+        elsif ( $err->isa('Amazon::MWS::Exception')) {
+            $msg = $err->error . "\n" . $_->trace->as_string . "\n";
+        }
+        else {
+            $msg = Dumper($err);
+        }
+        die $msg;
+    }
+    die $err;
+}
+
 
 1;
