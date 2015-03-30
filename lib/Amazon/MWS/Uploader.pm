@@ -2312,12 +2312,14 @@ sub get_unprocessed_orders {
 }
 
 sub get_unprocessed_order_report_ids {
-    my $self = shift;
+    my ($self, %options) = @_;
     my $res;
     try {
         $res = $self->client
           ->GetReportList(Acknowledged => 0,
-                          ReportTypeList => ['_GET_ORDERS_DATA_']);
+                          ReportTypeList => ['_GET_ORDERS_DATA_'],
+                          %options,
+                         );
     } catch {
         _handle_exception($_);
     };
