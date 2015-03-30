@@ -8,6 +8,7 @@ use Amazon::MWS::XML::Feed;
 use Amazon::MWS::XML::Order;
 use Amazon::MWS::Client;
 use Amazon::MWS::XML::Response::FeedSubmissionResult;
+use Amazon::MWS::XML::Response::OrderReport;
 use Data::Dumper;
 use File::Spec;
 use DateTime;
@@ -20,7 +21,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -2268,18 +2269,59 @@ sub get_products_with_amazon_shop_mismatches {
     return \%mismatches;
 }
 
-=head2 get_unprocessed_order_report_ids
+
+=head2 Order Report
+
+To get this feature working, you need an C<amzn-envelope.xsd> with
+OrderReport plugged in. Older versions are broken. Newer schema
+versions may have missing Amazon.xsd file. So either you ask amazon to
+give you a B<full set of xsd, which inclused OrderReport in
+amzn-envelope.xsd> or you apply this patch to amzn-envelope.xsd:
+
+  --- a/amzn-envelope.xsd  2014-10-27 10:26:19.000000000 +0100
+  +++ b/amzn-envelope.xsd  2015-03-26 10:56:16.000000000 +0100
+  @@ -23,2 +23,3 @@
+          <xsd:include schemaLocation="Price.xsd"/>
+  +    <xsd:include schemaLocation="OrderReport.xsd"/>
+          <xsd:include schemaLocation="ProcessingReport.xsd"/>
+  @@ -41,2 +42,3 @@
+                                                          <xsd:enumeration value="OrderFulfillment"/>
+  +                            <xsd:enumeration value="OrderReport"/>
+                                                          <xsd:enumeration value="Override"/>
+  @@ -83,2 +85,3 @@
+                                                                  <xsd:element ref="OrderFulfillment"/>
+  +                                <xsd:element ref="OrderReport"/>
+                                                                  <xsd:element ref="Override"/>
+
+=head3 get_unprocessed_orders
+
+Return a list of objects with the orders.
+
+=head3 get_unprocessed_order_report_ids
 
 Return a list of unprocessed (i.e., which weren't acknowledged by us)
 order report ids.
 
 =cut
 
+sub get_unprocessed_orders {
+    my ($self) = @_;
+    my @ids = $self->get_unprocessed_order_report_ids;
+    my @orders = $self->get_order_reports_by_id(@ids);
+    return @orders;
+}
+
 sub get_unprocessed_order_report_ids {
     my $self = shift;
-    my $res = $self->client
-      ->GetReportList(Acknowledged => 0,
-                      ReportTypeList => ['_GET_ORDERS_DATA_']);
+    my $res;
+    try {
+        $res = $self->client
+          ->GetReportList(Acknowledged => 0,
+                          ReportTypeList => ['_GET_ORDERS_DATA_']);
+    } catch {
+        _handle_exception($_);
+    };
+
     my @reportids;
 
     # for now, do not ask for the next token, we will process them all
@@ -2294,5 +2336,115 @@ sub get_unprocessed_order_report_ids {
     }
     return @reportids;
 }
+
+
+=head3 get_order_reports_by_id(@id_list)
+
+The GetReport operation has a maximum request quota of 15 and a
+restore rate of one request every minute.
+
+=cut
+
+sub get_order_reports_by_id {
+    my ($self, @ids) = @_;
+    my @orders;
+    foreach my $id (@ids) {
+        my $xml;
+        try {
+            $xml = $self->client->GetReport(ReportId => $id);
+        } catch {
+            _handle_exception($_);
+        };
+        if ($xml) {
+            if (my @got = $self->_parse_order_reports_xml($xml)) {
+                push @orders, @got;
+            }
+        }
+    }
+    return @orders;
+}
+
+sub _parse_order_reports_xml {
+    my ($self, $xml) = @_;
+    my @orders;
+    my $data = $self->xml_reader->($xml);
+    if (my $messages = $data->{Message}) {
+        foreach my $message (@$messages) {
+            if (my $order = $message->{OrderReport}) {
+                my $order_object = Amazon::MWS::XML::Response::OrderReport->new(struct => $order);
+                push @orders, $order_object;
+            }
+            else {
+                die "Cannot found expected OrderReport in " . Dumper($message);
+            }
+        }
+    }
+    return @orders;
+}
+
+
+=head2 acknowledge_reports(@ids)
+
+Mark the reports as processed.
+
+=head2 unacknowledge_reports(@ids)
+
+Mark the reports as not processed.
+
+=cut
+
+sub acknowledge_reports {
+    my ($self, @ids) = @_;
+    $self->_toggle_ack_reports(1, @ids);
+}
+
+sub unacknowledge_reports {
+    my ($self, @ids) = @_;
+    $self->_toggle_ack_reports(0, @ids);
+}
+
+sub _toggle_ack_reports {
+    my ($self, $flag, @ids) = @_;
+    return unless @ids;
+    while (@ids) {
+        # max 100 ids per run
+        my @list = splice(@ids, 0, 100);
+        try {
+            $self->client->UpdateReportAcknowledgements(ReportIdList => \@list,
+                                                        Acknowledged => $flag);
+        } catch {
+            _handle_exception($_);
+        };
+    }
+    return;
+}
+
+sub _handle_exception {
+    my ($err) = @_;
+    if (blessed $err) {
+        my $msg;
+        if ( $err->isa('Amazon::MWS::Exception::Throttled') ) {
+            $msg = $err->xml;
+        }
+        elsif ( $err->isa('Amazon::MWS::Exception')) {
+            if (my $string = $err->error) {
+                $msg = $string;
+            }
+            else {
+                $msg = Dumper($err);
+            }
+        }
+        else {
+            $msg = Dumper($err);
+        }
+        if ( $err->isa('Amazon::MWS::Exception')) {
+            $msg .= "\n" . $err->trace->as_string . "\n";
+        }
+        die $msg;
+    }
+    die $err;
+}
+
+
 
 1;
