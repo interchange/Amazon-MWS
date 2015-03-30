@@ -243,12 +243,11 @@ my @orders = ($uploader->_parse_order_reports_xml($xml), $uploader->_parse_order
 
 ok(@orders == 2, "Got the orders");
 my $count = 0;
-foreach my $struct (@orders) {
+foreach my $order (@orders) {
     $count++;
-    my $order = Amazon::MWS::XML::Response::OrderReport->new(struct => $struct);
     ok ($order, "object ok");
     ok ($order->amazon_order_number, "Got order number")  and diag $order->amazon_order_number;
-    is_deeply($order->struct, $struct, "struct intact, of course");
+    ok ($order->struct, "struct ok");
 
     my $order_date = $order->order_date;
     ok($order_date->isa('DateTime'), "datetime object returned");

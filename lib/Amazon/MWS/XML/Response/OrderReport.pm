@@ -57,19 +57,21 @@ has billing_address => (is => 'lazy');
 
 sub _build_shipping_address {
     my $self = shift;
-    my $data = $self->struct->{FulfillmentData};
-    # unclear if we want to check the FulfillmentMethod
-    if (my $address = $data->{Address}) {
-        return Amazon::MWS::XML::Address->new(%$address);
+    if (my $data = $self->struct->{FulfillmentData}) {
+        # unclear if we want to check the FulfillmentMethod
+        if (my $address = $data->{Address}) {
+            return Amazon::MWS::XML::Address->new(%$address);
+        }
     }
     return undef;
 }
 
 sub _build_billing_address {
     my $self = shift;
-    my $data = $self->struct->{BillingData};
-    if (my $address = $data->{Address}) {
-        return Amazon::MWS::XML::Address->new(%$address);
+    if (my $data = $self->struct->{BillingData}) {
+        if (my $address = $data->{Address}) {
+            return Amazon::MWS::XML::Address->new(%$address);
+        }
     }
     return undef;
 }
