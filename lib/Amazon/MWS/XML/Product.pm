@@ -102,10 +102,9 @@ The price is rounded via sprintf '%.2f' by the module.
 
 =item currency
 
-Default to EUR. Valid values are: AUD BRL CAD CNY DEFAULT EUR GBP INR
-JPY MXN USD.
+Valid values are: AUD BRL CAD CNY DEFAULT EUR GBP INR JPY MXN USD.
 
-Default to EUR.
+Defaults to EUR.
 
 =item sale_price
 
