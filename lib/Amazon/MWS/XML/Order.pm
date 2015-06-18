@@ -100,6 +100,21 @@ sub amazon_order_number {
     return shift->order->{AmazonOrderId};
 }
 
+=head2 amazon_order_number
+
+The Amazon order id.
+
+=head2 remote_shop_order_id
+
+Same as C<amazon_order_number>
+
+=cut
+
+sub remote_shop_order_id {
+    return shift->amazon_order_number;
+}
+
+
 sub email {
     return shift->order->{BuyerEmail};
 }
@@ -119,6 +134,7 @@ sub _build_items_ref {
     my $orderline = $self->orderline;
     my @items;
     foreach my $item (@$orderline) {
+        # print Dumper($item);
         push @items, Amazon::MWS::XML::OrderlineItem->new(%$item);
     }
     return \@items;

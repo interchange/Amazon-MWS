@@ -119,4 +119,8 @@ sub region {
     return shift->StateOrRegion;
 }
 
+sub state {
+    return shift->StateOrRegion;
+}
+
 1;

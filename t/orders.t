@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 10;
 
 use Amazon::MWS::XML::Order;
 
@@ -116,3 +116,5 @@ is $global, 1, "get_orderline called";
 is_deeply(\@newitems, \@items);
 is($items[0]->price, "59.90");
 ok ($order->order_is_shipped, "It is shipped");
+is ($order->amazon_order_number, $order->remote_shop_order_id, "alias ok");
+is ($order->shipping_address->state, $order->shipping_address->region, "state and region are aliases");
