@@ -290,4 +290,9 @@ sub can_be_imported {
     }
 }
 
+sub shop_type {
+    return 'amazon';
+}
+
+
 1;
