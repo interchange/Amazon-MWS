@@ -21,7 +21,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
