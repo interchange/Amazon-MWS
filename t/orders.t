@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 10;
+use Test::More tests => 13;
 
 use Amazon::MWS::XML::Order;
 
@@ -118,3 +118,6 @@ is($items[0]->price, "59.90");
 ok ($order->order_is_shipped, "It is shipped");
 is ($order->amazon_order_number, $order->remote_shop_order_id, "alias ok");
 is ($order->shipping_address->state, $order->shipping_address->region, "state and region are aliases");
+is ($order->first_name, 'John');
+is ($order->last_name, 'Doe');
+is ($order->shipping_method, '');

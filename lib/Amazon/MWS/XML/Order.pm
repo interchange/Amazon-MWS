@@ -131,7 +131,7 @@ has first_name => (is => 'lazy');
 
 sub _build_first_name {
     my $self = shift;
-    my ($fist, $last) = $self->_get_first_last_name;
+    my ($first, $last) = $self->_get_first_last_name;
     return $first || '';
 }
 
@@ -139,12 +139,13 @@ has last_name => (is => 'lazy');
 
 sub _build_last_name {
     my $self = shift;
-    my ($fist, $last) = $self->_get_first_last_name;
+    my ($first, $last) = $self->_get_first_last_name;
     return $last || '';
 }
 
 sub _get_first_last_name {
-    my $address = $order->shipping_address;
+    my $self = shift;
+    my $address = $self->shipping_address;
     die "Missing name in shipping address" unless $address->name;
     # this is totally euristic
     my ($first_name, $last_name) = split(/\s+/, $address->name, 2);
