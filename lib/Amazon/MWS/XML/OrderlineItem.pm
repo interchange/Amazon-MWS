@@ -64,6 +64,11 @@ sub amazon_order_item {
     return shift->OrderItemId;
 }
 
+sub remote_shop_order_item {
+    return shift->amazon_order_item;
+}
+
+
 sub currency {
     return shift->ItemPrice->{CurrencyCode};
 }
