@@ -290,9 +290,32 @@ sub can_be_imported {
     }
 }
 
+
+=head2 shop_type
+
+Returns C<amazon>
+
+=head2 comments
+
+Returns an empty string
+
+=head2 payment_method
+
+Returns C<Amazon>
+
+=cut
+
 sub shop_type {
     return 'amazon';
 }
 
+sub comments {
+    # unclear if we have something like that
+    return '';
+}
+
+sub payment_method {
+    return 'Amazon';
+}
 
 1;
