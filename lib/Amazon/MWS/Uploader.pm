@@ -310,7 +310,12 @@ If set to an integer, abort the job after X hours are elapsed since
 the job was started. Default to 3 hours. Set to 0 to disable (not
 recommended).
 
-This doesn't affect jobs for order acknowledgements (C<order_ack>).
+This doesn't affect jobs for order acknowledgements (C<order_ack>), see below.
+
+=item order_ack_days_timeout
+
+Order acknowlegments times out at different rate, because it's somehow
+sensitive.
 
 =cut
 
@@ -318,6 +323,9 @@ has job_hours_timeout => (is => 'ro',
                           isa => Int,
                           default => sub { 3 });
 
+has order_ack_days_timeout => (is => 'ro',
+                               isa => Int,
+                               default => sub { 30 });
 
 has limit_inventory => (is => 'ro',
                         isa => Int);
@@ -749,19 +757,12 @@ sub resume {
     while (my $row = $pending->fetchrow_hashref) {
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {
-            # do not timeout order_ack jobs.
-            if ($row->{task} ne 'order_ack') {
-                if (my $timeout = $self->job_hours_timeout) {
-                    if (my $started = $row->{job_started_epoch}) {
-                        my $now = time();
-                        if (($now - $started) > ($timeout * 60 * 60)) {
-                            warn "Timeout reached for $row->{amws_job_id}, aborting\n";
-                            $self->cancel_job($row->{task}, $row->{amws_job_id},
-                                              "Job timed out after $timeout hours");
-                            next;
-                        }
-                    }
-                }
+            if (my $seconds_elapsed = $self->job_timed_out($row)) {
+                warn "Timeout reached for $row->{amws_job_id}, aborting: "
+                  . Dumper($row);
+                $self->cancel_job($row->{task}, $row->{amws_job_id},
+                                  "Job timed out after $seconds_elapsed seconds");
+                next;
             }
             $self->process_feeds($row);
         }
@@ -2447,6 +2448,29 @@ sub _handle_exception {
     die $err;
 }
 
-
+sub job_timed_out {
+    my ($self, $job_row) = @_;
+    my $task = $job_row->{task};
+    die "Missing task in $job_row->{amws_job_id}" unless $task;
+    my $started = $job_row->{job_started_epoch};
+    die "Missing job_started_epoch in $job_row->{amws_job_id}" unless $started;
+    my $now = time();
+    my $timeout;
+    if ($task eq 'order_ack') {
+        $timeout = $self->order_ack_days_timeout * 60 * 60 * 24;
+    }
+    else {
+        $timeout = $self->job_hours_timeout * 60 * 60;
+    }
+    die "Something is off, timeout not defined" unless defined $timeout;
+    return unless $timeout;
+    my $elapsed = $now - $started;
+    if ($elapsed > $timeout) {
+        return $elapsed;
+    }
+    else {
+        return;
+    }
+}
 
 1;

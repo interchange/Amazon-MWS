@@ -6,6 +6,7 @@ use warnings;
 use Amazon::MWS::Uploader;
 use Data::Dumper;
 use Test::More;
+use DateTime;
 
 binmode STDOUT, ':utf8';
 binmode STDERR, ':utf8';
@@ -13,7 +14,7 @@ binmode STDERR, ':utf8';
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 19;
+    plan tests => 22;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -127,3 +128,27 @@ $uploader = Amazon::MWS::Uploader->new(%constructor,
                         ]);
 }
 
+my $now = DateTime->now;
+
+my $old = $now->clone->subtract(days => 4);
+
+ok (!$uploader->job_timed_out({
+                               task => 'order_ack',
+                               job_started_epoch => $old->epoch,
+                              }),
+    "order_ack doesn't timeout in 4 days since " . $old->ymd);
+
+ok ($uploader->job_timed_out({
+                              task => 'upload',
+                              job_started_epoch => $old->epoch,
+                             }),
+    "upload timeouts in 4 days since " . $old->ymd);
+
+
+$old = $now->clone->subtract(days => 31);
+
+ok ($uploader->job_timed_out({
+                              task => 'order_ack',
+                              job_started_epoch => $old->epoch,
+                             }),
+    "order_ack doesn't timeout in 31 days since " . $old->ymd);
