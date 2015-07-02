@@ -14,7 +14,7 @@ binmode STDERR, ':utf8';
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 22;
+    plan tests => 24;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -130,7 +130,21 @@ $uploader = Amazon::MWS::Uploader->new(%constructor,
 
 my $now = DateTime->now;
 
-my $old = $now->clone->subtract(days => 4);
+my $old = $now->clone->subtract(hours => 2);
+
+ok (!$uploader->job_timed_out({
+                               task => 'order_ack',
+                               job_started_epoch => $old->epoch,
+                              }),
+    "order_ack doesn't timeout in 2 hours since " . $old->ymd);
+
+ok (!$uploader->job_timed_out({
+                               task => 'upload',
+                               job_started_epoch => $old->epoch,
+                              }),
+    "upload doesn't timeout in 2 hours since " . $old->ymd);
+
+$old = $now->clone->subtract(days => 4);
 
 ok (!$uploader->job_timed_out({
                                task => 'order_ack',
