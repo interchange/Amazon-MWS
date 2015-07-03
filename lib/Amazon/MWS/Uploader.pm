@@ -21,7 +21,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -472,6 +472,7 @@ sub _build_existing_products {
     my $sth = $self->_exe_query($self->sqla->select(amazon_mws_products => [qw/sku
                                                                                timestamp_string
                                                                                status
+                                                                               listed
                                                                                error_code
                                                                               /],
                                                     {
