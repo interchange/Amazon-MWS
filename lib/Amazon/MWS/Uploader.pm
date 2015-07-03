@@ -21,7 +21,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -68,6 +68,13 @@ The table structure needed is defined and commented in sql/amazon.sql
   # every 10 minutes or so, continue the work started with ->upload, if any
   $agent->resume;
 
+
+=head1 UPGRADE NOTES
+
+When migrating from 0.05 to 0.06 please execute this SQL statement
+
+ ALTER TABLE amazon_mws_products ADD COLUMN listed BOOLEAN;
+ UPDATE amazon_mws_products SET listed = 1 WHERE status = 'ok';
 
 =head1 ACCESSORS
 
@@ -640,9 +647,6 @@ sub upload {
     # create the feeds to be uploaded using the products
     my @products = @{ $self->products_to_upload };
 
-    # at the end of this method, we insert them anew marking them as
-    # pending
-    $self->_remove_products_from_table(@products);
     unless (@products) {
         print "No products, can't upload anything\n";
         return;
@@ -670,30 +674,30 @@ sub upload {
     $self->_mark_products_as_pending($job_id, @products);
 }
 
-sub _remove_products_from_table {
-    my ($self, @products) = @_;
-    return unless @products;
-    my @skus = map { $_->sku } @products;
-    # delete those skus from the db, we will insert them again aftward
-    $self->_exe_query($self->sqla->delete('amazon_mws_products',
-                                          {
-                                           sku => { -in => \@skus },
-                                           shop_id => $self->_unique_shop_id,
-                                          }));
-}
-
 sub _mark_products_as_pending {
     my ($self, $job_id, @products) = @_;
     die "Bad usage" unless $job_id;
     # these skus were cleared up when asking for the products to upload
     foreach my $p (@products) {
-        $self->_exe_query($self->sqla->insert(amazon_mws_products => {
-                                                                      amws_job_id => $job_id,
-                                                                      sku => $p->sku,
-                                                                      status => 'pending',
-                                                                      shop_id => $self->_unique_shop_id,
-                                                                      timestamp_string => $p->timestamp_string,
-                                                                     }));
+        my %identifier = (
+                          sku => $p->sku,
+                          shop_id => $self->_unique_shop_id,
+                         );
+        my %data = (
+                    amws_job_id => $job_id,
+                    status => 'pending',
+                    timestamp_string => $p->timestamp_string,
+                   );
+        my $check = $self
+          ->_exe_query($self->sqla->select(amazon_mws_products => [qw/sku/],  { %identifier }));
+        my $existing = $check->fetchrow_hashref;
+        $check->finish;
+        if ($existing) {
+            $self->_exe_query($self->sqla->update(amazon_mws_products => \%data, \%identifier));
+        }
+        else {
+            $self->_exe_query($self->sqla->insert(amazon_mws_products => { %identifier, %data }));
+        }
     }
 }
 
@@ -874,7 +878,9 @@ sub process_feeds {
         if ($row->{task} eq 'upload') {
             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                   { status => 'ok',
-                                                    listed_date => DateTime->now},
+                                                    listed_date => DateTime->now,
+                                                    listed => 1,
+                                                  },
                                                   {
                                                    amws_job_id => $job_id,
                                                    shop_id => $self->_unique_shop_id,
