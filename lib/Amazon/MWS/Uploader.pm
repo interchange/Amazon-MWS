@@ -415,7 +415,7 @@ sub _build_xml_reader {
 }
 
 
-=head2 generic_feeder
+=item generic_feeder
 
 Return a L<Amazon::MWS::XML::GenericFeed> object to build a feed using
 the XML writer.
@@ -1427,7 +1427,7 @@ sub delete_skus {
 
 =head2 delete_skus_feed(@skus)
 
-Prepare a feed (via C<create_feed) to delete the given skus.
+Prepare a feed (via C<create_feed>) to delete the given skus.
 
 =cut
 
