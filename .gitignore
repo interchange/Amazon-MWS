@@ -1,4 +1,5 @@
 Makefile
+Makefile.old
 schemas/*
 pm_to_blib
 MYMETA.*
