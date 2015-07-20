@@ -115,9 +115,21 @@ sub remote_shop_order_id {
 }
 
 
+=head2 email
+
+Buyer's email
+
+=cut
+
 sub email {
     return shift->order->{BuyerEmail};
 }
+
+=head2 shipping_address
+
+An L<Amazon::MWS::XML::Address> object with the shipping address.
+
+=cut
 
 has shipping_address => (is => 'lazy');
                          
@@ -126,6 +138,16 @@ sub _build_shipping_address {
     my $address = $self->order->{ShippingAddress};
     return Amazon::MWS::XML::Address->new(%$address);
 }
+
+=head2 first_name
+
+Buyer's first name (built lazily using euristics).
+
+=head2 last_name
+
+Buyer's last_name (built lazily using euristics)
+
+=cut 
 
 has first_name => (is => 'lazy');
 
@@ -166,6 +188,13 @@ sub _build_items_ref {
     return \@items;
 }
 
+=head2 items
+
+Return a list of L<Amazon::MWS::XML::OrderlineItem> objects with the
+ordered items.
+
+=cut
+
 sub items {
     my $self = shift;
     return @{ $self->items_ref };
@@ -187,6 +216,14 @@ sub _get_dt {
     return DateTime::Format::ISO8601->parse_datetime($date);
 }
 
+=head2 shipping_cost
+
+The total shipping cost, built summing up the shipping cost of each
+item.
+
+=cut
+
+
 sub shipping_cost {
     my $self = shift;
     my @items = $self->items;
@@ -196,6 +233,13 @@ sub shipping_cost {
     }
     return sprintf('%.2f', $shipping);
 }
+
+=head2 subtotal
+
+The subtotal of the order, built summing up the subtotal of each
+orderline's item.
+
+=cut
 
 sub subtotal {
     my $self = shift;
@@ -223,6 +267,13 @@ sub number_of_items {
     return $total;
 }
 
+=head2 total_cost;
+
+Return OrderTotal.Amount. Throws an exception if it doesn't match
+shipping_cost + subtotal.
+
+=cut
+
 
 sub total_cost {
     my $self = shift;
@@ -239,6 +290,12 @@ sub total_cost {
     }
 }
 
+=head2 currency
+
+The currency of the order. Looked up in OrderTotal.CurrencyCode.
+
+=cut
+
 sub currency {
     my $self = shift;
     my $currency = $self->order->{OrderTotal}->{CurrencyCode}; 
@@ -246,6 +303,12 @@ sub currency {
       unless $currency;
     return $currency;
 }
+
+=head2 as_ack_order_hashref
+
+Return an hashref suitable to build an order ack feed.
+
+=cut
 
 sub as_ack_order_hashref {
     my $self = shift;
@@ -323,11 +386,15 @@ Returns C<amazon>
 
 =head2 comments
 
-Returns an empty string
+Returns an empty string.
 
 =head2 payment_method
 
-Returns C<Amazon>
+Always returns C<Amazon>
+
+=head2 shipping_method
+
+Returns the empty string. Nothing available.
 
 =cut
 
