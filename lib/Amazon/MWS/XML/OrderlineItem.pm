@@ -5,7 +5,43 @@ use warnings;
 use Moo;
 
 
-=head1 ACCESSORS
+=head1 ACCESSORS (they map the XML data)
+
+=over 4
+
+=item PromotionDiscount
+
+=item Title
+
+=item OrderItemId
+
+=item ASIN
+
+=item GiftWrapPrice
+
+=item GiftWrapTax
+
+=item SellerSKU
+
+=item ShippingPrice
+
+=item ShippingTax
+
+=item ShippingDiscount
+
+=item ItemTax
+
+=item ConditionId
+
+=item ItemPrice
+
+=item ConditionSubtypeId
+
+=item QuantityShipped
+
+=item QuantityOrdered
+
+=back
 
 =cut
 
@@ -52,9 +88,17 @@ has QuantityOrdered => (is => 'ro');
 
 The amazon id for the given item (read-only)
 
+=head2 remote_shop_order_item
+
+Alias for C<amazon_order_item>
+
 =head2 merchant_order_item
 
 Our id (read-write).
+
+=head2 currency
+
+The currency code.
 
 =cut
 
@@ -94,10 +138,43 @@ sub price {
     return sprintf('%.2f', $self->subtotal / $self->quantity);
 }
 
+=head2 shipping
+
+The ShippingPrice amount.
+
+=head2 subtotal
+
+The price of the items for the given quantity (see above, C<price>).
+
+=cut
+
 sub shipping {
     my $shipping =  shift->ShippingPrice->{Amount} || 0;
     return sprintf('%.2f', $shipping);
 }
+
+=head2 as_ack_orderline_item_hashref
+
+Return an hashref suitable for the building of an ack order feed.
+
+=cut
+
+=head2 Aliases
+
+=over 4
+
+=item sku (SellerSKU)
+
+=item asin (ASIN)
+
+=item quantity (QuantityOrdered)
+
+=item name (Title)
+
+=back
+
+
+=cut
 
 sub sku {
     return shift->SellerSKU;
