@@ -25,6 +25,10 @@ Amazon::MWS::XML::Response::FeedSubmissionResult -- response parser
 
 The xml string
 
+=head2 xml_reader
+
+A sub reference with the AmazonEnvelope reader.
+
 =head2 structure
 
 Lazy attribute built via parsing the xml string passed at the constructor.
@@ -205,6 +209,24 @@ sub _format_msgs {
     }
     return;
 }
+
+=head2 Failures and warnings
+
+They return a list of skus or order_id.
+
+=over 4
+
+=item failed_skus
+
+=item skus_with_warnings
+
+=item failed_orders
+
+=item orders_with_warnings
+
+=back
+
+=cut
 
 sub failed_skus {
     my ($self) = @_;
