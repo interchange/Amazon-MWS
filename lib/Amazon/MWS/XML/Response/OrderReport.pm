@@ -141,6 +141,12 @@ sub items {
     return @{ shift->_items_ref };
 }
 
+=head2 as_ack_order_hashref
+
+Return a structure suitable create an the acknowledge feed.
+
+=cut
+
 sub as_ack_order_hashref {
     my $self = shift;
     my @items;
