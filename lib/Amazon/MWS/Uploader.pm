@@ -227,6 +227,9 @@ has purge_missing_products => (is => 'rw');
 If set to a true value, don't skip previously failed items and
 effectively reset all of them.
 
+Also, when the accessor is set for send_shipping_confirmation, try to
+upload again previously failed orders.
+
 =cut
 
 has reset_all_errors => (is => 'ro');
@@ -1819,7 +1822,13 @@ sub send_shipping_confirmation {
                 print "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id}: already notified\n";
             }
             elsif (my $error = $report->{shipping_confirmation_error}) {
-                warn "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id} with error $error\n";
+                if ($self->reset_all_errors) {
+                    warn "Submitting again previously failed job $report->{amazon_order_id} $report->{shop_order_id}\n";
+                    push @orders_to_notify, $ord;
+                }
+                else {
+                    warn "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id} with error $error\n";
+                }
             }
             elsif ($report->{shipping_confirmation_job_id}) {
                 print "Skipping ship-confirm for order $report->{amazon_order_id} $report->{shop_order_id}: pending\n";
@@ -1846,6 +1855,7 @@ sub send_shipping_confirmation {
     foreach my $ord (@orders_to_notify) {
         $self->_exe_query($self->sqla->update(amazon_mws_orders => {
                                                                     shipping_confirmation_job_id => $job_id,
+                                                                    shipping_confirmation_error => undef,
                                                                    },
                                               $self->_condition_for_shipped_orders($ord)));
     }
