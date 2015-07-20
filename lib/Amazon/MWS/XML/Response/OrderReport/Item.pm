@@ -25,13 +25,21 @@ They correspond to the documented structure. They should not be called
 directly, though, prefer the methods above.
 
 =over 4
+
 =item Title              
+
 =item Quantity           
+
 =item SKU                
+
 =item ItemPrice          
+
 =item ProductTaxCode     
+
 =item AmazonOrderItemCode
+
 =item ItemFees           
+
 =back
 
 =cut
@@ -89,6 +97,8 @@ quantity.
 
 The price paid to amazon for the given item. It could be a negative
 number.
+
+=item quantity
 
 =item currency
 
