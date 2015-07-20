@@ -9,6 +9,11 @@ use Moo;
 
 Amazon::MWS::XML::Address
 
+=head1 DESCRIPTION
+
+Class to handle the addresses in the Amazon MWS's XML responses. It
+provides some aliases to get a consistent interface.
+
 =head1 ACCESSORS
 
 =over 4
@@ -18,7 +23,9 @@ Amazon::MWS::XML::Address
 Name of customer for this address.
 
 =item AddressLine1
+
 =item AddressFieldOne
+
 =item address1
 
 This is a field where Amazon stores the company name, or the c/o, or
@@ -28,7 +35,9 @@ you can't be sure what exactly it is (save you don't want to lose it).
 Sometimes the street address is here, sometimes is empty.
 
 =item AddressLine2
+
 =item AddressFieldTwo
+
 =item address2
 
 This appears to be the regular street/number address line, sometimes.
@@ -45,9 +54,14 @@ Postal code for this address.
 City for this address.
 
 =item Phone
+
 =item PhoneNumber
 
 Phone number for this address.
+
+=item CountryCode
+
+=item StateOrRegion
 
 =back
 
@@ -80,6 +94,32 @@ sub address2 {
     return $self->AddressLine2 || $self->AddressFieldTwo || '';
 }
 
+
+=head2 ALIASES
+
+=over 4
+
+=item name (Name)
+
+=item address_line
+
+Concatenation of address1 and address2.
+
+=item city (City)
+
+=item zip (PostalCode)
+
+=item country (CountryCode)
+
+=item phone (Phone or PhoneNumber)
+
+=item region (StateOrRegion)
+
+=item state (StateOrRegion)
+
+=back
+
+=cut
 
 sub address_line {
     my $self = shift;
