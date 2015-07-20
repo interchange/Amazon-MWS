@@ -190,6 +190,16 @@ sub _build__unique_shop_id {
     }
 }
 
+=item debug
+
+Print out additional information.
+
+=item logfile
+
+Passed to L<Amazon::MWS::Client> constructor.
+
+=cut
+
 has debug => (is => 'ro');
 
 has logfile => (is => 'ro');
@@ -404,6 +414,13 @@ sub _build_xml_reader {
     return $self->schema->compile(READER => 'AmazonEnvelope');
 }
 
+
+=head2 generic_feeder
+
+Return a L<Amazon::MWS::XML::GenericFeed> object to build a feed using
+the XML writer.
+
+=cut
 
 sub generic_feeder {
     my $self = shift;
@@ -783,6 +800,12 @@ sub resume {
     }
 }
 
+=head2 cancel_job($task, $job_id, $reason)
+
+Abort the job setting the aborted flag in C<amazon_mws_jobs> table.
+
+=cut
+
 sub cancel_job {
     my ($self, $task, $job_id, $reason) = @_;
     $self->_exe_query($self->sqla->update('amazon_mws_jobs',
@@ -1126,6 +1149,13 @@ sub _check_processing_complete {
     }
 }
 
+=head2 submission_result($feed_id)
+
+Return a L<Amazon::MWS::XML::Response::FeedSubmissionResult> object
+for the given feed ID.
+
+=cut
+
 sub submission_result {
     my ($self, $feed_id) = @_;
     my $xml;
@@ -1256,6 +1286,14 @@ sub order_already_registered {
     }
 }
 
+=head2 acknowledge_successful_order(@orders)
+
+Accept a list of L<Amazon::MWS::XML::Order> objects, prepare a
+acknowledge feed with the C<Success> status, and insert the orders in
+the database.
+
+=cut
+
 sub acknowledge_successful_order {
     my ($self, @orders) = @_;
     my @orders_to_register;
@@ -1294,6 +1332,15 @@ sub acknowledge_successful_order {
     }
 }
 
+
+=head2 acknowledge_feed($status, @orders)
+
+The first argument is usually C<Success>. The other arguments is a
+list of L<Amazon::MWS::XML::Order> objects.
+
+=cut
+
+
 sub acknowledge_feed {
     my ($self, $status, @orders) = @_;
     die "Missing status" unless $status;
@@ -1313,6 +1360,13 @@ sub acknowledge_feed {
     }
     return $feeder->create_feed(OrderAcknowledgement => \@messages);
 }
+
+=head2 delete_skus(@skus)
+
+Accept a list of skus. Prepare a C<product_deletion> feed and update
+the database.
+
+=cut
 
 sub delete_skus {
     my ($self, @skus) = @_;
@@ -1370,6 +1424,12 @@ sub delete_skus {
                                            shop_id => $self->_unique_shop_id,
                                           }));
 }
+
+=head2 delete_skus_feed(@skus)
+
+Prepare a feed (via C<create_feed) to delete the given skus.
+
+=cut
 
 sub delete_skus_feed {
     my ($self, @skus) = @_;
@@ -1485,6 +1545,24 @@ sub register_ship_order_errors {
 }
 
 
+=head2 register_errors($job_id, $result)
+
+The first argument is the job ID. The second is a
+L<Amazon::MWS::XML::Response::FeedSubmissionResult> object.
+
+This method will update the status of the products (either C<failed>
+or C<redo>) in C<amazon_mws_products>.
+
+=head2 register_order_ack_errors($job_id, $result);
+
+Same arguments as above, but for order acknowledgements.
+
+=head2 register_ship_order_errors($job_id, $result);
+
+Same arguments as above, but for shipping notifications.
+
+=cut
+
 sub register_errors {
     my ($self, $job_id, $result) = @_;
     # first, get the list of all the skus which were scheduled for this job
@@ -1525,6 +1603,13 @@ sub register_errors {
     }
 }
 
+=head2 skus_in_job($job_id)
+
+Check the amazon_mws_product for the SKU which were uploaded by the
+given job ID.
+
+=cut
+
 sub skus_in_job {
     my ($self, $job_id) = @_;
     my $sth = $self->_exe_query($self->sqla->select('amazon_mws_products',
@@ -1551,6 +1636,11 @@ http://docs.developer.amazonservices.com/en_US/products/Products_GetMatchingProd
 =head2 get_asin_for_skus(@skus)
 
 Same as above (with the same limit of 5 items), but for SKUs.
+
+=head2 get_asin_for_sku($sku)
+
+Same as above, but for a single sku. Return the ASIN or undef if not
+found.
 
 =head2 get_asin_for_ean($ean)
 
@@ -1980,6 +2070,13 @@ sub product_needs_upload {
     print "$sku wasn't uploaded so far, scheduling it\n" if $debug;
     return $sku;
 }
+
+=head2 orders_in_shipping_job($job_id)
+
+Lookup the C<amazon_mws_orders> table and return a list of
+C<amazon_order_id> for the given shipping confirmation job. INTERNAL.
+
+=cut
 
 sub orders_in_shipping_job {
     my ($self, $job_id) = @_;
@@ -2464,6 +2561,15 @@ sub _handle_exception {
     }
     die $err;
 }
+
+=head2 job_timed_out($job_row) [INTERNAL]
+
+Check if the hashref (which is a hashref of the amazon_mws_jobs row)
+has timed out, comparing with the C<order_ack_days_timeout> and
+C<job_hours_timeout> (depending on the job).
+
+
+=cut
 
 sub job_timed_out {
     my ($self, $job_row) = @_;
