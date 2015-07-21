@@ -204,6 +204,15 @@ has debug => (is => 'ro');
 
 has logfile => (is => 'ro');
 
+=item quiet
+
+Boolean. Do not warn on timeouts and aborts (just print) if set to
+true.
+
+=cut
+
+has quiet => (is => 'ro');
+
 sub _build_dbh {
     my $self = shift;
     my $dsn = $self->db_dsn;
@@ -783,8 +792,8 @@ sub resume {
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {
             if (my $seconds_elapsed = $self->job_timed_out($row)) {
-                warn "Timeout reached for $row->{amws_job_id}, aborting: "
-                  . Dumper($row);
+                $self->_print_or_warn_error("Timeout reached for $row->{amws_job_id}, aborting: "
+                                            . Dumper($row));
                 $self->cancel_job($row->{task}, $row->{amws_job_id},
                                   "Job timed out after $seconds_elapsed seconds");
                 next;
@@ -895,7 +904,7 @@ sub process_feeds {
                    aborted => 1,
                    status => 'Feed error',
                   };
-        warn "Job $job_id aborted!\n";
+        $self->_print_or_warn_error("Job $job_id aborted!\n");
     }
     elsif ($success == $total) {
         $update = { success => 1 };
@@ -2595,5 +2604,22 @@ sub job_timed_out {
         return;
     }
 }
+
+sub _print_or_warn_error {
+    my ($self, @args) = @_;
+    my $action;
+    if (@args) {
+        if ($self->quiet) {
+            $action = 'print';
+            print @args;
+        }
+        else {
+            $action = 'warn';
+            warn @args;
+        }
+    }
+    return ($action, @args);
+}
+
 
 1;
