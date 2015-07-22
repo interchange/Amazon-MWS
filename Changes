@@ -1,5 +1,15 @@
 Revision history for Amazon::MWS
 
+0.113 Wed Jul 22 09:31:32 2015 CEST
+
+     [BUG FIXES]
+
+     * Add prerequisite on namespace::clean (Stefan Hornburg, GH #6).
+
+     [ENHANCEMENTS]
+
+     * Add quiet accessor to Uploader (Marco Pessotto).
+
 0.112 Mon Jul 20 17:29:42 2015 CEST
 
      * Initial release.
