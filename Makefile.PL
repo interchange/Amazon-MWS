@@ -42,7 +42,7 @@ WriteMakefile(
         'Digest::MD5'       => 0,
         'Digest::HMAC_SHA1' => 0,
 
-
+        'namespace::clean' => 0,
         'Moo' => 0,
         'MooX::Types::MooseLike' => 0,
         'DBI' => 0,
