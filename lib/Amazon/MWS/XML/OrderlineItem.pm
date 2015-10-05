@@ -149,7 +149,11 @@ The price of the items for the given quantity (see above, C<price>).
 =cut
 
 sub shipping {
-    my $shipping =  shift->ShippingPrice->{Amount} || 0;
+    my $self = shift;
+    my $shipping = 0;
+    if (my $price = $self->ShippingPrice) {
+        $shipping = $price->{Amount} || 0;
+    }
     return sprintf('%.2f', $shipping);
 }
 
@@ -193,7 +197,11 @@ sub name {
 
 sub subtotal {
     my $self = shift;
-    return $self->ItemPrice->{Amount} || 0;
+    my $amount = 0;
+    if (my $price = $self->ItemPrice) {
+        $amount = $price->{Amount} || 0;
+    }
+    return sprintf('%.2f', $amount);
 }
 
 sub as_ack_orderline_item_hashref {
