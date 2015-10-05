@@ -1,5 +1,12 @@
 Revision history for Amazon::MWS
 
+0.114 Mon Oct  5 12:22:23 2015 CEST
+
+     [BUG FIXES]
+
+     * Prevent crash from empty ItemPrice or ShippingPrice caused by
+       cancelled items (Marco Pessotto).
+
 0.113 Wed Jul 22 09:31:32 2015 CEST
 
      [BUG FIXES]
