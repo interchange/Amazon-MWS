@@ -1196,6 +1196,11 @@ the last week.
 
 Returns a list of Amazon::MWS::XML::Order objects.
 
+Beware that it's possible you get some items with 0 quantity, i.e.
+single items cancelled. The application code needs to be prepared to
+deal with this phantom items. You can check each order looping over
+C<$order->items> checking for C<$item->quantity>.
+
 =cut
 
 sub get_orders {
