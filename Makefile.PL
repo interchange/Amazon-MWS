@@ -49,6 +49,7 @@ WriteMakefile(
         'DateTime' => 0,
         'SQL::Abstract' => 0,
         'Try::Tiny' => 0,
+        'Path::Tiny' => 0,
         'XML::Compile::Schema' => 1.46,
         'DateTime::Format::ISO8601' => 0,
         'XML::LibXML::Simple' => 0,

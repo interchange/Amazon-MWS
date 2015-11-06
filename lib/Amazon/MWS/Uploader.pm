@@ -14,6 +14,7 @@ use File::Spec;
 use DateTime;
 use SQL::Abstract;
 use Try::Tiny;
+use Path::Tiny;
 use Scalar::Util qw/blessed/;
 use XML::Compile::Schema;
 
@@ -21,7 +22,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -2626,5 +2627,67 @@ sub _print_or_warn_error {
     return ($action, @args);
 }
 
+=head2 purge_old_jobs($limit)
+
+Eventually the jobs and feed tables grow and never get purged. You can
+call this method to remove from the db all the feeds older than
+C<order_ack_days_timeout> (30 by default).
+
+To avoid too much load on the db, you can set the limit to purge the
+jobs. Defaults to 500. Set it to 0 to disable it.
+
+=cut
+
+sub purge_old_jobs {
+    my ($self, $limit) = @_;
+    unless (defined $limit) {
+        $limit = 500;
+    }
+    my $range = time() - $self->order_ack_days_timeout * 60 * 60 * 24;
+    my @and = (
+               task => [qw/product_deletion
+                           upload/],
+               job_started_epoch => { '<', $range },
+               [ -or => {
+                         aborted => 1,
+                         success => 1,
+                        },
+               ],
+              );
+    if (my $shop_id = $self->shop_id) {
+        push @and, shop_id => $shop_id;
+    }
+
+    my $sth = $self->_exe_query($self->sqla
+                                ->select(amazon_mws_jobs => [qw/amws_job_id shop_id/],
+                                         [ -and => \@and ] ));
+    my @purge_jobs;
+    my $count = 0;
+    while (my $where = $sth->fetchrow_hashref) {
+        if ($limit) {
+            last if $count++ > $limit;
+        }
+        push @purge_jobs, $where;
+    }
+    $sth->finish;
+    if (@purge_jobs) {
+        $self->_exe_query($self->sqla->delete(amazon_mws_feeds => \@purge_jobs));
+        $self->_exe_query($self->sqla->delete(amazon_mws_jobs  => \@purge_jobs));
+        while (@purge_jobs) {
+            my $feed = shift @purge_jobs;
+            my $dir = path($self->feed_dir)->child($feed->{shop_id}, $feed->{amws_job_id});
+            if ($dir->exists) {
+                print "Removing " . $dir->canonpath . "\n"; # unless $self->quiet;
+                $dir->remove_tree;
+            }
+            else {
+                print "$dir doesn't exist\n";
+            }
+        }
+    }
+    else {
+        print "Nothing to purge\n" unless $self->quiet;
+    }
+}
 
 1;
