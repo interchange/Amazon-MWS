@@ -121,4 +121,4 @@ is ($order->amazon_order_number, $order->remote_shop_order_id, "alias ok");
 is ($order->shipping_address->state, $order->shipping_address->region, "state and region are aliases");
 is ($order->first_name, 'John');
 is ($order->last_name, 'Doe');
-is ($order->shipping_method, '');
+is ($order->shipping_method, 'Standard');
