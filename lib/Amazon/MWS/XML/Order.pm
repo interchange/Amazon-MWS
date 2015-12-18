@@ -394,7 +394,32 @@ Always returns C<Amazon>
 
 =head2 shipping_method
 
-Returns the empty string. Nothing available.
+Returns the generic ShipmentServiceLevelCategory (not the
+ShipServiceLevel which is a non-typed string).
+
+http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_Datatypes.html
+
+Available values:
+
+=over 4
+
+=item Expedited
+
+=item FreeEconomy
+
+=item NextDay
+
+=item SameDay
+
+=item SecondDay
+
+=item Scheduled
+
+=item Standard
+
+=back
+
+Or the empty string if nothing is found.
 
 =cut
 
@@ -412,8 +437,14 @@ sub payment_method {
 }
 
 sub shipping_method {
-    # empty so far
-    return '';
+    # this should return
+    my $order = shift->order;
+    if (my $shipping = $order->{ShipmentServiceLevelCategory}) {
+        return $shipping;
+    }
+    else {
+        return '';
+    }
 }
 
 
