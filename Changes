@@ -1,5 +1,12 @@
 Revision history for Amazon::MWS
 
+0.116 Sat Dec 19 15:12:10 2015 CET
+
+     [ENHANCEMENTS]
+
+     * Return the shipping category level as shipping_method
+       (Marco Pessotto).
+
 0.115 Sat Nov  7 12:38:49 2015 CET
 
      [ENHANCEMENTS]
