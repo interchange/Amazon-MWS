@@ -170,7 +170,14 @@ sub _get_first_last_name {
     my $address = $self->shipping_address;
     die "Missing name in shipping address" unless $address->name;
     # this is totally euristic
-    my ($first_name, $last_name) = split(/\s+/, $address->name, 2);
+    my ($first_name, $last_name) = ('', '');
+    if ($address->name =~ m/\s*(.+?)\s+([\w-]+)\s*$/) {
+        $first_name = $1;
+        $last_name = $2;
+    }
+    else {
+        ($first_name, $last_name) = split(/\s+/, $address->name, 2);
+    }
     return ($first_name, $last_name);
 }
 

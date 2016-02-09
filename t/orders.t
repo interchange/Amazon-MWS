@@ -29,7 +29,7 @@ my $order_data = {
                                         'CountryCode' => 'DE',
                                         'PostalCode' => '11111',
                                         'AddressLine2' => 'Strazze',
-                                        'Name' => "John Doe",
+                                        'Name' => "John U. Doe",
                                         'City' => 'Berlin'
                                        },
                   'BuyerName' => "John Doe",
@@ -119,6 +119,6 @@ is ($items[0]->amazon_order_item, $items[0]->remote_shop_order_item);
 ok ($order->order_is_shipped, "It is shipped");
 is ($order->amazon_order_number, $order->remote_shop_order_id, "alias ok");
 is ($order->shipping_address->state, $order->shipping_address->region, "state and region are aliases");
-is ($order->first_name, 'John');
+is ($order->first_name, 'John U.');
 is ($order->last_name, 'Doe');
 is ($order->shipping_method, 'Standard');
