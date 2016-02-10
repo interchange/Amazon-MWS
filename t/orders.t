@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 16;
 
 use Amazon::MWS::XML::Order;
 
@@ -122,3 +122,8 @@ is ($order->shipping_address->state, $order->shipping_address->region, "state an
 is ($order->first_name, 'John U.');
 is ($order->last_name, 'Doe');
 is ($order->shipping_method, 'Standard');
+
+$order_data->{ShippingAddress}->{Name} = 'Doe';
+$order = Amazon::MWS::XML::Order->new(order => $order_data);
+is ($order->first_name, '');
+is ($order->last_name, 'Doe');

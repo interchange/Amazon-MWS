@@ -171,12 +171,15 @@ sub _get_first_last_name {
     die "Missing name in shipping address" unless $address->name;
     # this is totally euristic
     my ($first_name, $last_name) = ('', '');
-    if ($address->name =~ m/\s*(.+?)\s+([\w-]+)\s*$/) {
-        $first_name = $1;
-        $last_name = $2;
-    }
-    else {
-        ($first_name, $last_name) = split(/\s+/, $address->name, 2);
+    if (my $name = $address->name) {
+        if ($name =~ m/\s*(.+?)\s+([\w-]+)\s*$/) {
+            $first_name = $1;
+            $last_name = $2;
+        }
+        elsif ($name =~ m/\s*(.+?)\s*$/) {
+            # nothing to split, so this is just the last name
+            $last_name = $1;
+        }
     }
     return ($first_name, $last_name);
 }
