@@ -22,10 +22,11 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
+    DEBUG => $ENV{AMZ_UPLOADER_DEBUG},
 };
 
 =head1 NAME
@@ -600,6 +601,31 @@ sub _build_client {
     return Amazon::MWS::Client->new(%mws_args);
 }
 
+has _mismatch_patterns => (is => 'lazy', isa => HashRef);
+
+sub _build__mismatch_patterns {
+    my $self = shift;
+    my $merchant_re = qr{\s+\(Merchant:\s+'(.*?)'\s+/};
+    my $amazon_re = qr{\s+.*?/\s*Amazon:\s+'(.*?)'\)};
+    my %patterns = (
+                    # informative only
+                    asin => qr{ASIN\s+([0-9A-Za-z]+)},
+
+                    shop_part_number => qr{part_number$merchant_re},
+                    amazon_part_number => qr{part_number$amazon_re},
+
+                    shop_title => qr{item_name$merchant_re},
+                    amazon_title => qr{item_name$amazon_re},
+
+                    shop_manufacturer => qr{manufacturer$merchant_re},
+                    amazon_manufacturer => qr{manufacturer$amazon_re},
+
+                    shop_brand => qr{brand$merchant_re},
+                    amazon_brand => qr{brand$amazon_re},
+                   );
+    return \%patterns;
+}
+
 
 =head1 MAIN METHODS
 
@@ -1102,7 +1128,7 @@ sub upload_feed {
 sub _exe_query {
     my ($self, $stmt, @bind) = @_;
     my $sth = $self->dbh->prepare($stmt);
-    # print $stmt, Dumper(\@bind);
+    print $stmt, Dumper(\@bind) if DEBUG;
     eval {
         $sth->execute(@bind);
     };
@@ -2287,22 +2313,28 @@ sub update_amw_order_status {
     return $status;
 }
 
-=head2 get_products_with_error_code($error_code)
+=head2 get_products_with_error_code(@error_codes)
 
 Return a list of hashref with the rows from C<amazon_mws_products> for
-the current shop and the error code passed as argument.
+the current shop and the error code passed as argument. If no error
+codes are passed, fetch all the products in error.
 
 =cut
 
 sub get_products_with_error_code {
-    my ($self, $errcode) = @_;
-    die "Bad usage" unless defined $errcode;
+    my ($self, @errcodes) = @_;
+    my $where = { '>' => 0 };
+    if (@errcodes) {
+        $where = { -in => \@errcodes };
+    }
     my $sth = $self->_exe_query($self->sqla
                                 ->select('amazon_mws_products', '*',
                                          {
+                                          status => { '!=' => 'deleted' },
                                           shop_id => $self->_unique_shop_id,
-                                          error_code => $errcode,
-                                         }));
+                                          error_code => $where,
+                                         },
+                                         [qw/error_code sku/]));
     my @records;
     while (my $row = $sth->fetchrow_hashref) {
         push @records, $row;
@@ -2331,11 +2363,14 @@ sub mark_failed_products_as_redo {
                                           }));
 }
 
-=head2 get_products_with_amazon_shop_mismatches
+=head2 get_products_with_amazon_shop_mismatches(@errors)
 
 Parse the amazon_mws_products and return an hashref where the keys are
-the skus, and the values are hashrefs where the keys are the
+the failed skus, and the values are hashrefs where the keys are the
 mismatched fields and the values are hashrefs with these keys:
+
+Mismatched fields may be: C<part_number>, C<title>, C<manufacturer>,
+C<brand>.
 
 =over 4
 
@@ -2361,7 +2396,7 @@ E.g.
                                             amazon => 'XYZ',
                                             error_code => '8541',
                                            },
-                            item_name => {
+                            title => {
                                             shop => 'ABC',
                                             amazon => 'DFG',
                                             error_code => '8541',
@@ -2370,35 +2405,89 @@ E.g.
                   .....
                   };
 
+Optionally, if the error codes are passed to the argument, only those
+errors are fetches.
+
 =cut
 
 
 sub get_products_with_amazon_shop_mismatches {
-    my ($self) = @_;
+    my ($self, @errors) = @_;
     # so far only this code is for mismatches
     my %mismatches;
-    my @faulty = $self->get_products_with_error_code('8541');
+    my @faulty = $self->get_products_with_error_code(@errors);
     foreach my $product (@faulty) {
-        my $msg = $product->{error_msg};
+        # only if failed.
         next if $product->{status} ne 'failed';
+        my $msg = $product->{error_msg};
         my $error_code = $product->{error_code};
         my $sku = $product->{sku};
-        while ($msg =~ m{'(\w+)' Merchant: '(.*?)' / Amazon: '(.*?)'}g) {
-            my $name = $1;
-            my $shop_value = $2;
-            my $amazon_value = $3;
-            if ($shop_value && $amazon_value) {
-                $mismatches{$sku}{$name} = {
-                                            shop => $shop_value,
-                                            amazon => $amazon_value,
-                                            error_code => $error_code,
-                                           };
+        my $errors = $self->_parse_error_message_mismatches($msg);
+        foreach my $key (keys %$errors) {
+            # in this case, we are interested only in the pairs
+            if (ref($errors->{$key}) eq 'HASH') {
+                # we have the pair, so add the error code and report
+                $errors->{$key}->{error_code} = $error_code;
+                $mismatches{$sku}{$key} = $errors->{$key};
             }
         }
     }
     return \%mismatches;
 }
 
+=head2 get_products_with_mismatches(@errors)
+
+Similar to C<get_products_with_amazon_shop_mismatches>, but instead
+return an arrayref where each element is a hashref with all the info
+collapsed.
+
+The structures reported by C<get_products_with_amazon_shop_mismatches>
+are flattened with an C<our_> and C<amazon_> prefix.
+
+ our_part_number => 'XY',
+ amazon_part_number => 'YZ',
+ our_title = 'xx',
+ amazon_title => 'yy',
+ # etc.
+
+
+=cut
+
+sub get_products_with_mismatches {
+    my ($self, @errors) = @_;
+    my @faulty = $self->get_products_with_error_code(@errors);
+    my @out;
+    while (@faulty) {
+        my $product = shift @faulty;
+        my $errors = $self->_parse_error_message_mismatches($product->{error_msg});
+        push @out, { %$product, %$errors };
+    }
+    return \@out;
+}
+
+sub _parse_error_message_mismatches {
+    my ($self, $message) = @_;
+    return {} unless $message;
+    my %patterns = %{$self->_mismatch_patterns};
+    my %out;
+    foreach my $key (keys %patterns) {
+        # if the pattern start we shop_ or amazon_, it's a pair
+        my ($mismatch, $target);
+        if ($key =~ /\A(shop|amazon)_(.+)/) {
+            $target = $1;
+            $mismatch = $2;
+        }
+        if ($message =~ $patterns{$key}) {
+            my $value = $1;
+            if ($target && $mismatch) {
+                $out{$mismatch}{$target} = $value;
+            }
+            # and in any case store a scalar (and let's hope not to conflict)
+            $out{$key} = $value;
+        }
+    }
+    return \%out;
+}
 
 =head2 Order Report
 
