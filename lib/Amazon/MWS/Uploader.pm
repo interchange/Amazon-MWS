@@ -480,6 +480,14 @@ B<This is set as read-write, so you can set the product after the
 object construction, but if you change it afterward, you will get
 unexpected results>.
 
+This routine also check if the product needs upload and delete
+disappeared products. If you are doing the check yourself, use
+C<checked_products>.
+
+=item checked_products
+
+As C<products>, but no check is performed. This takes precedence.
+
 =item sqla
 
 Lazy attribute to hold the C<SQL::Abstract> object.
@@ -520,8 +528,13 @@ sub _build_existing_products {
 
 has products_to_upload => (is => 'lazy');
 
+has checked_products => (is => 'rw', isa => ArrayRef);
+
 sub _build_products_to_upload {
     my $self = shift;
+    if (my $checked = $self->checked_products) {
+        return $checked;
+    }
     my $product_arrayref = $self->products;
     return [] unless $product_arrayref && @$product_arrayref;
     my @products = @$product_arrayref;
@@ -729,6 +742,7 @@ sub upload {
     }
     my $job_id = $self->prepare_feeds(upload => \@feeds);
     $self->_mark_products_as_pending($job_id, @products);
+    return $job_id;
 }
 
 sub _mark_products_as_pending {
