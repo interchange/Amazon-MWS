@@ -17,6 +17,12 @@ my %constructor = (
                    schema_dir => 'schemas',
                   );
 
+foreach my $dir (qw/feed_dir schema_dir/) {
+    mkdir $constructor{$dir} unless -d $constructor{$dir};
+}
+
+
+
 my $uploader = Amazon::MWS::Uploader->new(%constructor);
 
 my $error_msg = q{upload-2016-03-14-19-07-09 8541 The SKU data provided conflicts with the Amazon catalog. The standard_product_id value(s) provided correspond to the ASIN  XXXXXX, but some information contradicts with the Amazon catalog. The following are the attribute value(s) that are conflicting: part_number (Merchant: 'MERCHANT_ID' / Amazon: 'AMAZON_ID'). If your product is this ASIN, then modify your data to reflect the Amazon catalog values. Else, check your value(s) for standard_product_id are correct.};
