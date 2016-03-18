@@ -39,6 +39,7 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 README
 t/enumeration.t
+t/error-parsing.t
 t/errors.t
 t/feeds.t
 t/manifest.t
