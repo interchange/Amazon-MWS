@@ -22,7 +22,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.12';
+our $VERSION = '0.14';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -822,14 +822,20 @@ sub prepare_feeds {
 
 
 sub resume {
-    my $self = shift;
+    my ($self, @jobs) = @_;
+    my %additional;
+    if (@jobs) {
+        $additional{amws_job_id} = { -in => \@jobs };
+    }
     my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', {
                                                                      aborted => 0,
                                                                      success => 0,
                                                                      shop_id => $self->_unique_shop_id,
+                                                                     %additional,
                                                                     });
     my $pending = $self->_exe_query($stmt, @bind);
     while (my $row = $pending->fetchrow_hashref) {
+        print "Working on $row->{amws_job_id}\n";
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {
             if (my $seconds_elapsed = $self->job_timed_out($row)) {
