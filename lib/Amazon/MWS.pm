@@ -90,6 +90,19 @@ Possible reasons:
       <RequestID>5115e00d-35a8-4589-8083-f0ef998f76ef</RequestID>
     </ErrorResponse>
 
+=head2 Upload Errors
+
+=head3 Error 8572: Incorrect UPCs/EANs/...
+
+   error: You are using UPCs, EANs, ISBNs, ASINs, or JAN codes
+   that do not match the products you are trying to list. Using incorrect UPCs,
+   EANs, ISBNs, ASINs or JAN codes is prohibited and it can result in your ASIN
+   creation privileges being suspended or permanently removed.
+
+This happened in our case with products having self assigned EAN codes, but
+with a well known manufacturer. Apparently Amazon knows about the EAN ranges
+for this manufacturer.
+
 =head1 Uploader Module
 
 L<Amazon::MWS::Uploader> is an upload agent for Amazon::MWS.
