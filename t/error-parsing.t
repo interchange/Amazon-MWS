@@ -17,11 +17,8 @@ my %constructor = (
                    schema_dir => 'schemas',
                   );
 
-foreach my $dir (qw/feed_dir schema_dir/) {
-    mkdir $constructor{$dir} unless -d $constructor{$dir};
-}
-
-
+plan skip_all => "Missing schema and feed dirs"
+  unless (-d $constructor{schema_dir} && -d $constructor{feed_dir});
 
 my $uploader = Amazon::MWS::Uploader->new(%constructor);
 
