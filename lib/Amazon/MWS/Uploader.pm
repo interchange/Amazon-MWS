@@ -2361,6 +2361,11 @@ Return a list of hashref with the rows from C<amazon_mws_products> for
 the current shop and the error code passed as argument. If no error
 codes are passed, fetch all the products in error.
 
+=head2 get_products_with_warnings
+
+Returns a list of hashref, with C<sku> and C<warnings> as keys, for
+each product in the shop which has the warnings set to something.
+
 =cut
 
 sub get_products_with_error_code {
@@ -2377,6 +2382,23 @@ sub get_products_with_error_code {
                                           error_code => $where,
                                          },
                                          [qw/error_code sku/]));
+    my @records;
+    while (my $row = $sth->fetchrow_hashref) {
+        push @records, $row;
+    }
+    return @records;
+}
+
+sub get_products_with_warnings {
+    my $self = shift;
+    my $sth = $self->_exe_query($self->sqla
+                                ->select('amazon_mws_products', '*',
+                                         {
+                                          status => 'ok',
+                                          shop_id => $self->_unique_shop_id,
+                                          warnings => { '!=' => '' },
+                                         },
+                                         [qw/sku warnings/]));
     my @records;
     while (my $row = $sth->fetchrow_hashref) {
         push @records, $row;
