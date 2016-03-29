@@ -58,7 +58,7 @@ module.
 
 =head3 endpoint
 
-Where MWS lives.  Defaults to 'https://mws.amazonaws.com/'.
+Where MWS lives.  Defaults to 'https://mws.amazonaws.com'.
 
 =head3 access_key_id
 

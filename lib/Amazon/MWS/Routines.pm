@@ -285,10 +285,15 @@ sub new {
        close LOG; 
     }
 
+ # https://github.com/interchange/Amazon-MWS/issues/9
+ $opts{endpoint} ||= 'https://mws.amazonaws.com';
+ # strip the trailing slashes
+ $opts{endpoint} =~ s/\/+\z//;
+
   bless {
     package => "$pkg",
     agent => LWP::UserAgent->new(agent => $agent_string),
-    endpoint => $opts{endpoint} || 'https://mws.amazonaws.com/',
+    endpoint => $opts{endpoint},
     access_key_id => $opts{access_key_id},
     secret_key => $opts{secret_key},
     merchant_id => $opts{merchant_id},
