@@ -1,5 +1,20 @@
 Revision history for Amazon::MWS
 
+0.120 Tue Mar 29 07:35:46 2016 CEST
+
+     [ENHANCEMENTS]
+
+     * Permit arguments to resume method in Uploader class
+       (Marco Pessotto).
+     * Do not perform checks on products if checked_products is set
+       (Marco Pessotto).
+     * Add get_products_with_mismatches method (Marco Pessotto).
+     * Improve separation into first and last name (Marco Pessotto).
+
+     [DOCUMENTATION]
+
+     * Add possible explanation for error code 8572 (Stefan Hornburg/Racke).
+
 0.116 Sat Dec 19 15:12:10 2015 CET
 
      [ENHANCEMENTS]
