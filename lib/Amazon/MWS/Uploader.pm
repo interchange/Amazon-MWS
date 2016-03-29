@@ -23,7 +23,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -78,6 +78,10 @@ When migrating from 0.05 to 0.06 please execute this SQL statement
 
  ALTER TABLE amazon_mws_products ADD COLUMN listed BOOLEAN;
  UPDATE amazon_mws_products SET listed = 1 WHERE status = 'ok';
+
+When upgrading to 0.16, please execute this SQL statement:
+
+ ALTER TABLE amazon_mws_products ADD COLUMN warnings TEXT;
 
 =head1 ACCESSORS
 
@@ -765,6 +769,7 @@ sub _mark_products_as_pending {
         my %data = (
                     amws_job_id => $job_id,
                     status => 'pending',
+                    warnings => '', # clear out
                     timestamp_string => $p->timestamp_string,
                    );
         my $check = $self
@@ -1113,6 +1118,15 @@ sub upload_feed {
                     foreach my $w (@$warns) {
                         $self->_error_logger(warning => $w->{code},
                                              "$w->{sku}: $w->{error}");
+                        # and register it in the db
+                        if ($w->{sku} && $w->{error}) {
+                            $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                                                  { warnings => "$job_id $w->{code} $w->{error}" },
+                                                                  {
+                                                                   sku => $w->{sku},
+                                                                   shop_id => $self->_unique_shop_id,
+                                                                  }));
+                        }
                     }
                 }
                 else {
