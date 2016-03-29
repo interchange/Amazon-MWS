@@ -1,5 +1,6 @@
 package Amazon::MWS::Uploader;
 
+use utf8;
 use strict;
 use warnings;
 
@@ -618,11 +619,11 @@ has _mismatch_patterns => (is => 'lazy', isa => HashRef);
 
 sub _build__mismatch_patterns {
     my $self = shift;
-    my $merchant_re = qr{\s+\(Merchant:\s+'(.*?)'\s+/};
+    my $merchant_re = qr{\s+\((?:Merchant|Verkäufer):\s+'(.*?)'\s+/};
     my $amazon_re = qr{\s+.*?/\s*Amazon:\s+'(.*?)'\)};
     my %patterns = (
                     # informative only
-                    asin => qr{ASIN\s+([0-9A-Za-z]+)},
+                    asin => qr{ASIN(?:\s+überein)?\s+([0-9A-Za-z]+)},
 
                     shop_part_number => qr{part_number$merchant_re},
                     amazon_part_number => qr{part_number$amazon_re},
@@ -635,6 +636,13 @@ sub _build__mismatch_patterns {
 
                     shop_brand => qr{brand$merchant_re},
                     amazon_brand => qr{brand$amazon_re},
+
+                    shop_color => qr{color$merchant_re},
+                    amazon_color => qr{color$amazon_re},
+
+                    shop_size => qr{size$merchant_re},
+                    amazon_size => qr{size$amazon_re},
+
                    );
     return \%patterns;
 }
@@ -2390,7 +2398,7 @@ the failed skus, and the values are hashrefs where the keys are the
 mismatched fields and the values are hashrefs with these keys:
 
 Mismatched fields may be: C<part_number>, C<title>, C<manufacturer>,
-C<brand>.
+C<brand>, C<color>, C<size>
 
 =over 4
 
