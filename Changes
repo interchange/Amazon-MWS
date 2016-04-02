@@ -1,5 +1,22 @@
 Revision history for Amazon::MWS
 
+0.130 Sat Apr  2 08:08:26 2016 CEST
+
+     [ENHANCEMENTS]
+
+     * Add method to retrieve skus with warnings (Marco Pessotto).
+     * Add color and size mismatches, also handle errors in German
+       (Marco Pessotto).
+
+     [BUG FIXES]
+
+     * Strip trailing slash from endpoint
+       (Marco Pessotto, jordanmhiller, GH #9).
+
+     [DOCUMENTATION]
+
+     * Add possible explanation for error code 8572 (Stefan Hornburg/Racke).
+
 0.120 Tue Mar 29 07:35:46 2016 CEST
 
      [ENHANCEMENTS]
