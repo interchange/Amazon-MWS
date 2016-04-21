@@ -23,7 +23,7 @@ use Moo;
 use MooX::Types::MooseLike::Base qw(:all);
 use namespace::clean;
 
-our $VERSION = '0.16';
+our $VERSION = '0.18';
 
 use constant {
     AMW_ORDER_WILDCARD_ERROR => 999999,
@@ -693,6 +693,14 @@ to resume only those specific tasks.
 
 =back
 
+=head2 get_pending_jobs
+
+Return the list of hashref with the pending jobs out of the database.
+Accepts the same parameters as C<resume> (which actually calls this
+method).
+
+=cut
+
 =head1 INTERNAL METHODS
 
 =head2 prepare_feeds($type, { name => $feed_name, content => "<xml>..."}, { name => $feed_name2, content => "<xml>..."}, ....)
@@ -853,7 +861,7 @@ sub prepare_feeds {
 }
 
 
-sub _get_pending_jobs {
+sub get_pending_jobs {
     my ($self, @args) = @_;
     my %additional;
     my @named_jobs;
@@ -917,7 +925,7 @@ sub _get_pending_jobs {
 
 sub resume {
     my ($self, @args) = @_;
-    foreach my $row ($self->_get_pending_jobs(@args)) {
+    foreach my $row ($self->get_pending_jobs(@args)) {
         print "Working on $row->{amws_job_id}\n";
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {

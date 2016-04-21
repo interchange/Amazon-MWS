@@ -110,9 +110,9 @@ sub get_sample_records {
     close $fh;
     return @records;
 }
-my @jobs = $uploader->_get_pending_jobs;
+my @jobs = $uploader->get_pending_jobs;
 ok (@jobs > 0, "Found " . scalar(@jobs) . " jobs\n");
-# diag Dumper([$uploader->_get_pending_jobs]);
+# diag Dumper([$uploader->get_pending_jobs]);
 is $jobs[0]->{task}, 'product_deletion', "First job is product_deletion";
 is ((grep { $_->{task} ne 'product_deletion' } @jobs)[0]{task}, 'upload',
     "next in line is upload");
@@ -121,14 +121,14 @@ ok (scalar(grep { $_->{task} eq 'shipping_confirmation' } @jobs), "Found shipcon
 
 # db is bogus, will just remove them
 {
-    my @named = $uploader->_get_pending_jobs({ task => [qw/upload/] });
+    my @named = $uploader->get_pending_jobs({ task => [qw/upload/] });
     ok (scalar(@named), "Found jobs");
     is (scalar(grep { $_->{task} ne 'upload' } @named), 0, "Only upload found");
     diag "Resuming all uploads";
     $uploader->resume({ task => 'upload' });
 }
 {
-    my @named = $uploader->_get_pending_jobs('product_deletion-2016-04-20-22-00-08');
+    my @named = $uploader->get_pending_jobs('product_deletion-2016-04-20-22-00-08');
     is (scalar(@named), 1, "Found a single job");
     is $named[0]{amws_job_id}, 'product_deletion-2016-04-20-22-00-08';
     diag "Resuming a single job";
@@ -141,7 +141,7 @@ $uploader->resume({ task => [qw/shipping_confirmation product_deletion/] });
 diag "Resuming everything";
 $uploader->resume;
 
-@jobs = grep { $_->{task} ne 'order_ack' } $uploader->_get_pending_jobs;
+@jobs = grep { $_->{task} ne 'order_ack' } $uploader->get_pending_jobs;
 ok (!@jobs, "No regular jobs expected now");
-@jobs = $uploader->_get_pending_jobs;
+@jobs = $uploader->get_pending_jobs;
 ok (@jobs, "But there are still order_ack jobs pending");
