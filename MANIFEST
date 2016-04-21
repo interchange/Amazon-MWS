@@ -42,6 +42,8 @@ t/enumeration.t
 t/error-parsing.t
 t/errors.t
 t/feeds.t
+t/job-selection.t
+t/jobs.txt
 t/manifest.t
 t/order-reports.t
 t/orders.t
