@@ -15,7 +15,7 @@ binmode STDERR, ':utf8';
 my $feed_dir = 't/feeds';
 
 if (-d 'schemas') {
-    plan tests => 3;
+    plan tests => 12;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -113,6 +113,32 @@ sub get_sample_records {
 my @jobs = $uploader->_get_pending_jobs;
 ok (@jobs > 0, "Found " . scalar(@jobs) . " jobs\n");
 # diag Dumper([$uploader->_get_pending_jobs]);
+is $jobs[0]->{task}, 'product_deletion', "First job is product_deletion";
+is ((grep { $_->{task} ne 'product_deletion' } @jobs)[0]{task}, 'upload',
+    "next in line is upload");
+is $jobs[$#jobs]{task}, 'order_ack', "Last is order_ack";
+ok (scalar(grep { $_->{task} eq 'shipping_confirmation' } @jobs), "Found shipconfirms");
+
+# db is bogus, will just remove them
+{
+    my @named = $uploader->_get_pending_jobs({ task => 'upload' });
+    ok (scalar(@named), "Found jobs");
+    is (scalar(grep { $_->{task} ne 'upload' } @named), 0, "Only upload found");
+    diag "Resuming all uploads";
+    $uploader->resume({ task => 'upload' });
+}
+{
+    my @named = $uploader->_get_pending_jobs('product_deletion-2016-04-20-22-00-08');
+    is (scalar(@named), 1, "Found a single job");
+    is $named[0]{amws_job_id}, 'product_deletion-2016-04-20-22-00-08';
+    diag "Resuming a single job";
+    $uploader->resume('product_deletion-2016-04-20-22-00-08');
+}
+
+diag "Resuming everything";
 $uploader->resume;
+
+@jobs = grep { $_->{task} ne 'order_ack' } $uploader->_get_pending_jobs;
+ok (!@jobs, "No regular jobs expected now");
 @jobs = $uploader->_get_pending_jobs;
-ok (!@jobs, "No jobs expected now");
+ok (@jobs, "But there are still order_ack jobs pending");

@@ -674,6 +674,25 @@ calls C<resume>, which is in charge for the actual uploading.
 
 Restore the state and resume where it was left.
 
+This method accepts an optional list of parameters. Each parameter may be:
+
+=over 4
+
+=item a scalar
+
+This is considered a job id.
+
+=item a hashref
+
+This will be merged in the query to retrieve the pending jobs. A
+sample usage could be:
+
+  $upload->resume({ task => [qw/upload product_deletion/] });
+
+to resume only those specific tasks.
+
+=back
+
 =head1 INTERNAL METHODS
 
 =head2 prepare_feeds($type, { name => $feed_name, content => "<xml>..."}, { name => $feed_name2, content => "<xml>..."}, ....)
@@ -837,19 +856,61 @@ sub prepare_feeds {
 sub _get_pending_jobs {
     my ($self, @args) = @_;
     my %additional;
-    if (@args) {
-        $additional{amws_job_id} = { -in => \@args };
+    my @named_jobs;
+    foreach my $arg (@args) {
+        if (!ref($arg)) {
+            push @named_jobs, $arg;
+        }
+        elsif (ref($arg) eq 'HASH') {
+            # add the filters
+            foreach my $key (keys %$arg) {
+                if ($additional{$key}) {
+                    die "Attempt to overwrite $key in the additional parameters!\n";
+                }
+                else {
+                    $additional{$key} = $arg->{$key};
+                }
+            }
+        }
+        else {
+            die "Argument must be either a scalar with a job name and/or "
+              . "an hashref with additional filters!";
+        }
     }
-    my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', {
-                                                                     aborted => 0,
-                                                                     success => 0,
-                                                                     shop_id => $self->_unique_shop_id,
-                                                                     %additional,
-                                                                    });
+    if (@named_jobs) {
+        $additional{amws_job_id} = { -in => \@named_jobs };
+    }
+    my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*',
+                                            {
+                                             %additional,
+                                             aborted => 0,
+                                             success => 0,
+                                             shop_id => $self->_unique_shop_id,
+                                            },
+                                            { -asc => 'job_started_epoch'});
     my $pending = $self->_exe_query($stmt, @bind);
-    my @out;
+    my %jobs;
     while (my $row = $pending->fetchrow_hashref) {
-        push @out, $row;
+        $jobs{$row->{task}} ||= [];
+        push @{$jobs{$row->{task}}}, $row;
+    }
+    my @out;
+    foreach my $task (qw/product_deletion upload shipping_confirmation order_ack/) {
+        if (my $list = delete $jobs{$task}) {
+            if ($task eq 'order_ack') {
+                for (1..2) {
+                    push @out, pop @$list if @$list;
+                }
+            }
+            elsif ($task eq 'shipping_confirmation') {
+                while (@$list) {
+                    push @out, pop @$list;
+                }
+            }
+            else {
+                push @out, @$list if @$list;
+            }
+        }
     }
     return @out;
 }
