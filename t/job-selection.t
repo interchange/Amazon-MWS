@@ -121,7 +121,7 @@ ok (scalar(grep { $_->{task} eq 'shipping_confirmation' } @jobs), "Found shipcon
 
 # db is bogus, will just remove them
 {
-    my @named = $uploader->_get_pending_jobs({ task => 'upload' });
+    my @named = $uploader->_get_pending_jobs({ task => [qw/upload/] });
     ok (scalar(@named), "Found jobs");
     is (scalar(grep { $_->{task} ne 'upload' } @named), 0, "Only upload found");
     diag "Resuming all uploads";
@@ -134,6 +134,9 @@ ok (scalar(grep { $_->{task} eq 'shipping_confirmation' } @jobs), "Found shipcon
     diag "Resuming a single job";
     $uploader->resume('product_deletion-2016-04-20-22-00-08');
 }
+
+diag "Doing ship confirm and deletion";
+$uploader->resume({ task => [qw/shipping_confirmation product_deletion/] });
 
 diag "Resuming everything";
 $uploader->resume;
