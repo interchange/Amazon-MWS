@@ -21,6 +21,8 @@ WriteMakefile(
         'Test::MockObject'          => 0,
         'Test::MockObject::Extends' => 0,
         'HTTP::Response'            => 0,
+        'DBI' => 0,
+        'DBD::SQLite' => 0,
     },
     PREREQ_PM => {
         'URI'            => 0, 

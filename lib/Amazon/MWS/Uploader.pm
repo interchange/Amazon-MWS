@@ -834,11 +834,11 @@ sub prepare_feeds {
 }
 
 
-sub resume {
-    my ($self, @jobs) = @_;
+sub _get_pending_jobs {
+    my ($self, @args) = @_;
     my %additional;
-    if (@jobs) {
-        $additional{amws_job_id} = { -in => \@jobs };
+    if (@args) {
+        $additional{amws_job_id} = { -in => \@args };
     }
     my ($stmt, @bind) = $self->sqla->select(amazon_mws_jobs => '*', {
                                                                      aborted => 0,
@@ -847,7 +847,16 @@ sub resume {
                                                                      %additional,
                                                                     });
     my $pending = $self->_exe_query($stmt, @bind);
+    my @out;
     while (my $row = $pending->fetchrow_hashref) {
+        push @out, $row;
+    }
+    return @out;
+}
+
+sub resume {
+    my ($self, @args) = @_;
+    foreach my $row ($self->_get_pending_jobs(@args)) {
         print "Working on $row->{amws_job_id}\n";
         # check if the job dir exists
         if (-d $self->_feed_job_dir($row->{amws_job_id})) {
