@@ -2135,8 +2135,10 @@ Return a list of hashref with two keys, C<amazon_order_id> and
 C<shop_order_id> for each order which is waiting confirmation.
 
 This is implemented looking into amazon_mws_orders where there is no
-shipping confirmation job id but there is the confirmed flag (which
-means we acknowledged the order).
+shipping confirmation job id.
+
+The confirmed flag (which means we acknowledged the order) is ignored
+to avoid stuck order_ack jobs to prevent the shipping confirmation.
 
 =cut
 
@@ -2148,7 +2150,8 @@ sub orders_waiting_for_shipping {
                                                     {
                                                      shop_id => $self->_unique_shop_id,
                                                      shipping_confirmation_job_id => undef,
-                                                     confirmed => 1,
+                                                     # do not stop the unconfirmed to be considered
+                                                     # confirmed => 1,
                                                     }));
     my @out;
     while (my $row = $sth->fetchrow_hashref) {
