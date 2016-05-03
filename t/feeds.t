@@ -12,7 +12,7 @@ use Test::More;
 # testing requires a directory with the schema
 
 if (-d 'schemas') {
-    plan tests => 41;
+    plan tests => 51;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -386,3 +386,28 @@ like($feeder->inventory_feed, qr/Quantity>0</, "Quantity found");
 ok(!$feeder->price_feed, "No price feed");
 ok(!$feeder->image_feed, "No image feed");
 ok(!$feeder->variants_feed, "No variant feed");
+
+$test->feeds_needed([]);
+$feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
+                                      xml_writer => $writer,
+                                      merchant_id => '__MERCHANT_ID__',
+                                      );
+
+ok(!$feeder->product_feed, "No product feed found");
+ok(!$feeder->inventory_feed, "No quantity found");
+ok(!$feeder->price_feed, "No price feed");
+ok(!$feeder->image_feed, "No image feed");
+ok(!$feeder->variants_feed, "No variant feed");
+
+$test->feeds_needed([qw/inventory/]);
+$feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
+                                      xml_writer => $writer,
+                                      merchant_id => '__MERCHANT_ID__',
+                                      );
+
+ok(!$feeder->product_feed, "No product feed found");
+ok($feeder->inventory_feed, "Inventory found");
+ok(!$feeder->price_feed, "No price feed");
+ok(!$feeder->image_feed, "No image feed");
+ok(!$feeder->variants_feed, "No variant feed");
+

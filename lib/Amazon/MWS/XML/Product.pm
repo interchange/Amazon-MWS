@@ -26,6 +26,10 @@ They has to be passed to the constructor
 
 Mandatory.
 
+=item feeds_needed([qw/product inventory price image variants/])
+
+If set to an arrayref, output only the selected feeds.
+
 =item timestamp_string
 
 An arbitrary string (usually a timestamp) which identifies the
@@ -161,6 +165,16 @@ Part number manufacturer.
 =cut
 
 has sku => (is => 'ro', required => 1);
+
+has feeds_needed => (is => 'rw', isa => ArrayRef,
+                     default => sub { [qw/product inventory price image variants/] });
+
+sub is_feed_needed {
+    my ($self, $feed) = @_;
+    return unless $feed;
+    return scalar(grep { $_ eq $feed } @{ $self->feeds_needed });
+}
+
 has timestamp_string => (is => 'ro',
                          default => sub { '0' });
 has ean => (is => 'ro',
@@ -390,6 +404,7 @@ inactive).
 
 sub as_product_hash {
     my $self = shift;
+    return unless $self->is_feed_needed('product');
     my $data = {
         SKU => $self->sku,
     };
@@ -473,6 +488,7 @@ sub as_product_hash {
 
 sub as_inventory_hash {
     my $self = shift;
+    return unless $self->is_feed_needed('inventory');
     my $quantity = $self->inventory;
     if ($self->is_inactive) {
         $quantity = 0;
@@ -486,6 +502,7 @@ sub as_inventory_hash {
 
 sub as_price_hash {
     my $self = shift;
+    return unless $self->is_feed_needed('price');
     return if $self->is_inactive;
     my $price = $self->price;
     my $data = {
@@ -547,6 +564,7 @@ stored with a secured URL (https) so be sure to use http instead.
 
 sub as_images_array {
     my $self = shift;
+    return unless $self->is_feed_needed('image');
     return if $self->is_inactive;
     return unless $self->images;
     my $sku = $self->sku;
@@ -577,6 +595,7 @@ the product is inactive.
 
 sub as_variants_hash {
     my $self = shift;
+    return unless $self->is_feed_needed('variants');
     return if $self->is_inactive;
     my $children = $self->children;
     return unless $children && @$children;

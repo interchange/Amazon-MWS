@@ -773,15 +773,18 @@ sub upload {
                               variants
                              /) {
         my $method = $feed_name . "_feed";
-        my $content = $feeder->$method;
-        push @feeds, {
-                      name => $feed_name,
-                      content => $content,
-                     }
+        if (my $content = $feeder->$method) {
+            push @feeds, {
+                          name => $feed_name,
+                          content => $content,
+                         };
+        }
     }
-    my $job_id = $self->prepare_feeds(upload => \@feeds);
-    $self->_mark_products_as_pending($job_id, @products);
-    return $job_id;
+    if (my $job_id = $self->prepare_feeds(upload => \@feeds)) {
+        $self->_mark_products_as_pending($job_id, @products);
+        return $job_id;
+    }
+    return;
 }
 
 sub _mark_products_as_pending {
@@ -816,6 +819,7 @@ sub _mark_products_as_pending {
 sub prepare_feeds {
     my ($self, $task, $feeds) = @_;
     die "Missing task ($task) and feeds ($feeds)" unless $task && $feeds;
+    return unless @$feeds; # nothing to do
     my $job_id = $task . "-" . DateTime->now->strftime('%F-%H-%M-%S');
     my $job_started_epoch = time();
 
