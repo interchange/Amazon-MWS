@@ -17,6 +17,50 @@ our $VERSION = '0.130';
 See L<Amazon::MWS::Client> for the implementation of the low level
 Amazon MWS API.
 
+=head2 Uploading products
+
+Basically you take the products which need to be uploaded to Amazon
+and create L<Amazon::MWS::XML::Product> objects from them:
+
+    use Amazon::MWS::XML::Product;
+    use Amazon::MWS::Uploader;
+    use Try::Tiny;
+
+    my @upload;
+
+    foreach my $product_object (@send_to_amazon) {
+        my %prod = ....
+
+        try {
+            my $product = Amazon::MWS::XML::Product->new(%prod);
+            push @upload, $product;
+        } catch {
+            warn "Failure with $prod{sku} : $_";
+        };
+     }
+
+Now you create an L<Amazon::MWS::XML::Uploader> object and do the
+actual upload.
+
+    my $uploader = Amazon::MWS::XML::Uploader->new(...);
+
+    try {
+        $uploader->products(\@upload);
+        $uploader->upload;
+    } catch {
+        die "Uploader failure with: $_";
+    };
+
+You are not by any means finished with the upload, see L</Resume uploads>.
+
+=head2 Resume uploads
+
+This is necessary to check whether the upload has been
+processed by Amazon.
+
+    my $uploader = Amazon::MWS::XML::Uploader->new(...);
+    $uploader->resume;
+
 =head1 MWS in practice
 
 =head2 Product price
