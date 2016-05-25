@@ -51,6 +51,35 @@ actual upload.
         die "Uploader failure with: $_";
     };
 
+A product upload goes through the following steps:
+
+=over 4
+
+=item product
+
+Basic product data.
+
+=item inventory
+
+Product inventory count (required).
+
+=item price
+
+Product price (required).
+
+=item image
+
+Product images (required).
+
+Please note that B<only http:// links> are allowed. If you pass https://
+links, they will be rejected by Amazon.
+
+=item variants
+
+Product variants (optional).
+
+=back
+
 You are not by any means finished with the upload, see L</Resume uploads>.
 
 =head2 Resume uploads
@@ -60,6 +89,9 @@ processed by Amazon.
 
     my $uploader = Amazon::MWS::XML::Uploader->new(...);
     $uploader->resume;
+
+The uploader also goes automatically through the steps for the
+product uploads.
 
 =head1 MWS in practice
 
