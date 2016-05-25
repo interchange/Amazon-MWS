@@ -17,6 +17,9 @@ our $VERSION = '0.130';
 See L<Amazon::MWS::Client> for the implementation of the low level
 Amazon MWS API.
 
+For the high level methods provided by the L<Amazon::MWS::Uploader>
+you are going to need to supply database storage.
+
 =head2 Uploading products
 
 Basically you take the products which need to be uploaded to Amazon
