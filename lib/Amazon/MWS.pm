@@ -14,7 +14,8 @@ our $VERSION = '0.130';
 
 =head1 DESCRIPTION
 
-See L<Amazon::MWS::Client>
+See L<Amazon::MWS::Client> for the implementation of the low level
+Amazon MWS API.
 
 =head1 MWS in practice
 
