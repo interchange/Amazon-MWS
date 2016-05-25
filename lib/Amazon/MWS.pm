@@ -82,6 +82,14 @@ Product variants (optional).
 
 You are not by any means finished with the upload, see L</Resume uploads>.
 
+=head2 Delete products
+
+Deleting products is much more straightforward, but you have still to
+care of tracking the upload process, see again L</Resume uploads>.
+
+    my $uploader = Amazon::MWS::Uploader->new(...);
+    $uploader->delete_skus(@skus);
+
 =head2 Resume uploads
 
 This is necessary to check whether the upload has been
