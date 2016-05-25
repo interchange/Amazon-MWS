@@ -1,5 +1,26 @@
 Revision history for Amazon::MWS
 
+0.131 Wed May 25 09:50:20 2016 CEST
+
+     [ENHANCEMENTS]
+
+     * Allow to limit the product upload steps (Marco Pessotto).
+     * Removed confirmed => 1 filters to get the orders waiting for shipping
+      (Marco Pessotto).
+     * Make _get_pending_jobs method of the uploader public
+       (Marco Pessotto).
+     * Allow additional parameters for resume method and keep the jobs
+	   in predictable order (Marco Pessotto).
+
+     [DOCUMENTATION]
+
+     * Add sections about uploading products, deleting products
+       and resuming uploads to the main documentation (Stefan Hornburg/Racke).
+     * Add note about image links to Product class documentation
+       (Stefan Hornburg/Racke).
+     * Add comment about usage of Amazon::MWS::Client to the documentation.
+       (Stefan Hornburg/Racke).
+
 0.130 Sat Apr  2 08:08:26 2016 CEST
 
      [ENHANCEMENTS]

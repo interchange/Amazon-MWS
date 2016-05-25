@@ -4,11 +4,96 @@ NAME
 
 VERSION
 
-    0.130
+    0.131
 
 DESCRIPTION
 
-    See Amazon::MWS::Client
+    See Amazon::MWS::Client for the implementation of the low level Amazon
+    MWS API.
+
+    For the high level methods provided by the Amazon::MWS::Uploader you
+    are going to need to supply database storage.
+
+ Uploading products
+
+    Basically you take the products which need to be uploaded to Amazon and
+    create Amazon::MWS::XML::Product objects from them:
+
+        use Amazon::MWS::XML::Product;
+        use Amazon::MWS::Uploader;
+        use Try::Tiny;
+    
+        my @upload;
+    
+        foreach my $product_object (@send_to_amazon) {
+            my %prod = ....
+    
+            try {
+                my $product = Amazon::MWS::XML::Product->new(%prod);
+                push @upload, $product;
+            } catch {
+                warn "Failure with $prod{sku} : $_";
+            };
+         }
+
+    Now you create an Amazon::MWS::XML::Uploader object and do the actual
+    upload.
+
+        my $uploader = Amazon::MWS::XML::Uploader->new(...);
+    
+        try {
+            $uploader->products(\@upload);
+            $uploader->upload;
+        } catch {
+            die "Uploader failure with: $_";
+        };
+
+    A product upload goes through the following steps:
+
+    product
+
+      Basic product data.
+
+    inventory
+
+      Product inventory count (required).
+
+    price
+
+      Product price (required).
+
+    image
+
+      Product images (required).
+
+      Please note that only http:// links are allowed. If you pass https://
+      links, they will be rejected by Amazon.
+
+    variants
+
+      Product variants (optional).
+
+    You are not by any means finished with the upload, see "Resume
+    uploads".
+
+ Delete products
+
+    Deleting products is much more straightforward, but you have still to
+    care of tracking the upload process, see again "Resume uploads".
+
+        my $uploader = Amazon::MWS::Uploader->new(...);
+        $uploader->delete_skus(@skus);
+
+ Resume uploads
+
+    This is necessary to check whether the upload has been processed by
+    Amazon.
+
+        my $uploader = Amazon::MWS::XML::Uploader->new(...);
+        $uploader->resume;
+
+    The uploader also goes automatically through the steps for the product
+    uploads.
 
 MWS in practice
 
