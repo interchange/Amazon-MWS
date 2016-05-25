@@ -127,6 +127,9 @@ A DateTime object with the sale end date
 An (optional) arrayref of image urls. The first will become the main
 image, the other one will become the PT1, etc.
 
+Please note that B<only http:// links> are allowed. If you pass https://
+links, they will be rejected by Amazon.
+
 =item children
 
 An (optional) arraryref of children sku.
