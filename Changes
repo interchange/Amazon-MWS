@@ -1,5 +1,11 @@
 Revision history for Amazon::MWS
 
+0.132 Sun Oct 23 09:01:46 2016 CEST
+
+     [ENHANCEMENTS]
+
+     * Add GetPrepInstructionsForASIN and GetPrepInstructionsForSKU api methods provided by rinser.
+
 0.131 Wed May 25 09:50:20 2016 CEST
 
      [ENHANCEMENTS]
