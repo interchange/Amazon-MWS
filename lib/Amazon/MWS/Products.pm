@@ -5,10 +5,10 @@ use Amazon::MWS::Routines qw(:all);
 my $version = '2011-10-01';
 my $products_service = "/Products/$version";
 
-define_api_method "GetServiceStatus" =>
+define_api_method GetServiceStatus =>
     raw_body => 0,
+    version => $version,
     service => "$products_service",
-    module_name => 'Amazon::MWS::Products',
     parameters => {},
     respond => sub {
         my $root = shift;
