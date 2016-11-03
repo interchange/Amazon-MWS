@@ -38,6 +38,7 @@ Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 README
+t/client.t
 t/enumeration.t
 t/error-parsing.t
 t/errors.t
