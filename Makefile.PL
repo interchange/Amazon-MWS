@@ -17,6 +17,7 @@ WriteMakefile(
         'ExtUtils::MakeMaker' => 0,
     },
     BUILD_REQUIRES => {
+        'Test::Deep'                => 0,
         'Test::More'                => 0,
         'Test::MockObject'          => 0,
         'Test::MockObject::Extends' => 0,
