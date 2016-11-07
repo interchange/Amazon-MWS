@@ -17,8 +17,8 @@ define_api_method GetServiceStatus =>
 
 define_api_method ListMatchingProducts =>
     raw_body => 0,
-    version => $version,
     service => "$products_service",
+    version => $version,
     parameters => {
         Query      => {
              type       => 'string',
@@ -35,6 +35,7 @@ define_api_method ListMatchingProducts =>
 define_api_method GetMatchingProduct =>
     raw_body => 1,
     service => "$products_service",
+    version => $version,
     parameters => {
         ASINList      => {
              type       => 'ASINList',
@@ -45,8 +46,8 @@ define_api_method GetMatchingProduct =>
 
 define_api_method GetMatchingProductForId =>
   raw_body => 0,
-  version => $version,
   service => $products_service,
+  version => $version,
   parameters => {
                  MarketplaceId   => {
                                      type => 'string',
@@ -134,6 +135,7 @@ define_api_method GetLowestOfferListingsForASIN =>
 define_api_method GetCompetitivePricingForSKU =>
     raw_body => 1,
     service => "$products_service",
+    version => $version,
     parameters => {
         SellerSKUList      => {
              type       => 'SellerSKUList',
@@ -145,6 +147,7 @@ define_api_method GetCompetitivePricingForSKU =>
 define_api_method GetCompetitivePricingForASIN =>
     raw_body => 1,
     service => "$products_service",
+    version => $version,
     parameters => {
         ASINList      => {
              type       => 'ASINList',
@@ -153,9 +156,66 @@ define_api_method GetCompetitivePricingForASIN =>
         MarketplaceId   => { type => 'string', required=>1 },
     };
 
+define_api_method GetLowestPricedOffersForSKU =>
+    raw_body => 1,
+    service => "$products_service",
+    version => $version,
+    parameters => {
+        SellerSKU      => {
+             type       => 'string',
+	     required	=> 1
+        },
+        MarketplaceId   => { type => 'string', required=>1 },
+        ItemCondition   => { type => 'List', values=>['Any', 'New', 'Used', 'Collectible', 'Refurbished', 'Club'],
+                             required => 1 },
+    };
+
+define_api_method GetLowestPricedOffersForASIN =>
+    raw_body => 1,
+    service => "$products_service",
+    version => $version,
+    parameters => {
+        ASIN      => {
+             type       => 'string',
+             required   => 1
+        },
+        MarketplaceId   => { type => 'string', required=>1 },
+        ItemCondition   => { type => 'List', values=>['Any', 'New', 'Used', 'Collectible', 'Refurbished', 'Club'],
+                             required => 1 },
+    };
+
+define_api_method GetMyPriceForSKU =>
+    raw_body => 1,
+    service => "$products_service",
+    version => $version,
+    parameters => {
+        SellerSKUList      => {
+             type       => 'SellerSKUList',
+	     required	=> 1
+        },
+        MarketplaceId   => { type => 'string', required=>1 },
+        ItemCondition   => { type => 'List', values=>['Any', 'New', 'Used', 'Collectible', 'Refurbished', 'Club'],
+                             required => 0 },
+    };
+
+define_api_method GetMyPriceForASIN =>
+    raw_body => 1,
+    service => "$products_service",
+    version => $version,
+    parameters => {
+        ASINList      => {
+             type       => 'ASINList',
+             required   => 1
+        },
+        MarketplaceId   => { type => 'string', required=>1 },
+        ItemCondition   => { type => 'List', values=>['Any', 'New', 'Used', 'Collectible', 'Refurbished', 'Club'],
+                             required => 0 },
+    };
+
 define_api_method GetProductCategoriesForSKU =>
     raw_body => 1,
     service => "$products_service",
+    version => $version,
     parameters => {
         SellerSKU      => {
              type       => 'string',
