@@ -72,6 +72,31 @@ define_api_method GetMatchingProductForId =>
       }
   };
 
+define_api_method GetMyFeesEstimate =>
+  raw_body => 0,
+  service => $products_service,
+  version => $version,
+  parameters => {
+        'FeesEstimateRequestList' => {
+                   required => 1,
+                   array_names => ['MarketplaceId','IdType','IdValue','IsAmazonFulfilled','Identifier',
+                      'PriceToEstimateFees.ListingPrice.Amount', 'PriceToEstimateFees.ListingPrice.CurrencyCode',
+                      'PriceToEstimateFees.Shipping.Amount', 'PriceToEstimateFees.Shipping.CurrencyCode',
+                      'PriceToEstimateFees.Points.PointsNumber'],
+                   type => 'FeesEstimateRequestArray',
+
+        },
+        },
+  respond => sub {
+      my $root = shift;
+      return unless $root; # failed totally
+      if (ref($root) ne 'ARRAY') {
+          return [ $root ];
+      }
+      else {
+          return $root;
+      }
+  };
 
 define_api_method GetLowestOfferListingsForSKU =>
     raw_body => 0,
