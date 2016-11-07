@@ -1,5 +1,21 @@
 Revision history for Amazon::MWS
 
+0.140 Mon Nov  7 10:27:33 2016 CET
+
+     [ENHANCEMENTS]
+
+     * Add API methods provided by rinser (GH #13, #14):
+
+       GetLowestPricedOffersForSKU
+       GetLowestPricedOffersForASIN
+       GetMyPriceForSKU
+       GetMyPriceForASIN
+       GetMyFeesEstimate
+
+     [BUG FIXES]
+
+     * Fix signature of API method GetServiceStatus (Stefan Hornburg/Racke).
+
 0.132 Sun Oct 23 09:01:46 2016 CEST
 
      [ENHANCEMENTS]
