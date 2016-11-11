@@ -4,7 +4,7 @@ Revision history for Amazon::MWS
 
      [ENHANCEMENTS]
 
-     * Add API methods provided by Risner (GH #13, #14):
+     * Add API methods provided by James Risner (GH #13, #14):
 
        GetLowestPricedOffersForSKU
        GetLowestPricedOffersForASIN
@@ -21,7 +21,7 @@ Revision history for Amazon::MWS
      [ENHANCEMENTS]
 
      * Add GetPrepInstructionsForASIN and GetPrepInstructionsForSKU
-       API methods provided by Risner.
+       API methods provided by James Risner.
 
 0.131 Wed May 25 09:50:20 2016 CEST
 
