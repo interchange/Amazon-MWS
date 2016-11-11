@@ -191,6 +191,11 @@ This happened in our case with products having self assigned EAN codes, but
 with a well known manufacturer. Apparently Amazon knows about the EAN ranges
 for this manufacturer.
 
+=head3 Error 18181
+
+The format of the tracking number passed to Amazon was invalid, e.g.
+wrong number of characters.
+
 =head3 Error 20013: Image file size
 
    error: Image file size: 13972730 bytes exceeds the the maximum allowed file size: 10485760 bytes.
