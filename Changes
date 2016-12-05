@@ -1,5 +1,15 @@
 Revision history for Amazon::MWS
 
+0.141 Mon Dec  5 13:30:14 2016 CET
+
+     [BUG FIXES]
+
+     * Handle hash references for address values (Marco Pessotto).
+
+     [DOCUMENTATION]
+
+     * Add documentation on Amazon error 18181 (Stefan Hornburg/Racke).
+
 0.140 Mon Nov  7 10:27:33 2016 CET
 
      [ENHANCEMENTS]
