@@ -86,14 +86,47 @@ sub name {
 
 sub address1 {
     my $self = shift;
-    return $self->AddressLine1 || $self->AddressFieldOne || '';
+    return $self->_unroll_ref($self->AddressLine1) || $self->_unroll_ref($self->AddressFieldOne) || '';
 }
 
 sub address2 {
     my $self = shift;
-    return $self->AddressLine2 || $self->AddressFieldTwo || '';
+    return $self->_unroll_ref($self->AddressLine2) || $self->_unroll_ref($self->AddressFieldTwo) || '';
 }
 
+sub _unroll_ref {
+    my ($self, $value) = @_;
+    return '' unless defined $value;
+    if (my $reftype = ref($value)) {
+        if ($reftype eq 'HASH') {
+            # this is probably incorrect, but given that we don't
+            # expect this, it's better than nothing.
+            if (%$value) {
+                # here we don't know exactly what to do.
+                my @list = %$value;
+                return join(' ', @list);
+            }
+            else {
+                return '';
+            }
+        }
+        elsif ($reftype eq 'ARRAY') {
+            if (@$value) {
+                return join(' ', @$value);
+            }
+            else {
+                return '';
+            }
+        }
+        else {
+            warn "Unknown ref passed $reftype";
+            return '';
+        }
+    }
+    else {
+        return $value;
+    }
+}
 
 =head2 ALIASES
 

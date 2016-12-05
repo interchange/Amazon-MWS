@@ -3,9 +3,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 36;
 
 use Amazon::MWS::XML::Order;
+use Amazon::MWS::XML::Address;
 
 my $order_data = {
                   'NumberOfItemsUnshipped' => '0',
@@ -29,6 +30,7 @@ my $order_data = {
                                         'CountryCode' => 'DE',
                                         'PostalCode' => '11111',
                                         'AddressLine2' => 'Strazze',
+                                        'AddressLine1' => {},
                                         'Name' => "John U. Doe",
                                         'City' => 'Berlin'
                                        },
@@ -119,6 +121,8 @@ is ($items[0]->amazon_order_item, $items[0]->remote_shop_order_item);
 ok ($order->order_is_shipped, "It is shipped");
 is ($order->amazon_order_number, $order->remote_shop_order_id, "alias ok");
 is ($order->shipping_address->state, $order->shipping_address->region, "state and region are aliases");
+is ($order->shipping_address->address1, '');
+is ($order->shipping_address->address2, 'Strazze');
 is ($order->first_name, 'John U.');
 is ($order->last_name, 'Doe');
 is ($order->shipping_method, 'Standard');
@@ -127,3 +131,49 @@ $order_data->{ShippingAddress}->{Name} = 'Doe';
 $order = Amazon::MWS::XML::Order->new(order => $order_data);
 is ($order->first_name, '');
 is ($order->last_name, 'Doe');
+
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressLine1 => {test => 1});
+    is $address->address1, 'test 1';
+    is $address->address2, '';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressLine1 => {});
+    is $address->address1, '';
+    is $address->address2, '';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressFieldOne => ['pippo']);
+    is $address->address1, 'pippo';
+    is $address->address2, '';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressFieldOne => []);
+    is $address->address1, '';
+    is $address->address2, '';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressLine2 => {test => 2});
+    is $address->address1, '';
+    is $address->address2, 'test 2';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressLine2 => {});
+    is $address->address1, '';
+    is $address->address2, '';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressFieldTwo => ['pippo']);
+    is $address->address1, '';
+    is $address->address2, 'pippo';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressFieldTwo => []);
+    is $address->address1, '';
+    is $address->address2, '';
+}
+{
+    my $address = Amazon::MWS::XML::Address->new(AddressFieldTwo => \0);
+    is $address->address1, '';
+    is $address->address2, '';
+}
