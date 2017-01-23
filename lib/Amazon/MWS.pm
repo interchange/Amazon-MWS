@@ -202,6 +202,10 @@ wrong number of characters.
 
 There is no point in using such big image files for Amazon.
 
+=head3 Error 99001: "brand_name"
+
+Brand is a required field for products.
+
 =head1 Uploader Module
 
 L<Amazon::MWS::Uploader> is an upload agent for Amazon::MWS.
