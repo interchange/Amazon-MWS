@@ -1636,7 +1636,7 @@ sub register_order_ack_errors {
     elsif (@errors) {
         my $error = shift @errors;
         %update = (
-                   error_msg => $error->{type} . ' ' . $_->{message} . ' ' . $_->{code},
+                   error_msg => $error->{type} . ' ' . $error->{message} . ' ' . $error->{code},
                    error_code => $error->{code},
                   );
     }
