@@ -567,7 +567,7 @@ sub _build_products_to_upload {
             foreach my $child (@$children) {
                 # skip failed children, but if the current status of
                 # parent is failed, and we reached this point, retry.
-                if (! exists $self->_force_hashref($child) and
+                if (! exists $self->_force_hashref->{$child} and
                     $existing->{$child} and
                     $existing->{$sku} and
                     $existing->{$sku}->{status} ne 'failed' and
