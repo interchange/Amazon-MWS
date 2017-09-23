@@ -6,11 +6,11 @@ Amazon::MWS - Perl interface to Amazon Marketplace Web Services
 
 =head1 VERSION
 
-0.141
+0.150
 
 =cut
 
-our $VERSION = '0.141';
+our $VERSION = '0.150';
 
 =head1 DESCRIPTION
 
