@@ -240,6 +240,10 @@ L<Amazon::MWS::XML::OrderlineItem>
 
 =back
 
+=head1 ACKNOWLEDGEMENTS
+
+James Rinser (additional API methods).
+
 =head1 AUTHORS
 
 Paul Driver
