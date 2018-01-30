@@ -154,6 +154,9 @@ sub shipping {
     if (my $price = $self->ShippingPrice) {
         $shipping = $price->{Amount} || 0;
     }
+    if (my $tax = $self->ShippingTax) {
+        $shipping += $tax->{Amount} || 0;
+    }
     return sprintf('%.2f', $shipping);
 }
 
@@ -200,6 +203,9 @@ sub subtotal {
     my $amount = 0;
     if (my $price = $self->ItemPrice) {
         $amount = $price->{Amount} || 0;
+    }
+    if (my $tax = $self->ItemTax) {
+        $amount += $tax->{Amount} || 0;
     }
     return sprintf('%.2f', $amount);
 }

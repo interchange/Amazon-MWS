@@ -47,6 +47,7 @@ t/job-selection.t
 t/jobs.txt
 t/manifest.t
 t/order-reports.t
+t/orders-tax.t
 t/orders.t
 t/pod-coverage.t
 t/pod.t
