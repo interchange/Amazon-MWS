@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use Amazon::MWS::XML::Order;
 
@@ -110,3 +110,48 @@ ok $order;
 is $order->subtotal, '122.68';
 is $order->total_cost, '160.08';
 is $order->currency, 'USD';
+
+my $canceled = {
+                            'AmazonOrderId' => '702-9999999-999999999',
+                            'EarliestShipDate' => '2018-01-26T00:02:54Z',
+                            'FulfillmentChannel' => 'MFN',
+                            'IsBusinessOrder' => 'false',
+                            'IsPremiumOrder' => 'false',
+                            'IsPrime' => 'false',
+                            'IsReplacementOrder' => 'false',
+                            'LastUpdateDate' => '2018-01-26T00:07:06Z',
+                            'LatestShipDate' => '2018-01-26T00:02:54Z',
+                            'MarketplaceId' => 'A2EUQ1WTGCTBG2',
+                            'NumberOfItemsShipped' => '0',
+                            'NumberOfItemsUnshipped' => '0',
+                            'OrderStatus' => 'Canceled',
+                            'OrderType' => 'StandardOrder',
+                            'PaymentMethodDetails' => {
+                                                       'PaymentMethodDetail' => 'Standard'
+                                                      },
+                            'PurchaseDate' => '2018-01-25T00:00:00Z',
+                            'SalesChannel' => 'Amazon.ca',
+                            'ShipServiceLevel' => 'Exp CA D2D Dom',
+                            'ShipmentServiceLevelCategory' => 'Expedited'
+               };
+my $canceled_orderline =  [
+                                {
+                                 'ASIN' => 'B0000000',
+                                 'ConditionId' => 'New',
+                                 'ConditionSubtypeId' => 'New',
+                                 'IsGift' => 'false',
+                                 'OrderItemId' => '9999999999999999',
+                                 'ProductInfo' => {
+                                                   'NumberOfItems' => '1'
+                                                  },
+                                 'QuantityOrdered' => '0',
+                                 'QuantityShipped' => '0',
+                                 'SellerSKU' => '1030616-007150-150',
+                                 'Title' => 'Pazz - stirrup leathers Soft Touch'
+                                }
+                               ];
+
+my $corder = Amazon::MWS::XML::Order->new(order => $canceled,
+                                          orderline => $canceled_orderline);
+is $corder->total_cost, 0;
+ok !$corder->can_be_imported;

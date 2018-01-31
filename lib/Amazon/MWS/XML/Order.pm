@@ -290,6 +290,7 @@ including sales taxes.
 
 sub total_cost {
     my $self = shift;
+    return 0 unless $self->order->{OrderTotal};
     my $total_cost = sprintf('%.2f', $self->order->{OrderTotal}->{Amount});
     die "Couldn't retrieve the OrderTotal/Amount " . Dumper($self->order)
       unless defined $total_cost;
