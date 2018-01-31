@@ -282,6 +282,9 @@ sub number_of_items {
 Return OrderTotal.Amount. Throws an exception if it doesn't match
 shipping_cost + subtotal.
 
+Please note that the total_cost is what is the customer paid,
+including sales taxes.
+
 =cut
 
 
