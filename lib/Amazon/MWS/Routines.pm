@@ -231,7 +231,7 @@ sub sign_request {
     if ($request->{_method} eq 'GET' || $request->{_content} ) {
     	$uri->query_form(\%params);
     } else {
-	$request->{_content} = "$canonical&Signature=$params{Signature}";
+        $request->{_content} = "$canonical&Signature=" . uri_escape($params{Signature});
     }
 	$request->uri($uri);
 	return $request;
