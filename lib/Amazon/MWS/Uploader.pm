@@ -908,7 +908,10 @@ sub get_pending_jobs {
         push @{$jobs{$row->{task}}}, $row;
     }
     my @out;
-    foreach my $task (qw/product_deletion upload shipping_confirmation order_ack/) {
+    foreach my $task (qw/order_ack
+                         shipping_confirmation
+                         product_deletion
+                         upload/) {
         if (my $list = delete $jobs{$task}) {
             if ($task eq 'order_ack') {
                 for (1..2) {
