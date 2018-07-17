@@ -1101,6 +1101,17 @@ sub process_feeds {
                                                    shop_id => $self->_unique_shop_id,
                                                   }));
         }
+        elsif ($row->{task} eq 'product_deletion') {
+            $self->_exe_query($self->sqla->update('amazon_mws_products',
+                                                  {
+                                                   listed_date => undef,
+                                                   listed => 0,
+                                                  },
+                                                  {
+                                                   amws_job_id => $job_id,
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
+        }
     }
     else {
         print "Job still to be processed\n";
