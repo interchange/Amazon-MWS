@@ -149,6 +149,39 @@ has skus_warnings_modes => (is => 'rw',
                    default => sub {{}},
                );
 
+=item throttled_feeds
+
+List of throttled feeds.
+
+=cut
+
+has throttled_feeds => (is => 'ro',
+                 isa => ArrayRef,
+                 default => sub {[]},
+             );
+
+=item throttle_log_mode
+
+Possible values:
+
+=over 4
+
+=item warn
+
+Prints throttle exceptions with C<warn> function (default mode).
+
+=item print
+
+Prints throttle exceptions with C<print> function.
+
+=back
+
+=cut
+
+has throttle_log_mode => (is => 'rw',
+                      default => sub {'warn'},
+);
+
 =item order_days_range
 
 When calling get_orders, check the orders for the last X days. It
@@ -1269,18 +1302,40 @@ sub _exe_query {
 sub _check_processing_complete {
     my ($self, $feed_id, $type) = @_;
     my $res;
+    my $skip;
+
     try {
         $res = $self->client->GetFeedSubmissionList;
     } catch {
         my $exception = $_;
-        if (ref($exception) && $exception->can('xml')) {
-            warn "checking processing complete error for $type $feed_id: " . $exception->xml;
+        my $exception_class = ref($exception);
+
+        if ($exception_class) {
+            if ($exception_class eq 'Amazon::MWS::Exception::Throttled') {
+                if ($self->throttle_log_mode eq 'warn') {
+                    warn "Request is throttled for $type $feed_id.\n";
+                }
+                elsif ($self->throttle_log_mode eq 'print') {
+                    print "Request is throttled for $type $feed_id.\n";
+                }
+                push @{$self->throttled_feeds}, {
+                    feed => $type,
+                    id => $feed_id,
+                };
+
+                $skip = 1;
+            }
+            elsif ($exception->can('xml')) {
+                warn "exception object type: ", ref($exception), "\n";
+                warn "checking processing complete error for $type $feed_id: " . $exception->xml;
+            }
         }
         else {
             warn "checking processing complete for $type $feed_id: " . Dumper($exception);
         }
     };
-    die unless $res;
+    return if $skip;
+    die "No result from GetFeedSubmissionList for type $type and feed $feed_id" unless $res;
     print "Checking if the processing is complete for $type $feed_id\n"; # . Dumper($res);
     my $found;
     if (my $list = $res->{FeedSubmissionInfo}) {
