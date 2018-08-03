@@ -160,7 +160,8 @@ sub define_api_method {
             my $hash = $xs->xml_in($content);
             my $root = $hash->{ErrorResponse};
             force_array($root, 'Error');
-            Amazon::MWS::Exception::Throttled->throw(errors => $root->{Error}, xml => $content);
+            Amazon::MWS::Exception::Throttled->throw(error => "Request is throttled\n",
+                                                     errors => $root->{Error}, xml => $content);
         }
 
         unless ($response->is_success) {
