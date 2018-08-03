@@ -1316,7 +1316,7 @@ sub _check_processing_complete {
     my $skip;
 
     try {
-        $res = $self->client->GetFeedSubmissionList;
+        $res = $self->client->GetFeedSubmissionList(FeedSubmissionIdList => [ $feed_id ]);
     } catch {
         my $exception = $_;
         my $exception_class = ref($exception);
