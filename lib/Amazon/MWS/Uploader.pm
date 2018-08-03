@@ -174,6 +174,10 @@ Prints throttle exceptions with C<warn> function (default mode).
 
 Prints throttle exceptions with C<print> function.
 
+=item fatal
+
+Rethrow the exception.
+
 =back
 
 =cut
@@ -1328,6 +1332,9 @@ sub _check_processing_complete {
                 }
                 elsif ($self->throttle_log_mode eq 'print') {
                     print "Request is throttled for $type $feed_id.\n";
+                }
+                elsif ($self->throttle_log_mode eq 'fatal') {
+                    die $exception; # rethrow.
                 }
                 push @{$self->throttled_feeds}, {
                     feed => $type,
