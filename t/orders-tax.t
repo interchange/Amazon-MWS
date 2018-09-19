@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 8;
 
 use Amazon::MWS::XML::Order;
 
@@ -103,13 +103,25 @@ my $orderline_data = [
                   }
                  ];
   
-my $order = Amazon::MWS::XML::Order->new(order => $order_data,
-                                         orderline => $orderline_data);
+{
+    my $order = Amazon::MWS::XML::Order->new(order => $order_data,
+                                             include_tax_in_prices => 1,
+                                             orderline => $orderline_data);
+    ok $order;
+    is $order->subtotal, '122.68';
+    is $order->total_cost, '160.08';
+    is $order->currency, 'USD';
+}
+{
+    my $order = Amazon::MWS::XML::Order->new(order => $order_data,
+                                             include_tax_in_prices => 0,
+                                             orderline => $orderline_data);
+    ok $order;
+    eval { $order->subtotal; $order->total_cost };
+    ok($@) and diag $@;
+}
 
-ok $order;
-is $order->subtotal, '122.68';
-is $order->total_cost, '160.08';
-is $order->currency, 'USD';
+
 
 my $canceled = {
                             'AmazonOrderId' => '702-9999999-999999999',
@@ -152,6 +164,7 @@ my $canceled_orderline =  [
                                ];
 
 my $corder = Amazon::MWS::XML::Order->new(order => $canceled,
+                                          include_tax_in_prices => 1,
                                           orderline => $canceled_orderline);
 is $corder->total_cost, 0;
 ok !$corder->can_be_imported;

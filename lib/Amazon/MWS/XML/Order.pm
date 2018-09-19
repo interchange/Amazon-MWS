@@ -89,6 +89,13 @@ sub _build_orderline {
 
 has order_number => (is => 'rw');
 
+=head2 include_tax_in_prices
+
+Passed to the L<Amazon::MWS::XML::OrderlineItem> constructor.
+
+=cut
+
+has include_tax_in_prices => (is => 'ro', isa => Bool, default => sub { 0 });
 
 =head1 METHODS
 
@@ -193,7 +200,9 @@ sub _build_items_ref {
     my @items;
     foreach my $item (@$orderline) {
         # print Dumper($item);
-        push @items, Amazon::MWS::XML::OrderlineItem->new(%$item);
+        push @items, Amazon::MWS::XML::OrderlineItem->new(%$item,
+                                                          include_tax_in_prices => $self->include_tax_in_prices,
+                                                         );
     }
     return \@items;
 }
@@ -300,7 +309,8 @@ sub total_cost {
         return $total_cost;
     }
     else {
-        die "subtotal $subtotal + shipping $shipping is not $total_cost\n";
+        die "subtotal $subtotal + shipping $shipping is not $total_cost. Try to turn include_tax_in_prices "
+          . ($self->include_tax_in_prices ? "OFF" : "ON");
     }
 }
 

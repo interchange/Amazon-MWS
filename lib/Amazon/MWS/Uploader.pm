@@ -403,6 +403,17 @@ has order_ack_days_timeout => (is => 'ro',
 has limit_inventory => (is => 'ro',
                         isa => Int);
 
+=item include_tax_in_prices
+
+Passed to the L<Amazon::MWS::XML::Order> constructor, which in turn
+passed it down to the L<Amazon::MWS::XML::OrderlineItem> constructor.
+
+See L<Amazon::MWS::XML::OrderlineItem>
+
+=cut
+
+has include_tax_in_prices => (is => 'ro', isa => Bool, default => sub { 0 });
+
 =item schema_dir
 
 The directory where the xsd files for the feed building can be found.
@@ -1496,6 +1507,7 @@ sub get_orders {
         };
 
         push @orders, Amazon::MWS::XML::Order->new(order => $order,
+                                                   include_tax_in_prices => $self->include_tax_in_prices,
                                                    retrieve_orderline_sub => $get_orderline);
     }
     return @orders;
@@ -2506,7 +2518,9 @@ sub update_amw_order_status {
         warn "Order $order not found on amazon!"
     }
     print Dumper($amazon_order);
-    my $obj = Amazon::MWS::XML::Order->new(order => $amazon_order);
+    my $obj = Amazon::MWS::XML::Order->new(order => $amazon_order,
+                                           include_tax_in_prices => $self->include_tax_in_prices,
+                                          );
     my $status = $obj->order_status;
     $self->_exe_query($self->sqla->update('amazon_mws_orders',
                                           { status => $status },

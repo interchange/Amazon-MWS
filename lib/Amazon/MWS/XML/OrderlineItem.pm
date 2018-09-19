@@ -117,6 +117,17 @@ sub currency {
     return shift->ItemPrice->{CurrencyCode};
 }
 
+=head2 include_tax_in_prices
+
+Boolean flag to indicate if the computed subtotal, price and shipping
+should include the tax or not. At the time of writing, the behavior
+depends on varius factors (business account, Amazon instance). Default
+to false.
+
+=cut
+
+has include_tax_in_prices => (is => 'ro', default => sub { 0 });
+
 =head2 price
 
 Amazon report the item price's as the sum of the items, not the
@@ -131,7 +142,7 @@ item and a quantity. This means that the value of ItemPrice is equal
 to the selling price of the item multiplied by the quantity ordered.
 Note that ItemPrice excludes ShippingPrice and GiftWrapPrice.
 
-It B<includes salestaxes> if present in the amazon breakdown.
+It B<includes taxes> if C<include_tax_in_prices> is true.
 
 =cut
 
@@ -144,13 +155,13 @@ sub price {
 
 The ShippingPrice amount.
 
-It B<includes salestaxes> if present in the amazon breakdown.
+It B<includes taxes> if C<include_tax_in_prices> is true.
 
 =head2 subtotal
 
 The price of the items for the given quantity (see above, C<price>).
 
-It B<includes salestaxes> if present in the amazon breakdown.
+It B<includes taxes> if C<include_tax_in_prices> is true.
 
 =cut
 
@@ -160,8 +171,10 @@ sub shipping {
     if (my $price = $self->ShippingPrice) {
         $shipping = $price->{Amount} || 0;
     }
-    if (my $tax = $self->ShippingTax) {
-        $shipping += $tax->{Amount} || 0;
+    if ($self->include_tax_in_prices) {
+        if (my $tax = $self->ShippingTax) {
+            $shipping += $tax->{Amount} || 0;
+        }
     }
     return sprintf('%.2f', $shipping);
 }
@@ -210,8 +223,10 @@ sub subtotal {
     if (my $price = $self->ItemPrice) {
         $amount = $price->{Amount} || 0;
     }
-    if (my $tax = $self->ItemTax) {
-        $amount += $tax->{Amount} || 0;
+    if ($self->include_tax_in_prices) {
+        if (my $tax = $self->ItemTax) {
+            $amount += $tax->{Amount} || 0;
+        }
     }
     return sprintf('%.2f', $amount);
 }
