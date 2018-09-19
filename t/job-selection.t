@@ -113,10 +113,10 @@ sub get_sample_records {
 my @jobs = $uploader->get_pending_jobs;
 ok (@jobs > 0, "Found " . scalar(@jobs) . " jobs\n");
 # diag Dumper([$uploader->get_pending_jobs]);
-is $jobs[0]->{task}, 'product_deletion', "First job is product_deletion";
-is ((grep { $_->{task} ne 'product_deletion' } @jobs)[0]{task}, 'upload',
+is $jobs[0]->{task}, 'order_ack', "First job is order_ack";
+is ((grep { $_->{task} ne 'order_ack' } @jobs)[0]{task}, 'shipping_confirmation',
     "next in line is upload");
-is $jobs[$#jobs]{task}, 'order_ack', "Last is order_ack";
+is $jobs[$#jobs]{task}, 'upload', "Last is order_ack";
 ok (scalar(grep { $_->{task} eq 'shipping_confirmation' } @jobs), "Found shipconfirms");
 
 # db is bogus, will just remove them
@@ -145,3 +145,4 @@ $uploader->resume;
 ok (!@jobs, "No regular jobs expected now");
 @jobs = $uploader->get_pending_jobs;
 ok (@jobs, "But there are still order_ack jobs pending");
+
