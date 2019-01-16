@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 12;
 
 use Amazon::MWS::XML::Order;
 
@@ -110,6 +110,10 @@ my $orderline_data = [
     ok $order;
     is $order->subtotal, '122.68';
     is $order->total_cost, '160.08';
+    is $order->items_ref->[0]->shipping_tax, '3.12';
+    is $order->items_ref->[0]->item_tax, '10.23';
+    is $order->shipping_tax, '3.12';
+    is $order->item_tax, '10.23';
     is $order->currency, 'USD';
 }
 {

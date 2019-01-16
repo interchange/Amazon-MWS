@@ -471,5 +471,32 @@ sub shipping_method {
     }
 }
 
+=head2 items_tax
+
+=head2 shipping_tax
+
+See the documentation in L<Amazon::MWS::XML::OrderlineItem> for these
+methods.
+
+=cut
+
+sub item_tax {
+    my $self = shift;
+    my $out = 0;
+    foreach my $i ($self->items) {
+        $out += $i->item_tax;
+    }
+    return $out;
+}
+
+sub shipping_tax {
+    my $self = shift;
+    my $out = 0;
+    foreach my $i ($self->items) {
+        $out += $i->shipping_tax;
+    }
+    return $out;
+}
+
 
 1;

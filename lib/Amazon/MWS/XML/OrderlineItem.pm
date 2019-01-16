@@ -172,9 +172,7 @@ sub shipping {
         $shipping = $price->{Amount} || 0;
     }
     if ($self->include_tax_in_prices) {
-        if (my $tax = $self->ShippingTax) {
-            $shipping += $tax->{Amount} || 0;
-        }
+        $shipping += $self->shipping_tax;
     }
     return sprintf('%.2f', $shipping);
 }
@@ -224,9 +222,7 @@ sub subtotal {
         $amount = $price->{Amount} || 0;
     }
     if ($self->include_tax_in_prices) {
-        if (my $tax = $self->ItemTax) {
-            $amount += $tax->{Amount} || 0;
-        }
+        $amount += $self->item_tax;
     }
     return sprintf('%.2f', $amount);
 }
@@ -237,6 +233,31 @@ sub as_ack_orderline_item_hashref {
             AmazonOrderItemCode => $self->amazon_order_item,
             MerchantOrderItemID => $self->merchant_order_item,
            };
+}
+
+=head item_tax
+
+=head shipping_tax
+
+The Tax amounts reported by Amazon. If this is included or not in the
+price varies, see the description above for C<include_tax_in_prices>
+
+=cut
+
+sub item_tax {
+    my $self = shift;
+    if (my $tax = $self->ItemTax) {
+        return $tax->{Amount} || 0;
+    }
+    return 0;
+}
+
+sub shipping_tax {
+    my $self = shift;
+    if (my $tax = $self->ShippingTax) {
+        return $tax->{Amount} || 0;
+    }
+    return 0;
 }
 
 
