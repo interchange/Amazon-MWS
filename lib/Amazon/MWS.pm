@@ -242,7 +242,7 @@ L<Amazon::MWS::XML::OrderlineItem>
 
 =head1 ACKNOWLEDGEMENTS
 
-James Rinser (additional API methods).
+James Risner (additional API methods).
 
 =head1 AUTHORS
 
