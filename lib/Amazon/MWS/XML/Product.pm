@@ -163,6 +163,12 @@ Maker of the product (max 50 chars)
 
 Part number manufacturer.
 
+=item description_data({ MerchantShippingGroupName => 'XYZ', ... })
+
+Arbitrary structure in the product feed can be passed here. This is
+for maximum flexibility but keep in mind that the XSD you are using
+must have the corresponding definition.
+
 =back
 
 =cut
@@ -296,6 +302,10 @@ has ship_in_days => (is => 'ro',
                      isa => Int,
                      default => sub { '2' });
 
+has description_data => (is => 'ro',
+                         isa => HashRef,
+                        );
+
 has price => (is => 'ro',
               required => 1,
               isa => \&_validate_price);
@@ -428,6 +438,9 @@ sub as_product_hash {
     # and totally
     # $data->{NumberOfItems} = 1
 
+    if (my $desc_data = $self->description_data) {
+        $data->{DescriptionData} = { %$desc_data };
+    }
     if (my $title = $self->title) {
         $data->{DescriptionData}->{Title} = $title;
     }
