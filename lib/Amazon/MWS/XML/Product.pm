@@ -163,6 +163,11 @@ Maker of the product (max 50 chars)
 
 Part number manufacturer.
 
+=item merchant_shipping_group_name
+
+The shipping template name. Please note that you need a recent XSD for
+this.
+
 =item description_data({ OtherItemAttributes => 'XYZ', ... })
 
 Arbitrary structure in the product feed can be passed here. This is
