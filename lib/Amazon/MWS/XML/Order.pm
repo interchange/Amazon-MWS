@@ -498,5 +498,15 @@ sub shipping_tax {
     return $out;
 }
 
+sub is_prime {
+    my $self = shift;
+    my $is_prime = $self->order->{IsPrime};
+    if ($is_prime and $is_prime =~ m/true/i) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 1;
