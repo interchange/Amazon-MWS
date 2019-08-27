@@ -206,6 +206,11 @@ There is no point in using such big image files for Amazon.
 
 Brand is a required field for products.
 
+=head2 Other problems
+
+It can take a while for additional images to show up on the Amazon website after a successful
+upload.
+
 =head1 Uploader Module
 
 L<Amazon::MWS::Uploader> is an upload agent for Amazon::MWS.
