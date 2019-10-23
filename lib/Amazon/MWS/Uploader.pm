@@ -1261,16 +1261,20 @@ sub upload_feed {
             if (my $warn = $result->warnings) {
                 if (my $warns = $result->skus_warnings) {
                     foreach my $w (@$warns) {
-                        $self->_error_logger(warning => $w->{code},
-                                             "$w->{sku}: $w->{error}");
-                        # and register it in the db
                         if ($w->{sku} && $w->{error}) {
+                            $self->_error_logger(warning => $w->{code},
+                                                 "$w->{sku}: $w->{error}");
+                            # and register it in the db
                             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                                   { warnings => "$job_id $w->{code} $w->{error}" },
                                                                   {
                                                                    sku => $w->{sku},
                                                                    shop_id => $self->_unique_shop_id,
                                                                   }));
+                        }
+                        else {
+                            $self->_error_logger(warning => $w->{code},
+                                                 $w->{error});
                         }
                     }
                 }
