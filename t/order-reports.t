@@ -11,7 +11,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 112;
+    plan tests => 114;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -158,12 +158,12 @@ my $xml_doc = <<'AMAZONXML';
         <AmazonOrderItemCode>55995643055555</AmazonOrderItemCode>
         <SKU>414070</SKU>
         <Title>Nike Women's Air Pegasus+ 25 ESC Running Shoe (Anthracite/ Grey/ Neutral Grey/ Mandarin) 9</Title>
-        <Quantity>1</Quantity>
+        <Quantity>2</Quantity>
         <ProductTaxCode>A_GEN_TAX</ProductTaxCode>
         <ItemPrice>
           <Component>
             <Type>Principal</Type>
-            <Amount currency="USD">32.90</Amount>
+            <Amount currency="USD">100.00</Amount>
           </Component>
           <Component>
             <Type>Shipping</Type>
@@ -171,7 +171,7 @@ my $xml_doc = <<'AMAZONXML';
           </Component>
           <Component>
             <Type>Tax</Type>
-            <Amount currency="USD">5.25</Amount>
+            <Amount currency="USD">20.00</Amount>
           </Component>
           <Component>
             <Type>ShippingTax</Type>
@@ -296,15 +296,17 @@ foreach my $order (@orders) {
         }
         else {
             is $item->currency, 'USD';
-            is $item->total_price, '37.90';
-            is $item->subtotal, '32.90';
-            is $item->price_brutto, '32.90';
-            is $item->price_netto, '27.65';
-            is $item->item_tax, '5.25';
+            is $item->total_price, '105.00';
+            is $item->subtotal, '100.00';
+            is $item->price_brutto, '100.00';
+            is $item->price_netto, '80.00';
+            is $item->item_tax, '20.00';
             is $item->shipping, '5.00';
             is $item->shipping_brutto, '5.00';
             is $item->shipping_netto, '4.00';
             is ($item->amazon_fee, '-9.60');
+            is $item->unit_price_brutto, '50.00';
+            is $item->unit_price_netto, '40.00';
         }
     }
     $order->order_number('testme');
@@ -317,6 +319,6 @@ foreach my $order (@orders) {
     ok $order->subtotal;
     ok $order->total_amazon_fee;
     ok $order->total_cost;
-    is $order->number_of_items, 1, "Only one item";
+    ok $order->number_of_items;
 }
 

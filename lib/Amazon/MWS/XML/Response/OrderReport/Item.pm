@@ -128,6 +128,8 @@ has price_netto => (is => 'lazy');
 has item_tax => (is => 'lazy');
 has shipping_tax => (is => 'lazy');
 has amazon_fee => (is => 'lazy');
+has unit_price_netto => (is => 'lazy');
+has unit_price_brutto => (is => 'lazy');
 
 
 sub _build_amazon_fee {
@@ -171,6 +173,16 @@ sub _build_shipping_tax {
 sub _build_price {
     my $self = shift;
     return sprintf('%.2f', $self->subtotal / $self->quantity);
+}
+
+sub _build_unit_price_netto {
+    my $self = shift;
+    return sprintf('%.2f', $self->price_netto / $self->quantity);
+    
+}
+sub _build_unit_price_brutto {
+    my $self = shift;
+    return sprintf('%.2f', $self->price_brutto / $self->quantity);
 }
 
 sub _build_shipping {
