@@ -120,12 +120,15 @@ has merchant_order_item => (is => 'rw',
 has total_price => (is => 'lazy');
 has subtotal => (is => 'lazy');
 has price => (is => 'lazy');
+has price_brutto => (is => 'lazy');
 has shipping => (is => 'lazy');
 has shipping_netto => (is => 'lazy');
+has shipping_brutto => (is => 'lazy');
 has price_netto => (is => 'lazy');
 has item_tax => (is => 'lazy');
 has shipping_tax => (is => 'lazy');
 has amazon_fee => (is => 'lazy');
+
 
 sub _build_amazon_fee {
     my $self = shift;
@@ -138,13 +141,24 @@ sub _build_amazon_fee {
     return sprintf('%.2f', $toll);
 }
 
-sub _build_shipping_netto {
+sub _build_shipping_brutto {
     return shift->_get_price_component('Shipping');
 }
 
-sub _build_price_netto {
+sub _build_price_brutto {
     return shift->_get_price_component('Principal');
 }
+
+sub _build_price_netto {
+    my $self = shift;
+    return sprintf('%.2f', $self->price_brutto - $self->item_tax);
+}
+
+sub _build_shipping_netto {
+    my $self = shift;
+    return sprintf('%.2f', $self->shipping_brutto - $self->shipping_tax);
+}
+
 
 sub _build_item_tax {
     return shift->_get_price_component('Tax');
@@ -169,23 +183,11 @@ sub _build_subtotal {
     return sprintf('%.2f', $self->price_netto + $self->item_tax);
 }
 
-
 sub _build_total_price {
     my $self = shift;
     my $amount = 0;
-    if (my $components = $self->ItemPrice->{Component}) {
-        foreach my $comp (@$components) {
-            $amount += $comp->{Amount}->{_} || 0;
-        }
-    }
-    my $total_price = sprintf('%.2f', $amount);
-    my $check = $self->price_netto + $self->item_tax + $self->shipping_netto + $self->shipping_tax;
-    if ($total_price eq sprintf('%.2f', $check)) {
-        return $total_price;
-    }
-    else {
-        die "There is a bug in the price routine!";
-    }
+    my $total_price = $self->price_netto + $self->item_tax + $self->shipping_netto + $self->shipping_tax;
+    return sprintf('%.2f', $total_price);
 }
 
 has currency => (is => 'lazy');

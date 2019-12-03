@@ -1,3 +1,4 @@
+
 #!perl
 use strict;
 use warnings;
@@ -10,7 +11,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 106;
+    plan tests => 112;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -162,19 +163,19 @@ my $xml_doc = <<'AMAZONXML';
         <ItemPrice>
           <Component>
             <Type>Principal</Type>
-            <Amount currency="USD">63.99</Amount>
+            <Amount currency="USD">32.90</Amount>
           </Component>
           <Component>
             <Type>Shipping</Type>
-            <Amount currency="USD">0.00</Amount>
+            <Amount currency="USD">5.00</Amount>
           </Component>
           <Component>
             <Type>Tax</Type>
-            <Amount currency="USD">0.00</Amount>
+            <Amount currency="USD">5.25</Amount>
           </Component>
           <Component>
             <Type>ShippingTax</Type>
-            <Amount currency="USD">0.00</Amount>
+            <Amount currency="USD">1.00</Amount>
           </Component>
         </ItemPrice>
         <ItemFees>
@@ -295,8 +296,14 @@ foreach my $order (@orders) {
         }
         else {
             is $item->currency, 'USD';
-            is $item->total_price, '63.99';
-            is $item->subtotal, '63.99';
+            is $item->total_price, '37.90';
+            is $item->subtotal, '32.90';
+            is $item->price_brutto, '32.90';
+            is $item->price_netto, '27.65';
+            is $item->item_tax, '5.25';
+            is $item->shipping, '5.00';
+            is $item->shipping_brutto, '5.00';
+            is $item->shipping_netto, '4.00';
             is ($item->amazon_fee, '-9.60');
         }
     }
