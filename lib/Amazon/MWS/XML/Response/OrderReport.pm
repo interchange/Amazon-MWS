@@ -273,4 +273,31 @@ sub _build_number_of_items {
     return $count;
 }
 
+sub total_shipping_cost_netto {
+    shift->_calc_sum_item_method('shipping_netto');
+}
+
+sub total_shipping_cost_brutto {
+    shift->_calc_sum_item_method('shipping_brutto');
+}
+
+sub total_cost_netto {
+    my $self = shift;
+    return sprintf('%.2f', $self->subtotal_netto + $self->total_shipping_cost_netto);
+}
+
+sub total_cost_brutto {
+    my $self = shift;
+    return sprintf('%.2f', $self->subtotal_brutto + $self->total_shipping_cost_brutto);
+}
+
+sub subtotal_netto {
+    shift->_calc_sum_item_method('price_netto');
+}
+
+sub subtotal_brutto {
+    shift->_calc_sum_item_method('price_brutto');
+}
+
+
 1;

@@ -119,17 +119,21 @@ has merchant_order_item => (is => 'rw',
 
 has total_price => (is => 'lazy');
 has subtotal => (is => 'lazy');
+
 has price => (is => 'lazy');
 has price_brutto => (is => 'lazy');
+has price_netto => (is => 'lazy');
+has item_tax => (is => 'lazy');
+
+has unit_price_netto => (is => 'lazy');
+has unit_price_brutto => (is => 'lazy');
+
 has shipping => (is => 'lazy');
 has shipping_netto => (is => 'lazy');
 has shipping_brutto => (is => 'lazy');
-has price_netto => (is => 'lazy');
-has item_tax => (is => 'lazy');
 has shipping_tax => (is => 'lazy');
+
 has amazon_fee => (is => 'lazy');
-has unit_price_netto => (is => 'lazy');
-has unit_price_brutto => (is => 'lazy');
 
 
 sub _build_amazon_fee {
@@ -254,6 +258,5 @@ sub as_ack_orderline_item_hashref {
            };
 
 }
-
 
 1;

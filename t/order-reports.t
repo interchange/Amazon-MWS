@@ -11,7 +11,7 @@ use Data::Dumper;
 use File::Spec;
 
 if (-d 'schemas') {
-    plan tests => 114;
+    plan tests => 121;
 }
 else {
     plan skip_all => q{Missing "schemas" directory with the xsd from Amazon, skipping feeds tests};
@@ -307,6 +307,13 @@ foreach my $order (@orders) {
             is ($item->amazon_fee, '-9.60');
             is $item->unit_price_brutto, '50.00';
             is $item->unit_price_netto, '40.00';
+            is $order->total_cost, '105.00';
+            is $order->total_shipping_cost_netto, '4.00';
+            is $order->total_shipping_cost_brutto, '5.00';
+            is $order->total_cost_netto, '84.00';
+            is $order->total_cost_brutto, '105.00';
+            is $order->subtotal_netto, '80.00';
+            is $order->subtotal_brutto, '100.00';
         }
     }
     $order->order_number('testme');
