@@ -54,3 +54,23 @@ define_api_method(SetOrderReferenceDetails =>
                                 },
                   respond => sub { return shift->{OrderReferenceDetails} },
                  );
+define_api_method(ConfirmOrderReference =>
+                  version => $version,
+                  parameters => {
+                                 AmazonOrderReferenceId => {
+                                                            required => 1,
+                                                            type => 'string',
+                                                           },
+
+# these keys are not documented in
+# https://developer.amazon.com/de/docs/eu/amazon-pay-api/confirmorderreference.html
+# but only here:
+# https://developer.amazon.com/de/docs/eu/amazon-pay-onetime/confirm-purchase.html
+
+                                 SuccessUrl => { type => 'string' },
+                                 FailureUrl => { type => 'string' },
+                                },
+                  # will not return anything, though
+                  respond => sub { return shift },
+                 );
+1;
