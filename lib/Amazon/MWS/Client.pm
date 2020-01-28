@@ -3,7 +3,7 @@ package Amazon::MWS::Client;
 use warnings;
 use strict;
 
-our $VERSION = '0.5';
+our $VERSION = '0.6';
 
 
 use Amazon::MWS::TypeMap qw(:all);
@@ -16,12 +16,32 @@ use Amazon::MWS::Sellers;
 use Amazon::MWS::Reports;
 use Amazon::MWS::Feeds;
 use Amazon::MWS::Products;
+use Amazon::MWS::AmazonPay;
+use Try::Tiny;
 use Data::Dumper;
 
 sub agent {
     return shift->{agent};
 }
 
+sub safe_api_call {
+    my ($self, $method, @args) = @_;
+    my %out = (
+               response => undef,
+               error => undef,
+              );
+    if ($self->can($method)) {
+        try {
+            $out{response} = $self->$method(@args);
+        } catch {
+            $out{error} = $_;
+        };
+    }
+    else {
+        $out{error} = "Invalid method $method";
+    }
+    return \%out;
+}
 
 1;
 
@@ -179,6 +199,20 @@ The raw body is returned.
 =head2 GetReportScheduleCount
 
 =head2 UpdateReportAcknowledgements
+
+=head2 AmazonPay
+
+=head3 GetOrderReferenceDetails
+
+=head3 SetOrderAttributes
+
+=head2 Wrapper method
+
+=head3 safe_api_call($method_name, @arguments)
+
+This is a convenience method which wraps the call catching the
+exceptions. It returns an hashref with two keys, C<response> (with the
+response, if any) and C<error> (with the error, if any).
 
 =head1 AUTHOR
 
