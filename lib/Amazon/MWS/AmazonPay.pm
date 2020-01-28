@@ -21,7 +21,6 @@ define_api_method (GetOrderReferenceDetails =>
 
 define_api_method (SetOrderAttributes =>
                    version => $version,
-                   raw_body => 1,
                    parameters => {
                                   AmazonOrderReferenceId => {
                                                              required => 1,
@@ -36,6 +35,22 @@ define_api_method (SetOrderAttributes =>
                                   'OrderAttributes.PaymentServiceProviderAttributes.PaymentServiceProviderId' => { type => 'string', required => 0 },
                                   'OrderAttributes.PaymentServiceProviderAttributes.PaymentServiceProviderOrderId' => { type => 'string', required => 0 },
                                  },
-                   # respond => sub { return shift->{OrderReferenceDetails} },
+                   respond => sub { return shift->{OrderReferenceDetails} },
                   );
   
+define_api_method(SetOrderReferenceDetails =>
+                  version => $version,
+                  parameters => {
+                                 AmazonOrderReferenceId => {
+                                                            required => 1,
+                                                            type => 'string',
+                                                           },
+                                 'OrderReferenceAttributes.OrderTotal.Amount' => { type => 'string', required => 0 },
+                                 'OrderReferenceAttributes.OrderTotal.CurrencyCode' => { type => 'string', required => 0 },
+                                 'OrderReferenceAttributes.PlatformId' => { type => 'string', required => 0 },
+                                 'OrderReferenceAttributes.SellerNote' => { type => 'string', required => 0 },
+                                 'OrderReferenceAttributes.SellerOrderAttributes.SellerOrderId' => { type => 'string', required => 0 },
+                                 'OrderAttributes.SellerOrderAttributes.StoreName' => { type => 'string', required => 0 },
+                                },
+                  respond => sub { return shift->{OrderReferenceDetails} },
+                 );
