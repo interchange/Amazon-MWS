@@ -143,8 +143,8 @@ sub define_api_method {
 
 
 	if ($self->{debug}) {
-                open LOG, ">>$self->{logfile}";
-		print LOG Dumper($response);
+                open (my $fh, '>>', $self->{logfile}) or warn("Cannot open $self->{logfile}");
+		print $fh Dumper($response);
             }
 
         my $xs = XML::Simple->new( KeepRoot => 1 );
@@ -279,11 +279,11 @@ sub new {
     die 'No marketplace id' unless $opts{marketplace_id};
 
     if ($opts{debug}) {
-       open LOG, ">$opts{logfile}" or die "Cannot open logfile.";
-       print LOG DateTime->now();
-       print LOG "\nNew instance created. \n";
-       print LOG Dumper(\%opts);
-       close LOG; 
+       open (my $fh, '>', $opts{logfile}) or die "Cannot open logfile $opts{logfile}";
+       print $fh DateTime->now();
+       print $fh "\nNew instance created. \n";
+       print $fh Dumper(\%opts);
+       close $fh;
     }
 
  # https://github.com/interchange/Amazon-MWS/issues/9
