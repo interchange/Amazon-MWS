@@ -109,7 +109,7 @@ define_api_method(Authorize =>
                                  # max 255
                                  SellerAuthorizationNote => { type => 'string' },
                                  # minutes. set to 0 for synchronous
-                                 TransactionTimeout => { type => 'nonNegativeInteger' },
+                                 TransactionTimeout => { type => 'integer' },
                                  CaptureNow => { type => 'boolean' },
                                  # max char.
                                  SoftDescriptor => { type => 'string' },
