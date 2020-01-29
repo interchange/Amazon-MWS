@@ -279,7 +279,7 @@ sub new {
     die 'No marketplace id' unless $opts{marketplace_id};
 
     if ($opts{debug}) {
-       open (my $fh, '>', $opts{logfile}) or die "Cannot open logfile $opts{logfile}";
+       open (my $fh, '>>', $opts{logfile}) or die "Cannot open logfile $opts{logfile}";
        print $fh DateTime->now();
        print $fh "\nNew instance created. \n";
        print $fh Dumper(\%opts);
