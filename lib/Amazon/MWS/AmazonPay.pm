@@ -73,4 +73,17 @@ define_api_method(ConfirmOrderReference =>
                   # will not return anything, though
                   respond => sub { return shift },
                  );
+
+define_api_method(CancelOrderReference =>
+                  version => $version,
+                  parameters => {
+                                 AmazonOrderReferenceId => {
+                                                            required => 1,
+                                                            type => 'string',
+                                                           },
+                                 CancelationReason => { type => 'string' },
+                                },
+                  respond => sub { return shift },
+                 );
+
 1;
