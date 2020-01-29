@@ -86,4 +86,34 @@ define_api_method(CancelOrderReference =>
                   respond => sub { return shift },
                  );
 
+define_api_method(Authorize =>
+                  version => $version,
+                  parameters => {
+                                 AmazonOrderReferenceId => {
+                                                            required => 1,
+                                                            type => 'string',
+                                                           },
+                                 # defined by caller, must be unique, max 32 chars
+                                 AuthorizationReferenceId => {
+                                                              required => 1,
+                                                              type => 'string',
+                                                             },
+                                 'AuthorizationAmount.Amount' => {
+                                                                  type => 'string',
+                                                                  required => 1,
+                                                                 },
+                                 'AuthorizationAmount.CurrencyCode' => {
+                                                                        type => 'string',
+                                                                        required => 1,
+                                                                       },
+                                 # max 255
+                                 SellerAuthorizationNote => { type => 'string' },
+                                 # minutes. set to 0 for synchronous
+                                 TransactionTimeout => { type => 'nonNegativeInteger' },
+                                 CaptureNow => { type => 'boolean' },
+                                 # max char.
+                                 SoftDescriptor => { type => 'string' },
+                                },
+                  respond => sub { return shift->{AuthorizationDetails} }
+                 );
 1;
