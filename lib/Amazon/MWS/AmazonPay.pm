@@ -116,4 +116,16 @@ define_api_method(Authorize =>
                                 },
                   respond => sub { return shift->{AuthorizationDetails} }
                  );
+
+define_api_method(GetAuthorizationDetails =>
+                  version => $version,
+                  parameters => {
+                                 AmazonAuthorizationId => {
+                                                           required => 1,
+                                                           type => 'string',
+                                                          },
+                                },
+                  respond => sub { return shift->{AuthorizationDetails} }
+                 );
+
 1;
