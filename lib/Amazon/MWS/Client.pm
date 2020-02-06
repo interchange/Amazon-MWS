@@ -36,32 +36,39 @@ sub safe_api_call {
             $out{response} = $self->$method(@args);
         } catch {
             my $err = $out{error_object} = $_;
-            my $err_string = "$err";
-            if (blessed($err)) {
-                if ($err->can('xml')) {
-                    # includes the throttled and the response. This is the most common
-                    $err_string = $err->xml;
-                }
-                elsif ($err->isa('Amazon::MWS::Exception::Transport')) {
-                    $err_string = sprintf("Request:\n%s\nResponse: %s", $err->request, $err->response);
-                }
-                elsif ($err->isa('Amazon::MWS::Exception::MissingArgument')) {
-                    $err_string = "Missing argument " . $err->name;
-                }
-                elsif ($err->isa('Amazon::MWS::Exception::Invalid')) {
-                    $err_string = sprintf("Invalid field %s %s (%s)", $err->field, $err->value, $err->message);
-                }
-                elsif ($err->isa('Amazon::MWS::Exception::BadChecksum')) {
-                    $err_string = sprintf("Bad checksum in %s", $err->request);
-                }
-            }
-            $out{error} = $err_string;
+            $out{error} = _stringify_exception($err);
         };
     }
     else {
         $out{error} = "Invalid method $method";
     }
     return \%out;
+}
+
+sub _stringify_exception {
+    my $err = shift;
+    my $err_string;
+    if (blessed($err)) {
+        if ($err->can('xml')) {
+            # includes the throttled and the response. This is the most common
+            $err_string = sprintf("%s XML: %s", $err->description, $err->xml);
+        }
+        elsif ($err->isa('Amazon::MWS::Exception::Transport')) {
+            $err_string = sprintf("Request:\n%s\nResponse: %s",
+                                  $err->request->as_string,
+                                  $err->response->as_string);
+        }
+        elsif ($err->isa('Amazon::MWS::Exception::MissingArgument')) {
+            $err_string = "Missing argument " . $err->name;
+        }
+        elsif ($err->isa('Amazon::MWS::Exception::Invalid')) {
+            $err_string = sprintf("Invalid field %s %s (%s)", $err->field, $err->value, $err->message);
+        }
+        elsif ($err->isa('Amazon::MWS::Exception::BadChecksum')) {
+            $err_string = sprintf("Bad checksum in %s", $err->request->as_string);
+        }
+    }
+    return $err_string || "$err";
 }
 
 1;

@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 use Amazon::MWS::Exception;
+use Amazon::MWS::Client;
 use Try::Tiny;
 use Scalar::Util qw/blessed/;
 use HTTP::Request;
@@ -43,26 +44,15 @@ try {
     handle_exception($_);
 };
 
-
-
+try {
+    Amazon::MWS::Exception->throw();
+} catch {
+    handle_exception($_);
+};
 
 sub handle_exception {
     my $err = shift;
-    my $err_string;
-    # same handling as in safe_api_call
-    diag "$err";
-    if ($err->can('xml')) {
-        # includes the throttled and the response. This is the most common
-        $err_string = $err->xml;
-    } elsif ($err->isa('Amazon::MWS::Exception::Transport')) {
-        $err_string = sprintf("Request:\n%s\nResponse: %s", $err->request->as_string, $err->response->as_string);
-    } elsif ($err->isa('Amazon::MWS::Exception::MissingArgument')) {
-        $err_string = "Missing argument " . $err->name;
-    } elsif ($err->isa('Amazon::MWS::Exception::Invalid')) {
-        $err_string = sprintf("Invalid field %s %s (%s)", $err->field, $err->value, $err->message);
-    } elsif ($err->isa('Amazon::MWS::Exception::BadChecksum')) {
-        $err_string = sprintf("Bad checksum in %s", $err->request->as_string);
-    }
+    my $err_string = Amazon::MWS::Client::_stringify_exception($err);
     ok $err_string, "Found err: $err_string";
 }
 
