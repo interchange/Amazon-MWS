@@ -169,7 +169,7 @@ sub define_api_method {
         }
 
         if (my $md5 = $response->header('Content-MD5')) {
-            Amazon::MWS::Exception::BedChecksum->throw(response => $response) 
+            Amazon::MWS::Exception::BadChecksum->throw(response => $response)
                 unless ($md5 eq md5_base64($content) . '==');
         }
 

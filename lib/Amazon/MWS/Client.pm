@@ -3,7 +3,7 @@ package Amazon::MWS::Client;
 use warnings;
 use strict;
 
-our $VERSION = '0.6';
+our $VERSION = '0.7';
 
 
 use Amazon::MWS::TypeMap qw(:all);
@@ -19,6 +19,7 @@ use Amazon::MWS::Products;
 use Amazon::MWS::AmazonPay;
 use Try::Tiny;
 use Data::Dumper;
+use Scalar::Util qw/blessed/;
 
 sub agent {
     return shift->{agent};
@@ -34,7 +35,27 @@ sub safe_api_call {
         try {
             $out{response} = $self->$method(@args);
         } catch {
-            $out{error} = $_;
+            my $err = $out{error_object} = $_;
+            my $err_string = "$err";
+            if (blessed($err)) {
+                if ($err->can('xml')) {
+                    # includes the throttled and the response. This is the most common
+                    $err_string = $err->xml;
+                }
+                elsif ($err->isa('Amazon::MWS::Exception::Transport')) {
+                    $err_string = sprintf("Request:\n%s\nResponse: %s", $err->request, $err->response);
+                }
+                elsif ($err->isa('Amazon::MWS::Exception::MissingArgument')) {
+                    $err_string = "Missing argument " . $err->name;
+                }
+                elsif ($err->isa('Amazon::MWS::Exception::Invalid')) {
+                    $err_string = sprintf("Invalid field %s %s (%s)", $err->field, $err->value, $err->message);
+                }
+                elsif ($err->isa('Amazon::MWS::Exception::BadChecksum')) {
+                    $err_string = sprintf("Bad checksum in %s", $err->request);
+                }
+            }
+            $out{error} = $err_string;
         };
     }
     else {
@@ -211,8 +232,10 @@ The raw body is returned.
 =head3 safe_api_call($method_name, @arguments)
 
 This is a convenience method which wraps the call catching the
-exceptions. It returns an hashref with two keys, C<response> (with the
-response, if any) and C<error> (with the error, if any).
+exceptions. It returns an hashref with three keys, C<response> (with
+the response, if any) and C<error> (with an error string, if any) and
+C<error_object> (with the exception object which originates the error
+string, if any).
 
 =head1 AUTHOR
 
