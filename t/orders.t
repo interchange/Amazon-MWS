@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 36;
+use Test::More tests => 38;
 
 use Amazon::MWS::XML::Order;
 use Amazon::MWS::XML::Address;
@@ -20,6 +20,9 @@ my $order_data = {
                   'ShippedByAmazonTFM' => 'false',
                   'SalesChannel' => 'Amazon.de',
                   'LastUpdateDate' => '2014-10-27T09:38:56Z',
+                  IsBusinessOrder => "true",
+                  IsPremiumOrder => "true",
+                  IsPrime => "true",
                   'NumberOfItemsShipped' => '2',
                   'PurchaseDate' => '2014-10-26T04:40:40Z',
                   'AmazonOrderId' => '333-9999999-99999999',
@@ -90,6 +93,7 @@ my $orderline_data = [
 
 my $order = Amazon::MWS::XML::Order->new(order => $order_data,
                                          orderline => $orderline_data);
+ok $order->is_prime;
 
 is($order->subtotal, "119.80");
 my @items = $order->items;
@@ -106,6 +110,7 @@ my $get_orderline = sub {
 
 $order = Amazon::MWS::XML::Order->new(order => $order_data,
                                       retrieve_orderline_sub => $get_orderline);
+ok $order->is_prime;
 
 my $amazon_order_number = $order->amazon_order_number;
 

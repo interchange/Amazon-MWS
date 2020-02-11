@@ -44,6 +44,8 @@ foreach my $product ({
                       shipping_weight => '5',
                       shipping_weight_unit => 'GR',
                       package_weight => 290,
+                      merchant_shipping_group_name => 'XYZ',
+                      description_data => { OtherItemAttributes => 'WXY' },
                      },
                      {
                       sku => '3333',
@@ -109,7 +111,9 @@ my $exp_product_feed = <<'XML';
         <SearchTerms>c</SearchTerms>
         <SearchTerms>d</SearchTerms>
         <SearchTerms>e</SearchTerms>
+        <OtherItemAttributes>WXY</OtherItemAttributes>
         <RecommendedBrowseNode>111111</RecommendedBrowseNode>
+        <MerchantShippingGroupName>XYZ</MerchantShippingGroupName>
       </DescriptionData>
       <ProductData>
         <CE>

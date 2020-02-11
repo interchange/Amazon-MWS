@@ -163,6 +163,17 @@ Maker of the product (max 50 chars)
 
 Part number manufacturer.
 
+=item merchant_shipping_group_name
+
+The shipping template name. Please note that you need a recent XSD for
+this.
+
+=item description_data({ OtherItemAttributes => 'XYZ', ... })
+
+Arbitrary structure in the product feed can be passed here. This is
+for maximum flexibility but keep in mind that the XSD you are using
+must have the corresponding definition.
+
 =back
 
 =cut
@@ -296,6 +307,13 @@ has ship_in_days => (is => 'ro',
                      isa => Int,
                      default => sub { '2' });
 
+has description_data => (is => 'ro',
+                         isa => HashRef,
+                        );
+
+has merchant_shipping_group_name => (is => 'ro',
+                                     isa => Str);
+
 has price => (is => 'ro',
               required => 1,
               isa => \&_validate_price);
@@ -428,6 +446,9 @@ sub as_product_hash {
     # and totally
     # $data->{NumberOfItems} = 1
 
+    if (my $desc_data = $self->description_data) {
+        $data->{DescriptionData} = { %$desc_data };
+    }
     if (my $title = $self->title) {
         $data->{DescriptionData}->{Title} = $title;
     }
@@ -481,6 +502,9 @@ sub as_product_hash {
                                                      unitOfMeasure => $unit,
                                                      _ => $ship_weight,
                                                     };
+    }
+    if (my $merchant_shipping_group_name = $self->merchant_shipping_group_name) {
+        $data->{DescriptionData}->{MerchantShippingGroupName} = $merchant_shipping_group_name;
     }
 
     if (my $product_data = $self->product_data) {
