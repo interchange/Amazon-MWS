@@ -3,7 +3,7 @@ package Amazon::MWS::Client;
 use warnings;
 use strict;
 
-our $VERSION = '0.7';
+our $VERSION = '0.8';
 
 
 use Amazon::MWS::TypeMap qw(:all);

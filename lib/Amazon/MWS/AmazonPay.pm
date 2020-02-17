@@ -128,4 +128,14 @@ define_api_method(GetAuthorizationDetails =>
                   respond => sub { return shift->{AuthorizationDetails} }
                  );
 
+define_api_method(CloseOrderReference =>
+                  version => $version,
+                  parameters => {
+                                 AmazonOrderReferenceId => {
+                                                            required => 1,
+                                                            type => 'string',
+                                                           },
+                                 ClosureReason => { type => 'string' },
+                                },
+                  respond => sub { return shift });
 1;
