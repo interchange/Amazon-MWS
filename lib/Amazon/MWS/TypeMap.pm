@@ -29,6 +29,7 @@ sub from_amazon {
 my %to_map = (
     'string'   => \&identity,
     'boolean'  => sub { $_[0] ? 'true' : 'false' },
+    'integer' => sub { int(shift) },
     'nonNegativeInteger' => sub {
         my $int = int(shift);
         $int = 1 unless $int > 0;
