@@ -5,6 +5,7 @@ examples/print-template.pl
 examples/request-FBA-fulfillment-report.pl
 lib/Amazon/MWS.pm
 lib/Amazon/MWS/amazon.xml
+lib/Amazon/MWS/AmazonPay.pm
 lib/Amazon/MWS/Client.pm
 lib/Amazon/MWS/Enumeration.pm
 lib/Amazon/MWS/Enumeration/FeedProcessingStatus.pm
@@ -42,6 +43,7 @@ t/client.t
 t/enumeration.t
 t/error-parsing.t
 t/errors.t
+t/exceptions.t
 t/feeds.t
 t/job-selection.t
 t/jobs.txt
