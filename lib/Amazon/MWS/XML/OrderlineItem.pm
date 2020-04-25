@@ -235,12 +235,10 @@ sub as_ack_orderline_item_hashref {
            };
 }
 
-=head item_tax
+=head2 item_tax
 
-=head shipping_tax
-
-The Tax amounts reported by Amazon. If this is included or not in the
-price varies, see the description above for C<include_tax_in_prices>
+The item tax amount reported by Amazon. If this is included or not in the
+price varies, see L</include_tax_in_prices>
 
 =cut
 
@@ -251,6 +249,13 @@ sub item_tax {
     }
     return 0;
 }
+
+=head2 shipping_tax
+
+The Tax amounts reported by Amazon. If this is included or not in the
+price varies, see L</include_tax_in_prices>.
+
+=cut
 
 sub shipping_tax {
     my $self = shift;
