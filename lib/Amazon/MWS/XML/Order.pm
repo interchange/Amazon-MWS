@@ -471,12 +471,10 @@ sub shipping_method {
     }
 }
 
-=head2 items_tax
+=head2 item_tax
 
-=head2 shipping_tax
-
-See the documentation in L<Amazon::MWS::XML::OrderlineItem> for these
-methods.
+See the documentation in L<Amazon::MWS::XML::OrderlineItem> for this
+method.
 
 =cut
 
@@ -489,6 +487,13 @@ sub item_tax {
     return $out;
 }
 
+=head2 shipping_tax
+
+See the documentation in L<Amazon::MWS::XML::OrderlineItem> for this
+method.
+
+=cut
+
 sub shipping_tax {
     my $self = shift;
     my $out = 0;
@@ -497,6 +502,12 @@ sub shipping_tax {
     }
     return $out;
 }
+
+=head2 is_prime
+
+Determines whether the order is a Prime order.
+
+=cut
 
 sub is_prime {
     my $self = shift;
