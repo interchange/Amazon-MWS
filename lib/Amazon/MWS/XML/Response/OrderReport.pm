@@ -273,6 +273,32 @@ sub _build_number_of_items {
     return $count;
 }
 
+=head2 subtotal_netto
+
+Returns netto subtotal.
+
+=head2 subtotal_brutto
+
+Returns brutto subtotal.
+
+=head2 total_shipping_cost_netto
+
+Returns netto shipping costs.
+
+=head2 total_shipping_cost_brutto
+
+Returns brutto shipping costs.
+
+=head2 total_cost_netto
+
+Returns netto total costs..
+
+=head2 total_cost_brutto
+
+Returns brutto total costs.
+
+=cut
+
 sub total_shipping_cost_netto {
     shift->_calc_sum_item_method('shipping_netto');
 }
