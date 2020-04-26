@@ -40,7 +40,7 @@ parsed from the output of L<Amazon::MWS::Client>.
 =head2 order
 
 It should be the output of C<ListOrders> or C<GetOrder> without the
-root, e.g. C<$response->{Orders}->{Order}->[0]>
+root, e.g. C<$response-E<gt>{Orders}-E<gt>{Order}-E<gt>[0]>
 
 Field description:
 
@@ -49,7 +49,7 @@ http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_GetOrder
 =head2 orderline
 
 It should be the output of C<ListOrderItems> without the root, like
-C<$response->{OrderItems}->{OrderItem}>.
+C<$response-E<gt>{OrderItems}-E<gt>{OrderItem}>.
 
 =head2 retrieve_orderline_sub
 
