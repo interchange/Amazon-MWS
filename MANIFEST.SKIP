@@ -41,6 +41,9 @@
 \.#
 \.rej$
 
+# Avoid files produced by tests
+t/test.db
+
 # Avoid OS-specific files/dirs
 #   Mac OSX metadata
 \B\.DS_Store
