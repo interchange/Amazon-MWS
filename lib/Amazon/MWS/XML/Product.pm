@@ -183,12 +183,6 @@ has sku => (is => 'ro', required => 1);
 has feeds_needed => (is => 'rw', isa => ArrayRef,
                      default => sub { [qw/product inventory price image variants/] });
 
-sub is_feed_needed {
-    my ($self, $feed) = @_;
-    return unless $feed;
-    return scalar(grep { $_ eq $feed } @{ $self->feeds_needed });
-}
-
 has timestamp_string => (is => 'ro',
                          default => sub { '0' });
 has ean => (is => 'ro',
@@ -401,6 +395,17 @@ sub is_inactive {
     }
 }
 
+=head2 is_feed_needed($feed)
+
+Determines whether a feed is needed.
+
+=cut
+
+sub is_feed_needed {
+    my ($self, $feed) = @_;
+    return unless $feed;
+    return scalar(grep { $_ eq $feed } @{ $self->feeds_needed });
+}
 
 =head2 as_product_hash
 
