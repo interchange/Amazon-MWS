@@ -44,7 +44,7 @@ root, e.g. C<$response-E<gt>{Orders}-E<gt>{Order}-E<gt>[0]>
 
 Field description:
 
-http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_GetOrder.html
+L<https://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_GetOrder.html>
 
 =head2 orderline
 
@@ -421,7 +421,7 @@ Always returns C<Amazon>
 Returns the generic ShipmentServiceLevelCategory (not the
 ShipServiceLevel which is a non-typed string).
 
-http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_Datatypes.html
+L<https://docs.developer.amazonservices.com/en_US/orders/Orders_Datatypes.html>
 
 Available values:
 

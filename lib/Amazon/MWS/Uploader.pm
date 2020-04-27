@@ -509,7 +509,7 @@ Provided by Amazon.
 
 =item marketplace_id
 
-L<http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
+L<https://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
 
 =item endpoint
 
@@ -711,7 +711,7 @@ saving the state in the database. You should reinstantiate the object
 and call C<resume> on it every 10 minutes or so.
 
 The workflow is described here:
-L<http://docs.developer.amazonservices.com/en_US/feeds/Feeds_Overview.html>
+L<https://docs.developer.amazonservices.com/en_US/feeds/Feeds_Overview.html>
 
 This has to be done for each feed: Product, Inventory, Price, Image,
 Relationship (for variants).
@@ -1889,7 +1889,7 @@ Accept a list of EANs and return an hashref where the keys are the
 eans passed as arguments, and the values are the ASIN for the current
 marketplace. Max EANs: 5.x
 
-http://docs.developer.amazonservices.com/en_US/products/Products_GetMatchingProductForId.html
+L<https://docs.developer.amazonservices.com/en_US/products/Products_GetMatchingProductForId.html>
 
 =head2 get_asin_for_skus(@skus)
 
@@ -2067,6 +2067,8 @@ routine.
 If we can't get any info, just return undef.
 
 Return undef if no prices are found.
+
+Reference: L<https://docs.developer.amazonservices.com/en_US/products/Products_GetLowestOfferListingsForSKU.html>.
 
 =head2 get_lowest_price_for_ean($ean, $condition)
 

@@ -135,7 +135,7 @@ For marketplaces with a different currency you need to convert your price first.
 
 The list of marketplaces can be found at:
 
-L<http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
+L<https://docs.developer.amazonservices.com/en_US/dev_guide/DG_Endpoints.html>
 
 =head2 Throttling and Quota
 

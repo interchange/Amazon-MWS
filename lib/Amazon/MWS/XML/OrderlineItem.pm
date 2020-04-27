@@ -135,7 +135,7 @@ individual price. So we have to do a division for what we know as the
 item's price. This looks ugly anyway.
 
 From
-L<http://docs.developer.amazonservices.com/en_US/orders/2013-09-01/Orders_ListOrderItems.html>:
+L<https://docs.developer.amazonservices.com/en_US/orders-2013-09-01/Orders_ListOrderItems.html>:
 
 The selling price of the order item. Note that an order item is an
 item and a quantity. This means that the value of ItemPrice is equal
