@@ -9,6 +9,7 @@ our $VERSION = '0.8';
 use Amazon::MWS::TypeMap qw(:all);
 use Amazon::MWS::Routines qw(:all);
 use Amazon::MWS::InboundShipments;
+use Amazon::MWS::Finances;
 use Amazon::MWS::FulfillmentInventory;
 use Amazon::MWS::FulfillmentOutbound;
 use Amazon::MWS::Orders;
