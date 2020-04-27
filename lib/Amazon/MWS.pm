@@ -253,6 +253,7 @@ L<Amazon::MWS::XML::OrderlineItem>
 =head1 ACKNOWLEDGEMENTS
 
 James Risner (additional API methods).
+Eric Ferguson (support for Finances API).
 
 =head1 AUTHORS
 
