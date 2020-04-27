@@ -206,6 +206,11 @@ There is no point in using such big image files for Amazon.
 
 Brand is a required field for products.
 
+=head2 Temporary errors
+
+The following error codes are issued for internal errors: 5002, 14001, 159144.
+There is nothing you can do about, so ignorance is the best way to deal with them.
+
 =head2 Other problems
 
 It can take a while for additional images to show up on the Amazon website after a successful
