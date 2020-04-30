@@ -15,6 +15,7 @@ lib/Amazon/MWS/Enumeration/ReportType.pm
 lib/Amazon/MWS/Enumeration/Schedule.pm
 lib/Amazon/MWS/Exception.pm
 lib/Amazon/MWS/Feeds.pm
+lib/Amazon/MWS/Finances.pm
 lib/Amazon/MWS/FulfillmentInventory.pm
 lib/Amazon/MWS/FulfillmentOutbound.pm
 lib/Amazon/MWS/InboundShipments.pm
