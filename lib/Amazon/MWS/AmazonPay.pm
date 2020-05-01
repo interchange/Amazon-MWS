@@ -4,6 +4,49 @@ use Amazon::MWS::Routines qw(:all);
 
 my $version = '2013-01-01';
 
+=head1 NAME
+
+Amazon::MWS::AmazonPay - API methods for Amazon Pay
+
+=head1 API methods
+
+=over 4
+
+=item GetOrderReferenceDetails
+
+=item SetOrderAttributes
+
+=item SetOrderReferenceDetails
+
+=item ConfirmOrderReference
+
+=item CancelOrderReference
+
+=item Authorize
+
+=item GetAuthorizationDetails
+
+=item CloseOrderReference
+
+=back
+
+=head1 Authors
+
+=over 4
+
+=item Marco Pessotto
+
+=item Stefan Hornburg (Racke)
+
+=back
+
+=head1 License
+
+This is free software; you can redistribute it and/or modify it under the same terms
+as the Perl 5 programming language system itself.
+
+=cut
+
 define_api_method (GetOrderReferenceDetails =>
                    version => $version,
                    parameters => {
