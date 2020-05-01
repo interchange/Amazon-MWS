@@ -21,6 +21,7 @@ WriteMakefile(
         'Test::More'                => 0,
         'Test::MockObject'          => 0,
         'Test::MockObject::Extends' => 0,
+        'Test::Warnings'            => 0,
         'HTTP::Response'            => 0,
         'DBI' => 0,
         'DBD::SQLite' => 0,
