@@ -31,7 +31,6 @@ my @exclude = (qw/Amazon::MWS::FulfillmentInventory
                   Amazon::MWS::InboundShipments
                   Amazon::MWS::Enumeration
                   Amazon::MWS::FulfillmentOutbound
-                  Amazon::MWS::Feeds
                   Amazon::MWS::Orders
                   Amazon::MWS::Sellers
                   Amazon::MWS::Exception

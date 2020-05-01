@@ -4,6 +4,47 @@ use Amazon::MWS::Routines qw(:all);
 
 my $version = '2009-01-01';
 
+=head1 NAME
+
+Amazon::MWS::Feeds - API methods for feeds
+
+=head1 API methods
+
+=over 4
+
+=item SubmitFeed
+
+=item GetFeedSubmissionList
+
+=item GetFeedSubmissionListByNextToken
+
+=item GetFeedSubmissionCount
+
+=item CancelFeedSubmissions
+
+=item GetFeedSubmissionResult
+
+=back
+
+=head1 Authors
+
+=over 4
+
+=item Marco Pessotto
+
+=item Phil Smith
+
+=item Stefan Hornburg (Racke)
+
+=back
+
+=head1 License
+
+This is free software; you can redistribute it and/or modify it under the same terms
+as the Perl 5 programming language system itself.
+
+=cut
+
 define_api_method SubmitFeed =>
     version => "$version",
     parameters => {
