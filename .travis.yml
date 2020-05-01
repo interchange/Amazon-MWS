@@ -1,0 +1,38 @@
+dist: trusty
+language: perl
+
+# We do not need sudo. Setting this allows travis to use (Docker) containers on EC2
+sudo: false
+
+perl:
+  - "dev"
+  - "5.30"
+  - "5.28"
+  - "5.26"
+  - "5.24"
+  - "5.22"
+  - "5.20"
+  - "5.18"
+  - "5.16"
+  - "5.14"
+  - "5.12"
+  - "5.10"
+
+env: RELEASE_TESTING=1
+
+matrix:
+  include:
+    - perl: 5.30
+      env: COVERAGE=1   # enables coverage+coveralls reporting
+  allow_failures:
+    - perl: dev
+before_install:
+  - eval $(curl https://travis-perl.github.io/init) --auto
+install:
+  - cpan-install --deps
+  - cpan-install Test::CheckManifest
+  - cpan-install --coverage
+script:
+  - perl Makefile.PL
+  - make
+  - prove -b -r -s -j$(test-jobs) $(test-files)
