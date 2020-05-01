@@ -5,6 +5,43 @@ use Amazon::MWS::Routines qw(:all) ;
 my $version        = '2015-05-01' ;
 my $finance_service = "/Finances/$version/" ;
 
+=head1 NAME
+
+Amazon::MWS::Finances - API methods for finances
+
+=head1 API methods
+
+=over 4
+
+=item GetServiceStatus
+
+=item ListFinancialEventGroups
+
+=item ListFinancialEventGroupsByNextToken
+
+=item ListFinancialEvents
+
+=item ListFinancialEventsByNextToken
+
+=back
+
+=head1 Authors
+
+=over 4
+
+=item Eric Ferguson
+
+=item Stefan Hornburg (Racke)
+
+=back
+
+=head1 License
+
+This is free software; you can redistribute it and/or modify it under the same terms
+as the Perl 5 programming language system itself.
+
+=cut
+
 define_api_method GetServiceStatus =>
     version => $version,
     raw_body => 0,
