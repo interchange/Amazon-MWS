@@ -3,7 +3,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 38;
+use Test::More;
+use Test::Warnings;
 
 use Amazon::MWS::XML::Order;
 use Amazon::MWS::XML::Address;
@@ -182,3 +183,5 @@ is ($order->last_name, 'Doe');
     is $address->address1, '';
     is $address->address2, '';
 }
+
+done_testing;
