@@ -118,6 +118,9 @@ sub _unroll_ref {
                 return '';
             }
         }
+        elsif ($reftype eq 'SCALAR') {
+            return $$value;
+        }
         else {
             warn "Unknown ref passed $reftype";
             return '';
