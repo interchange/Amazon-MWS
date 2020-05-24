@@ -149,7 +149,7 @@ sub define_api_method {
 
         my $xs = XML::Simple->new( KeepRoot => 1 );
 
-        if ($response->code == 400 || $response->code == 403) {
+        if ($response->code == 400 || $response->code == 401 || $response->code == 403) {
             my $hash = $xs->xml_in($content);
             my $root = $hash->{ErrorResponse};
             force_array($root, 'Error');
