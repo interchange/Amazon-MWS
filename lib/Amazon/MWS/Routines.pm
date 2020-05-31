@@ -19,6 +19,68 @@ our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 sub slurp_kwargs { ref $_[0] eq 'HASH' ? shift : { @_ } }
 
+sub process_params {
+  my ($params, $args) = @_;
+  my %form;
+  #TODO- now make unit tests for expected behaviors!
+  foreach my $name (keys %$params) {
+      my $param = $params->{$name};
+      unless (exists $args->{$name}) {
+          Amazon::MWS::Exception::MissingArgument->throw(name => $name) if $param->{required};
+          next;
+      }
+
+      my $type  = $param->{type};
+      my $array_names  = $param->{array_names};
+      my $value = $args->{$name};
+
+      if ($type =~ /^List$/) {
+          my %valuehash;
+          @valuehash{@{$param->{values}}}=();
+          Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value) unless (exists ($valuehash{$value}));
+          $form{$name} = $value;
+          next;
+      }
+
+      # Odd 'structured list' notation handled here
+      if ($type =~ /(\w+)List/) {
+          my $list_type = $1;
+           Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
+          my $counter   = 1;
+
+          foreach my $sub_value (@$value) {
+              my $listKey = "$name.$list_type." . $counter++;
+              $form{$listKey} = $sub_value;
+          }
+          next;
+      }
+
+      if ($type =~ /(\w+)Array/) {
+           Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
+          my $list_type = $1;
+          my $counter   = 0;
+          foreach my $sub_value (@$value) {
+              $counter++;
+              my $arr_col=0;
+              foreach my $array_name (@{$array_names}) {
+                  if ( ! defined $sub_value->[$arr_col] ) { next; }
+                  my $listKey = "$name.$list_type." . $counter;
+                     $listKey .= ".$array_name";
+                  $form{$listKey} = $sub_value->[$arr_col++];
+              }
+          }
+          next;
+      }
+      if ($type eq 'HTTP-BODY') {
+          $form{body} = $value;
+      }
+      else {
+          $form{$name} = to_amazon($type, $value);
+      }
+  }
+  return %form
+}
+
 sub define_api_method {
     my $method_name = shift;
     my $spec        = slurp_kwargs(@_);
@@ -28,7 +90,6 @@ sub define_api_method {
 
         my $self = shift;
         my $args = slurp_kwargs(@_);
-        my $body = '';
 
         my %form = (
             Action           		=> $method_name,
@@ -40,61 +101,8 @@ sub define_api_method {
             Timestamp        		=> to_amazon('datetime', DateTime->now),
         );
 
-        foreach my $name (keys %$params) {
-            my $param = $params->{$name};
-            unless (exists $args->{$name}) {
-                Amazon::MWS::Exception::MissingArgument->throw(name => $name) if $param->{required};
-                next;
-            }
-
-            my $type  = $param->{type};
-            my $array_names  = $param->{array_names};
-            my $value = $args->{$name};
-
-	    if ($type =~ /^List$/) {
-	 	my %valuehash;
-		@valuehash{@{$param->{values}}}=();
-		Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value) unless (exists ($valuehash{$value}));
-		$form{$name} = $value;
-		next;
-            }
-
-            # Odd 'structured list' notation handled here
-            if ($type =~ /(\w+)List/) {
-                my $list_type = $1;
-		 Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
-                my $counter   = 1;
-
-                foreach my $sub_value (@$value) {
-                    my $listKey = "$name.$list_type." . $counter++;
-                    $form{$listKey} = $sub_value;
-                }
-                next;
-            }
-
-            if ($type =~ /(\w+)Array/) {
-		 Amazon::MWS::Exception::Invalid->throw(field => $name, value=>$value, message=>"$name should be of type ARRAY") unless (ref $value eq 'ARRAY');
-                my $list_type = $1;
-                my $counter   = 0;
-                foreach my $sub_value (@$value) {
-		    $counter++;
-		    my $arr_col=0;
-		    foreach my $array_name (@{$array_names}) {
-			if ( ! defined $sub_value->[$arr_col] ) { next; }
-                    	my $listKey = "$name.$list_type." . $counter;
-		     	   $listKey .= ".$array_name";
-                    	$form{$listKey} = $sub_value->[$arr_col++];
-    		    }
-                }
-                next;
-            }
-            if ($type eq 'HTTP-BODY') {
-                $body = $value;
-            }
-            else {
-                $form{$name} = to_amazon($type, $value);
-            }
-        }
+        %form = ( %form, process_params($params, $args) );
+        my $body = delete $form{body};
 
 	$form{Version} = $spec->{version} || '2010-01-01';
 

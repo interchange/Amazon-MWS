@@ -6,3 +6,5 @@ MYMETA.*
 blib/*
 *.bak
 t/test.db
+
+*.sw?
