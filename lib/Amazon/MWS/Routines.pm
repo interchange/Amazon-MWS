@@ -14,8 +14,9 @@ use Amazon::MWS::Exception;
 use Data::Dumper;
 
 use Exporter qw(import);
-our @EXPORT_OK = qw(define_api_method new sign_request convert force_array);
-our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+my @normal_exports = qw(define_api_method new sign_request convert force_array);
+our @EXPORT_OK = ( @normal_exports, qw(process_params) );
+our %EXPORT_TAGS = ( all => \@normal_exports );
 
 sub slurp_kwargs { ref $_[0] eq 'HASH' ? shift : { @_ } }
 
