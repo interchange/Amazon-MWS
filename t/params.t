@@ -4,19 +4,38 @@ use strict;
 use Test::More;
 
 use Amazon::MWS::Routines qw(process_params);
+use DateTime;
 
 subtest 'basic types' => sub {
   my $params = {
-    CreatedAfter      => { type => 'datetime' },
-    MaxResultsPerPage => { type => 'nonNegativeInteger' },
-    ABoolFlag         => { type => 'boolean' },
-    FooBar            => { type => 'string' }
+    DateTime      => { type => 'datetime' },
+    MoreThanOne   => { type => 'nonNegativeInteger' },
+    ABoolFlag     => { type => 'boolean' },
+    String        => { type => 'string' }
   };
 
-  my $first = { MaxResultsPerPage => 9001 };
-  is_deeply { process_params($params, $first) }, {
-    MaxResultsPerPage => 9001
-  }, 'did non-negative integer';
+  my $args;
+  $args = { MoreThanOne => -5 };
+  is_deeply { process_params($params, $args) }, {
+    MoreThanOne => 1
+  }, 'changed non-negative integer to 1';
+
+  $args = { ABoolFlag => 9001 };
+  is_deeply { process_params($params, $args) }, {
+    ABoolFlag => 'true'
+  }, 'changed truthy to true';
+
+  $args = { ABoolFlag => 0 };
+  is_deeply { process_params($params, $args) }, {
+    ABoolFlag => 'false'
+  }, 'changed falsy to false';
+
+  my $time = DateTime->new(year => 2020, month => 1, day => 1);
+
+  $args = { DateTime => $time };
+  is_deeply { process_params($params, $args) }, {
+    DateTime => '2020-01-01T00:00:00'
+  }, 'properly formats a timestamp';
 
 };
 
