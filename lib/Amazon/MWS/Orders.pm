@@ -8,6 +8,12 @@ use Amazon::MWS::Routines qw(:all);
 my $version = '2013-09-01';
 my $orders_service = "/Orders/$version";
 
+=head1 NAME
+
+Amazon::MWS::Finances - API methods for finances
+
+=cut
+
 define_api_method GetServiceStatus =>
     raw_body => 0,
     service => "$orders_service",

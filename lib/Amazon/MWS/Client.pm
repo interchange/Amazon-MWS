@@ -157,6 +157,32 @@ this exception will be thrown.  The response can be found in $e->response.
 
 The LWP::UserAgent object used to send the requests to Amazon.
 
+=head1 API SUPPORT
+
+=head2 Easy Ship
+
+The Easy Ship API applies only to sellers in India and is B<not supported>.
+
+=head2 Feeds
+
+The L<Feeds API|https://docs.developer.amazonservices.com/en_US/feeds/Feeds_Overview.html> is supported by L<Amazon::MWS::Feeds>.
+
+=head2 Finances
+
+The L<Finances API|https://docs.developer.amazonservices.com/en_US/finances/Finances_Overview.html> is supported by L<Amazon::MWS::Finances>.
+
+=head2 Fulfillment Inventory
+
+The L<Fulfillment Inventory|https://docs.developer.amazonservices.com/en_US/fba_inventory/FBAInventory_Overview.html> is supported by L<Amazon::MWS::FulfillmentInventory>.
+
+=head2 Orders
+
+Supported by L<Amazon::MWS::Orders>.
+
+=head2 Products
+
+L<https://docs.developer.amazonservices.com/en_US/fba_inventory/FBAInventory_Overview.html>
+
 =head1 API METHODS
 
 The following methods may be called on objects of this class.  All concerns

@@ -17,6 +17,10 @@ our $VERSION = '0.150';
 See L<Amazon::MWS::Client> for the implementation of the low level
 Amazon MWS API.
 
+Following Amazon APIs are supported:
+
+This API supports the following:
+
 For the high level methods provided by the L<Amazon::MWS::Uploader>
 you are going to need to supply database storage.
 
