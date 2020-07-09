@@ -208,8 +208,12 @@ Brand is a required field for products.
 
 =head2 Temporary errors
 
-The following error codes are issued for internal errors: 5002, 14001, 159144.
+The following error codes are issued for internal errors: 5002, 14001, 20003, 159144.
 There is nothing you can do about, so ignorance is the best way to deal with them.
+
+=head3 Error 20003
+
+   error: Submitting image updates for SKU 0815 is temporarily unavailable. Please retry your submission at a later date.
 
 =head2 Other problems
 
