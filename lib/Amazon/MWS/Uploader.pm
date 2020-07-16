@@ -2076,9 +2076,6 @@ sub get_product_categories {
     }
 }
 
-
-# http://docs.developer.amazonservices.com/en_US/products/Products_GetLowestOfferListingsForSKU.html
-
 =head2 get_lowest_price_for_asin($asin, $condition)
 
 Return the lowest price for asin, excluding ourselves. The second
