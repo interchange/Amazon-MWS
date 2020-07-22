@@ -101,6 +101,7 @@ sub define_api_method {
             SignatureMethod  		=> 'HmacSHA256',
             Timestamp        		=> to_amazon('datetime', DateTime->now),
         );
+        $form{MWSAuthToken} = $self->{mws_auth_token} if $self->{mws_auth_token};
 
         %form = ( %form, process_params($params, $args) );
         my $body = delete $form{body};
@@ -308,6 +309,7 @@ sub new {
     secret_key => $opts{secret_key},
     merchant_id => $opts{merchant_id},
     marketplace_id => $opts{marketplace_id}, 
+    mws_auth_token => $opts{mws_auth_token},
     debug => $opts{debug}, 
     logfile => $opts{logfile},
 	}, $pkg;
