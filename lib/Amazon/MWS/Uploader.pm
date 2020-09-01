@@ -1808,8 +1808,7 @@ sub register_ship_order_errors {
 The first argument is the job ID. The second is a
 L<Amazon::MWS::XML::Response::FeedSubmissionResult> object.
 
-This method will update the status of the products (either C<failed>
-or C<redo>) in C<amazon_mws_products>.
+This method will update the status of the products (C<failed, C<redo> or C<ok>) in C<amazon_mws_products>.
 
 =head2 register_order_ack_errors($job_id, $result);
 
@@ -1827,6 +1826,8 @@ sub register_errors {
     # we don't have a products hashref anymore.
     # probably we could parse back the produced xml, but looks like an overkill.
     # just mark them as redo and wait for the next cron call.
+    # in case of single feeds we mark them as ok
+    my @feeds = $self->feeds_in_job($job_id);
     my @products = $self->skus_in_job($job_id);
     my $errors = $result->skus_errors;
     my @errors_with_sku = grep { $_->{sku} } @$errors;
@@ -1847,18 +1848,42 @@ sub register_errors {
                                                   }));
         }
         else {
-            # this is good, mark it to be redone
+            # update status (redo if we run multiple feeds for this job, ok if we run a single job)
+            my $update_status = scalar(@feeds) > 1 ? 'redo' : 'ok';
+
             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                   {
-                                                   status => 'redo',
+                                                   status => $update_status,
                                                   },
                                                   {
                                                    sku => $sku,
                                                    shop_id => $self->_unique_shop_id,
                                                   }));
-            print "Scheduling $sku for redoing\n";
+            print "Update status for $sku from job $job_id to $update_status\n";
         }
     }
+}
+
+=head2 feeds_in_job($job_id)
+
+Returns feeds in job by given job ID.
+
+=cut
+
+sub feeds_in_job {
+    my ($self, $job_id) = @_;
+
+    my $sth = $self->_exe_query($self->sqla->select('amazon_mws_feeds',
+                                                    '*',
+                                                    {
+                                                     amws_job_id => $job_id,
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
+    my @feeds;
+    while (my $row = $sth->fetchrow_hashref) {
+        push @feeds, $row;
+    }
+    return @feeds;
 }
 
 =head2 skus_in_job($job_id)
