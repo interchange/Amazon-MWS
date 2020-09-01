@@ -1808,7 +1808,7 @@ sub register_ship_order_errors {
 The first argument is the job ID. The second is a
 L<Amazon::MWS::XML::Response::FeedSubmissionResult> object.
 
-This method will update the status of the products (C<failed, C<redo> or C<ok>) in C<amazon_mws_products>.
+This method will update the status of the products (C<failed>, C<redo> or C<ok>) in C<amazon_mws_products>.
 
 =head2 register_order_ack_errors($job_id, $result);
 
