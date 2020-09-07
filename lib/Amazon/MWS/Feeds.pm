@@ -56,6 +56,9 @@ define_api_method SubmitFeed =>
             required => 1,
             type     => 'HTTP-BODY',
         },
+        FeedOptions => {
+                        type => 'string',
+                       },
         FeedType => {
             required => 1,
             type     => 'string',

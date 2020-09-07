@@ -24,6 +24,7 @@ lib/Amazon/MWS/Products.pm
 lib/Amazon/MWS/Reports.pm
 lib/Amazon/MWS/Routines.pm
 lib/Amazon/MWS/Sellers.pm
+lib/Amazon/MWS/TAB/Response/FeedSubmissionResult.pm
 lib/Amazon/MWS/TypeMap.pm
 lib/Amazon/MWS/Uploader.pm
 lib/Amazon/MWS/XML/Address.pm
@@ -57,4 +58,5 @@ t/pod.t
 t/product-filtering.t
 t/shipping-confirmation.t
 t/SubmitFeed.t
+t/tabs.t
 t/uploader.t
