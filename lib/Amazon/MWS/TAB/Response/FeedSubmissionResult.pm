@@ -40,14 +40,6 @@ Boolean
 
 has text => (is => 'ro', required => 1);
 
-sub skus_errors {
-    return [];
-}
-
-sub skus_warnings {
-    return [];
-}
-
 sub report_errors {
     my $self = shift;
     my $body = $self->text;
