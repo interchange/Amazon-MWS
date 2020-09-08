@@ -16,7 +16,17 @@ most of methods are not implemented.
 
   return Amazon::MWS::TAB::Response->new(text => $body);
 
+=head1 ACCESSORS
+
+=head2 text
+
+Response from GetFeedSubmissionResult API call.
+
 =head1 METHODS
+
+=head2 is_success
+
+Determines whether the submission was successful.
 
 =head2 report_errors
 
@@ -32,9 +42,9 @@ A list of error messages, where each element is an hashref with this keys:
 
 =back
 
-=head2 is_success
+=head2 errors
 
-Boolean
+Returns the message part of all errors as comma separated string.
 
 =cut
 
