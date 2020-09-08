@@ -16,8 +16,6 @@ most of methods are not implemented.
 
   return Amazon::MWS::TAB::Response->new(text => $body);
 
-=cut
-
 =head1 METHODS
 
 =head2 report_errors
