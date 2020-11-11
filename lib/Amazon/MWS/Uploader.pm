@@ -284,6 +284,12 @@ sub _build_dbh {
     return $dbh;
 }
 
+=item product_override_fields
+
+=cut
+
+has product_override_fields => (is => 'ro', isa => ArrayRef, default => sub{[]});
+
 =item purge_missing_products
 
 If true, the first time C<products_to_upload> is called, products not
@@ -823,6 +829,41 @@ sub upload {
         print "No products, can't upload anything\n";
         return;
     }
+
+    my @override_fields = @{$self->product_override_fields};
+
+    if (@override_fields) {
+        my @db_fields = map { "amazon_$_" } @override_fields;
+        for my $p (@products) {
+            # Do a query on the extra fields
+            my $sth = $self->_exe_query($self->sqla->select(amazon_mws_products => \@db_fields,
+                                                    {
+                                                     sku => $p->{sku},
+                                                     shop_id => $self->_unique_shop_id,
+                                                    }));
+            my $row = $sth->fetchrow_hashref;
+
+            if ($row) {
+                # check for changes
+                my %changes;
+                
+                for my $fld (@override_fields) {
+                    if (defined $row->{"amazon_$fld"}) {
+                        # special case for Color and Size
+                        if ($fld eq 'color' or $fld eq 'size') {
+                            $p->{product_data}->{Sports}->{VariationData}->{ucfirst($fld)} = $row->{"amazon_$fld"};
+                        }
+                        else {
+                            $p->{$fld} = $row->{"amazon_$fld"};
+                        }
+                        $changes{$fld} = $row->{"amazon_$fld"};
+                    }
+                }
+
+            }
+        }
+    }
+    
     my $feeder = Amazon::MWS::XML::Feed->new(
                                              products => \@products,
                                              xml_writer => $self->xml_writer,
@@ -1169,6 +1210,8 @@ sub upload_feed {
     my $job_id = $record->{amws_job_id};
     my $type   = $record->{feed_name};
     my $feed_id = $record->{feed_id};
+    my $skip;
+
     print "Checking $type feed for $job_id\n";
     # http://docs.developer.amazonservices.com/en_US/feeds/Feeds_FeedType.html
 
@@ -1199,12 +1242,34 @@ sub upload_feed {
                           );
         }
         catch {
-            warn "Failure to submit $type feed: \n";
-            if (ref($_)) {
-                if ($_->can('xml')) {
-                    warn $_->xml;
+            my $exception = $_;
+            my $exception_class = ref($exception);
+
+            if ($exception_class) {
+                if ($exception_class eq 'Amazon::MWS::Exception::Throttled') {
+                    if ($self->throttle_log_mode eq 'warn') {
+                        warn "Request is throttled for $type $job_id.\n";
+                    }
+                    elsif ($self->throttle_log_mode eq 'print') {
+                        print "Request is throttled for $type $job_id.\n";
+                    }
+                    elsif ($self->throttle_log_mode eq 'fatal') {
+                        die "Fatal throttle: ", $exception; # rethrow.
+                    }
+
+                    push @{$self->throttled_feeds}, {
+                        feed => $type,
+                        id => $feed_id,
+                    };
+
+                    $skip = 1;
+                }
+                elsif ($exception->can('xml')) {
+                    warn "exception object type: ", ref($exception), "\n";
+                    warn "checking processing complete error for $type $feed_id: " . $exception->xml;
                 }
                 else {
+                    warn "Failure to submit $type feed: \n";
                     warn Dumper($_);
                 }
             }
@@ -1212,6 +1277,9 @@ sub upload_feed {
                 warn $_;
             }
         };
+
+        return if $skip;
+
         # do not register the failure on die, because in this case (no
         # response) there could be throttling, or network failure
         die unless $res;
@@ -1325,7 +1393,24 @@ sub upload_feed {
             elsif ($type eq 'shipping_confirmation') {
                 $self->register_ship_order_errors($job_id, $result);
             }
+            # else {
+            #     warn "Failure of job $job_id, feed $feed_id, type $type, shop ", $self->_unique_shop_id, ".\n";
+            #     warn "Messages ", $result->structure->{ProcessingSummary}->{MessagesProcessed}, "\n";
+            #     warn "Success ", $result->structure->{ProcessingSummary}->{MessagesSuccessful}, "\n";
+            #     my $failures = $result->_parse_results_ng('sku');
+            #     warn "Results: ", Dumper([$result->_parse_results_ng('sku')]);
+
+            #     if ($job_id =~ /^product_deletion/) {
             
+            #         for my $entry (@$failures) {
+            #             warn "Entry: ", Dumper($entry);
+            #            # if ($entry->{code} == 8007) {
+            #            #     warn "Checking whether $entry->{sku} is still listed.\n";
+            #            # }
+            #         }
+            #     }
+            # }
+
             # and we stop this job, has errors
             return 0;
         }

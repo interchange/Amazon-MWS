@@ -161,6 +161,35 @@ sub _parse_results {
     @msgs ? return \@msgs : return;
 }
 
+sub _parse_results_ng {
+    my ($self, $type, $code) = @_;
+#    die unless ($code eq 'Error' or $code eq 'Warning');
+    my $struct = $self->structure;
+    my @msgs;
+    my %map = (sku => 'SKU',
+               order_id => 'AmazonOrderID');
+
+    my $key = $map{$type} or die "Bad type $type";
+    if ($struct->{Result}) {
+        foreach my $res (@{ $struct->{Result} }) {
+            my $ret = {
+                error => $res->{ResultDescription} || '',
+                code => $res->{ResultMessageCode} || '',
+            };
+
+            if ($res->{ResultCode}) {
+                $ret->{ResultName} = $res->{ResultCode};
+            }
+
+            if (my $value = $res->{AdditionalInfo}->{$key}) {
+                $ret->{$type} = $value;
+            }
+
+            push @msgs, $ret;
+        }
+    }
+    @msgs ? return \@msgs : return;
+}
 
 
 sub is_success {
