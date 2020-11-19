@@ -2584,7 +2584,7 @@ sub get_products_with_error_code {
     my $sth = $self->_exe_query($self->sqla
                                 ->select('amazon_mws_products', '*',
                                          {
-                                          status => { '!=' => 'deleted' },
+                                          status => { -not_in => [qw/deleted ok/] },
                                           shop_id => $self->_unique_shop_id,
                                           error_code => $where,
                                          },
