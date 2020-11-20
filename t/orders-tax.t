@@ -48,7 +48,16 @@ my $order_data = {
                                   'Phone' => 'censored',
                                   'PostalCode' => '99999-8888',
                                   'StateOrRegion' => 'CA'
-                                 }
+                                 },
+            TaxRegistrationDetails => {
+                                       member => {
+                                                  taxRegistrationAuthority => {
+                                                                               country => "IE"
+                                                                              },
+                                                  taxRegistrationId => "IE99999999",
+                                                  taxRegistrationType => "VAT"
+                                                 }
+                                      },
            };
 my $orderline_data = [
                   {
@@ -116,6 +125,7 @@ my $orderline_data = [
     is $order->shipping_tax, '3.12';
     is $order->item_tax, '10.23';
     is $order->currency, 'USD';
+    is $order->customer_vat_id, 'IE99999999';
 }
 {
     my $order = Amazon::MWS::XML::Order->new(order => $order_data,

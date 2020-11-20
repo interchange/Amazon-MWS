@@ -534,4 +534,23 @@ sub _check_boolean {
     }
 }
 
+=head2 customer_vat_id
+
+Return the VAT ID if provided by Amazon.
+
+=cut
+
+sub customer_vat_id {
+    my $self = shift;
+    my $order_data = $self->order;
+    if ($order_data->{TaxRegistrationDetails} and
+        $order_data->{TaxRegistrationDetails}->{member} and
+        $order_data->{TaxRegistrationDetails}->{member}->{taxRegistrationId}) {
+        return $order_data->{TaxRegistrationDetails}->{member}->{taxRegistrationId};
+    }
+    else {
+        return undef;
+    }
+}
+
 1;
