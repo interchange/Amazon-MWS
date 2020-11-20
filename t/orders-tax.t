@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More;
 
 use Amazon::MWS::XML::Order;
 
@@ -48,7 +48,16 @@ my $order_data = {
                                   'Phone' => 'censored',
                                   'PostalCode' => '99999-8888',
                                   'StateOrRegion' => 'CA'
-                                 }
+                                 },
+            TaxRegistrationDetails => {
+                                       member => {
+                                                  taxRegistrationAuthority => {
+                                                                               country => "IE"
+                                                                              },
+                                                  taxRegistrationId => "IE99999999",
+                                                  taxRegistrationType => "VAT"
+                                                 }
+                                      },
            };
 my $orderline_data = [
                   {
@@ -108,6 +117,7 @@ my $orderline_data = [
                                              include_tax_in_prices => 1,
                                              orderline => $orderline_data);
     ok $order;
+    ok !$order->is_business;
     is $order->subtotal, '122.68';
     is $order->total_cost, '160.08';
     is $order->items_ref->[0]->shipping_tax, '3.12';
@@ -115,6 +125,7 @@ my $orderline_data = [
     is $order->shipping_tax, '3.12';
     is $order->item_tax, '10.23';
     is $order->currency, 'USD';
+    is $order->customer_vat_id, 'IE99999999';
 }
 {
     my $order = Amazon::MWS::XML::Order->new(order => $order_data,
@@ -172,3 +183,7 @@ my $corder = Amazon::MWS::XML::Order->new(order => $canceled,
                                           orderline => $canceled_orderline);
 is $corder->total_cost, 0;
 ok !$corder->can_be_imported;
+ok !$corder->is_prime;
+ok !$corder->is_business;
+
+done_testing;

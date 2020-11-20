@@ -95,7 +95,8 @@ my $orderline_data = [
 my $order = Amazon::MWS::XML::Order->new(order => $order_data,
                                          orderline => $orderline_data);
 ok $order->is_prime;
-
+ok $order->is_business;
+is $order->customer_vat_id, undef;
 is($order->subtotal, "119.80");
 my @items = $order->items;
 is($items[0]->price, "59.90");

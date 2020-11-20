@@ -510,13 +510,46 @@ Determines whether the order is a Prime order.
 =cut
 
 sub is_prime {
-    my $self = shift;
-    my $is_prime = $self->order->{IsPrime};
-    if ($is_prime and $is_prime =~ m/true/i) {
+    shift->_check_boolean('IsPrime');
+}
+
+=head2 is_business
+
+Return true if the order is a business order
+
+=cut
+
+sub is_business {
+    shift->_check_boolean('IsBusinessOrder');
+}
+
+sub _check_boolean {
+    my ($self, $key) = @_;
+    my $val = $self->order->{$key};
+    if ($val and $val =~ m/true/i) {
         return 1;
     }
     else {
         return 0;
+    }
+}
+
+=head2 customer_vat_id
+
+Return the VAT ID if provided by Amazon.
+
+=cut
+
+sub customer_vat_id {
+    my $self = shift;
+    my $order_data = $self->order;
+    if ($order_data->{TaxRegistrationDetails} and
+        $order_data->{TaxRegistrationDetails}->{member} and
+        $order_data->{TaxRegistrationDetails}->{member}->{taxRegistrationId}) {
+        return $order_data->{TaxRegistrationDetails}->{member}->{taxRegistrationId};
+    }
+    else {
+        return undef;
     }
 }
 
