@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More;
 
 use Amazon::MWS::XML::Order;
 
@@ -108,6 +108,7 @@ my $orderline_data = [
                                              include_tax_in_prices => 1,
                                              orderline => $orderline_data);
     ok $order;
+    ok !$order->is_business;
     is $order->subtotal, '122.68';
     is $order->total_cost, '160.08';
     is $order->items_ref->[0]->shipping_tax, '3.12';
@@ -172,3 +173,7 @@ my $corder = Amazon::MWS::XML::Order->new(order => $canceled,
                                           orderline => $canceled_orderline);
 is $corder->total_cost, 0;
 ok !$corder->can_be_imported;
+ok !$corder->is_prime;
+ok !$corder->is_business;
+
+done_testing;
