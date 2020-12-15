@@ -4,15 +4,14 @@ Revision history for Amazon::MWS
 
      [ENHANCEMENTS]
 
+     * Set inventory to 0 if price is zero and upload.
+       Upload image and variants feed if product is inactive (Marco Pessotto, GH #24).
      * Add customer_vat_id and is_business methods to Amazon::MWS::XML::Order (Marco Pessotto)
      * Exclude from get_products_with_mismatches the products with ok status (Marco Pessotto)
      * Treat HTTP response error code 401 as "Amazon::MWS::Exception::Response"
        (Stefan Hornburg/Racke)
      * Handle missing SKU in warning gracefully (Stefan Hornburg/Racke).
      * Add Travis CI configuration file (Stefan Hornburg/Racke).
-
-     [ENHANCEMENTS]
-
      * Support for Finances API methods (Eric Ferguson).
 
 0.150 Sat Sep 23 13:20:08 2017 CEST
