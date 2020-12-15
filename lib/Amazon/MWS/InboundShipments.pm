@@ -1,5 +1,27 @@
 package Amazon::MWS::InboundShipment;
 
+=head1 NAME
+
+Amazon::MWS::InboundShipment - API fulfillment inbound shipment methods for Amazon Marketplace Web Services.
+
+=head1 API methods
+
+=head2 GetServiceStatus
+
+=head2 ListInboundShipments
+
+=head2 ListInboundShipmentsByNextToken
+
+=head2 ListInboundShipmentItems
+
+=head2 ListInboundShipmentItemsByNextToken
+
+=head2 CreateInboundShipmentPlan
+
+=head2 CreateInboundShipment
+
+=cut
+
 use Amazon::MWS::Routines qw(:all);
 
 my $inbound_service = '/FulfillmentInboundShipment/2010-10-01';
