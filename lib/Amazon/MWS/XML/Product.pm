@@ -99,8 +99,7 @@ default of 2 here.
 
 The standard price of the item. If the price is zero, it is assumed to
 be a product which should be set as inactive without removing it,
-flipping the inventory to zero and refraining to do pass
-images/variants/price feeds.
+flipping the inventory to zero.
 
 The price is rounded via sprintf '%.2f' by the module.
 
@@ -380,8 +379,7 @@ sub price_is_zero {
 
 =head2 is_inactive
 
-Return true if price is 0 or inventory is 0. Inactive items will not
-get a price, variants, image feed output.
+Return true if price is 0 or inventory is 0.
 
 =cut
 
@@ -421,9 +419,7 @@ Inactive products will get a quantity of 0.
 =head2 as_price_hash
 
 Return a data structure suitable to feed the Price slot in a Price
-feed. If it's a inactive product, return nothing so there is a
-chance that we don't need the price feed at all (if all products are
-inactive).
+feed, unless the price is 0.
 
 =cut
 
@@ -535,7 +531,7 @@ sub as_inventory_hash {
 sub as_price_hash {
     my $self = shift;
     return unless $self->is_feed_needed('price');
-    return if $self->is_inactive;
+    return if $self->price_is_zero;
     my $price = $self->price;
     my $data = {
                 SKU => $self->sku,
@@ -563,8 +559,6 @@ sub as_price_hash {
 
 Return a data structure suitable to feed the ProductImage slot in a
 Image feed.
-
-No output if the product is inactive.
 
 =over 4
 
@@ -597,7 +591,6 @@ stored with a secured URL (https) so be sure to use http instead.
 sub as_images_array {
     my $self = shift;
     return unless $self->is_feed_needed('image');
-    return if $self->is_inactive;
     return unless $self->images;
     my $sku = $self->sku;
     # here we assign the first as the main one, the others as alternate.
@@ -620,15 +613,13 @@ sub as_images_array {
 
 =head2 as_variants_hash
 
-Return a structure suitable for the Relationship feed. No output if
-the product is inactive.
+Return a structure suitable for the Relationship feed.
 
 =cut
 
 sub as_variants_hash {
     my $self = shift;
     return unless $self->is_feed_needed('variants');
-    return if $self->is_inactive;
     my $children = $self->children;
     return unless $children && @$children;
     my $data = { ParentSKU => $self->sku,

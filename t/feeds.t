@@ -344,12 +344,12 @@ $test = Amazon::MWS::XML::Product->new(sku => '12345',
 
 ok($test->price_is_zero);
 ok($test->is_inactive);
-is($test->as_price_hash, undef, "zero priced item gets no price feed");
+ok(!$test->as_price_hash, "No price info with price at 0");
 is($test->inventory, 10);
 is($test->as_inventory_hash->{Quantity}, 0,
    "zero priced items get an inventory of 0");
-is($test->as_images_array, undef, "zero priced items gets no image feed");
-is($test->as_variants_hash, undef, "zero priced items gets no variant feed");
+ok($test->as_images_array);
+ok($test->as_variants_hash);
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
                                       xml_writer => $writer,
@@ -358,9 +358,9 @@ $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
 
 like($feeder->product_feed, qr/SKU>12345</, "Product feed found");
 like($feeder->inventory_feed, qr/Quantity>0</, "Quantity found");
-ok(!$feeder->price_feed, "No price feed");
-ok(!$feeder->image_feed, "No image feed");
-ok(!$feeder->variants_feed, "No variant feed");
+ok(!$feeder->price_feed, "no price feed");
+ok($feeder->image_feed, "image feed");
+ok($feeder->variants_feed, "variant feed");
 
 
 $test = Amazon::MWS::XML::Product->new(sku => '12345',
@@ -373,12 +373,12 @@ $test = Amazon::MWS::XML::Product->new(sku => '12345',
 
 ok(!$test->price_is_zero);
 ok($test->is_inactive);
-is($test->as_price_hash, undef, "inactive items get no price feed");
+ok($test->as_price_hash);
 is($test->inventory, -1);
 is($test->as_inventory_hash->{Quantity}, 0,
    "inactive items get an inventory of 0");
-is($test->as_images_array, undef, "inactive items gets no image feed");
-is($test->as_variants_hash, undef, "inactive items gets no variant feed");
+ok($test->as_images_array);
+ok($test->as_variants_hash);
 
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
                                       xml_writer => $writer,
@@ -387,9 +387,9 @@ $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
 
 like($feeder->product_feed, qr/SKU>12345</, "Product feed found");
 like($feeder->inventory_feed, qr/Quantity>0</, "Quantity found");
-ok(!$feeder->price_feed, "No price feed");
-ok(!$feeder->image_feed, "No image feed");
-ok(!$feeder->variants_feed, "No variant feed");
+ok($feeder->price_feed, "price feed");
+ok($feeder->image_feed, "image feed");
+ok($feeder->variants_feed, "variant feed");
 
 $test->feeds_needed([]);
 $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
