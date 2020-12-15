@@ -6,25 +6,21 @@ my $version = '2009-01-01';
 
 =head1 NAME
 
-Amazon::MWS::Feeds - API methods for feeds
+Amazon::MWS::Feeds - API feed methods for Amazon Marketplace Web Services.
 
 =head1 API methods
 
-=over 4
+=head2 SubmitFeed
 
-=item SubmitFeed
+=head2 GetFeedSubmissionList
 
-=item GetFeedSubmissionList
+=head2 GetFeedSubmissionListByNextToken
 
-=item GetFeedSubmissionListByNextToken
+=head2 GetFeedSubmissionCount
 
-=item GetFeedSubmissionCount
+=head2 CancelFeedSubmissions
 
-=item CancelFeedSubmissions
-
-=item GetFeedSubmissionResult
-
-=back
+=head2 GetFeedSubmissionResult
 
 =head1 Authors
 
