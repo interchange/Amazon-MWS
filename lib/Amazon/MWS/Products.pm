@@ -1,5 +1,23 @@
 package Amazon::MWS::Products;
 
+=head1 NAME
+
+Amazon::MWS::Products - API product methods for Amazon Marketplace Web Services.
+
+=head1 API methods
+
+=head2 GetServiceStatus
+
+=head2 ListMatchingProducts
+
+=head2 GetMatchingProduct
+
+=head2 GetMatchingProductForId
+
+=head2 GetLowestOfferListingsForSKU
+
+=cut
+
 use Amazon::MWS::Routines qw(:all);
 
 my $version = '2011-10-01';
