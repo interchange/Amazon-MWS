@@ -1,5 +1,24 @@
 package Amazon::MWS::Routines;
 
+=head1 NAME
+
+Amazon::MWS::Routines - Common routines for Amazon Marketplace Web Services modules.
+
+=head1 FUNCTIONS
+
+=head2 define_api_method($method_name, @args)
+
+Defines API method with name C<$method_name> and list of
+parameters in C<@args>. A hash reference as first parameter
+will be turned into a list.
+
+=head2 slurp_kwargs(@args)
+
+Turns list into a hash reference unless first element of
+the list is already a hash reference.
+
+=cut
+
 use URI;
 use DateTime;
 use XML::Simple;
