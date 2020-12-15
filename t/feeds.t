@@ -344,7 +344,7 @@ $test = Amazon::MWS::XML::Product->new(sku => '12345',
 
 ok($test->price_is_zero);
 ok($test->is_inactive);
-ok($test->as_price_hash);
+ok(!$test->as_price_hash, "No price info with price at 0");
 is($test->inventory, 10);
 is($test->as_inventory_hash->{Quantity}, 0,
    "zero priced items get an inventory of 0");
@@ -358,7 +358,7 @@ $feeder = Amazon::MWS::XML::Feed->new(products => [ $test ],
 
 like($feeder->product_feed, qr/SKU>12345</, "Product feed found");
 like($feeder->inventory_feed, qr/Quantity>0</, "Quantity found");
-ok($feeder->price_feed, "price feed");
+ok(!$feeder->price_feed, "no price feed");
 ok($feeder->image_feed, "image feed");
 ok($feeder->variants_feed, "variant feed");
 

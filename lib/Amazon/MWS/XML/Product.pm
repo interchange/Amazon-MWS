@@ -419,7 +419,7 @@ Inactive products will get a quantity of 0.
 =head2 as_price_hash
 
 Return a data structure suitable to feed the Price slot in a Price
-feed.
+feed, unless the price is 0.
 
 =cut
 
@@ -531,6 +531,7 @@ sub as_inventory_hash {
 sub as_price_hash {
     my $self = shift;
     return unless $self->is_feed_needed('price');
+    return if $self->price_is_zero;
     my $price = $self->price;
     my $data = {
                 SKU => $self->sku,
