@@ -1,5 +1,19 @@
 package Amazon::MWS::FulfillmentOutbound;
 
+=head1 NAME
+
+Amazon::MWS::FulfillmentOutbound - API fulfillment outbound shipment methods for Amazon Marketplace Web Services.
+
+=head2 API methods
+
+=over 4
+
+=item GetServiceStatus
+
+=back
+
+=cut
+
 use Amazon::MWS::Routines qw(:all);
 
 my $fulfillment_service = '/FulfillmentOutboundShipment/2010-10-01/';
