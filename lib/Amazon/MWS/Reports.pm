@@ -1,5 +1,51 @@
 package Amazon::MWS::Reports;
 
+=head1 NAME
+
+Amazon::MWS::Reports - API report methods for Amazon Marketplace Web Services.
+
+=head1 API methods
+
+=head2 RequestReport
+
+=head2 GetReportRequestList
+
+=head2 GetReportRequestListByNextToken
+
+=head2 GetReportRequestCount
+
+=head2 CancelReportRequests
+
+=head2 GetReportList
+
+=head2 GetReportListByNextToken
+
+=head2 GetReportCount
+
+=head2 GetReport
+
+=head2 ManageReportSchedule
+
+=head2 GetReportScheduleList
+
+=head2 GetReportScheduleListByNextToken
+
+=head2 GetReportScheduleCount
+
+=head2 UpdateReportAcknowledgements
+
+=head1 Convert methods
+
+=head2 convert_FeedSubmissionInfo
+
+=head2 convert_ReportRequestInfo
+
+=head2 convert_ReportSchedule
+
+=head2 convert_ReportInfo
+
+=cut
+
 use Amazon::MWS::Routines qw(:all);
 
 define_api_method RequestReport =>
