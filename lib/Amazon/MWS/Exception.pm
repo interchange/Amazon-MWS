@@ -1,5 +1,31 @@
 package Amazon::MWS::Exception;
 
+=head1 NAME
+
+Amazon::MWS::Exception
+
+=head1 DESCRIPTION
+
+Defines exceptions used by L<Amazon::MWS>:
+
+=over 4
+
+=item Amazon::MWS::Exception::MissingArgument
+
+=item Amazon::MWS::Exception::Invalid
+
+=item Amazon::MWS::Exception::Transport
+
+=item Amazon::MWS::Exception::Response
+
+=item Amazon::MWS::Exception::BadChecksum
+
+=item Amazon::MWS::Exception::Throttled
+
+=back
+
+=cut
+
 use Exception::Class (
     Amazon::MWS::Exception,
     "Amazon::MWS::Exception::MissingArgument" => {
