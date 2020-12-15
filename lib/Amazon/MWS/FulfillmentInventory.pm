@@ -1,5 +1,17 @@
 package Amazon::MWS::FulfillmentInventory;
 
+=head1 NAME
+
+Amazon::MWS::Routes - API fulfillment inventory methods for Amazon Marketplace Web Services.
+
+=head1 API methods
+
+=head2 ListInventorySupply
+
+=head2 ListInventorySupplyByNextToken
+
+=cut
+
 use Amazon::MWS::Routines qw(:all);
 
 my $fulfillment_service = '/FulfillmentInventory/2010-10-01/';
