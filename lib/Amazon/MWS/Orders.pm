@@ -1,5 +1,31 @@
 package Amazon::MWS::Orders;
 
+=head1 NAME
+
+Amazon::MWS::Orders - API order methods for Amazon Marketplace Web Services.
+
+=head1 API methods
+
+=head2 GetServiceStatus
+
+=head2 ListOrders
+
+=head2 ListOrdersByNextToken
+
+=head2 GetOrder
+
+=head2 ListOrderItems
+
+=head2 ListOrderItemsByNextToken
+
+=head1 Functions
+
+=head2 convert_ListOrdersResult
+
+=head2 convert_ListOrderItemsResult
+
+=cut
+
 use strict;
 use warnings;
 
