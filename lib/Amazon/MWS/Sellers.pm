@@ -1,5 +1,17 @@
 package Amazon::MWS::Sellers;
 
+=head1 NAME
+
+Amazon::MWS::Sellers - API seller methods for Amazon Marketplace Web Services.
+
+=head1 API methods
+
+=head2 ListMarketplaceParticipations
+
+=head2 ListMarketplaceParticipationsByNextToken
+
+=cut
+
 use Amazon::MWS::Routines qw(:all);
 
 my $sellers_service = '/Sellers/2011-07-01';
