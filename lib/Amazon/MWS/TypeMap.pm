@@ -10,6 +10,26 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(from_amazon to_amazon);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
+=head1 NAME
+
+Amazon::MWS::TypeMap - Module to convert types from and to Amazon Marketplace Web Services API
+
+=head1 FUNCTIONS
+
+=head2 from_amazon ($type, $value)
+
+Converts value C<$value> for C<$type> from Amazon data.
+
+=head2 to_amazon
+
+Converts value C<$value> for C<$type> to Amazon data.
+
+=head3 identity
+
+Returns first input parameter.
+
+=cut
+
 sub identity { shift }
 
 my %from_map = (
