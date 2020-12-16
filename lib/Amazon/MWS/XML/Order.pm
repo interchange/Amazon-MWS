@@ -101,6 +101,14 @@ has include_tax_in_prices => (is => 'ro', isa => Bool, default => sub { 0 });
 
 They are mostly shortcuts to retrieve the correct information.
 
+=head2 amazon_order_number
+
+Returns Amazon order number.
+
+=head2 email
+
+Returns Amazon email for customer.
+
 =cut
 
 sub amazon_order_number {
@@ -139,7 +147,7 @@ An L<Amazon::MWS::XML::Address> object with the shipping address.
 =cut
 
 has shipping_address => (is => 'lazy');
-                         
+
 sub _build_shipping_address {
     my $self = shift;
     my $address = $self->order->{ShippingAddress};
@@ -221,7 +229,7 @@ sub items {
 
 =head2 order_date
 
-Return a L<DateTime> object with th purchase date.
+Returns a L<DateTime> object with the purchase date.
 
 =cut
 
@@ -241,7 +249,6 @@ The total shipping cost, built summing up the shipping cost of each
 item.
 
 =cut
-
 
 sub shipping_cost {
     my $self = shift;
@@ -296,7 +303,6 @@ including sales taxes.
 
 =cut
 
-
 sub total_cost {
     my $self = shift;
     return 0 unless $self->order->{OrderTotal};
@@ -316,7 +322,7 @@ sub total_cost {
 
 =head2 currency
 
-The currency of the order. Looked up in OrderTotal.CurrencyCode.
+Currency code for this order.
 
 =cut
 
@@ -330,7 +336,7 @@ sub currency {
 
 =head2 as_ack_order_hashref
 
-Return an hashref suitable to build an order ack feed.
+Prepares structure to be used for order acknowledgement.
 
 =cut
 
@@ -387,7 +393,7 @@ sub order_status {
 
 =head2 can_be_imported
 
-Return false if the status is Pending or Canceled.
+Return false if the status is C<Pending> or C<Canceled>.
 
 =cut
 
