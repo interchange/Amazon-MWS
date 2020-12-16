@@ -16,7 +16,11 @@ most of methods are not implemented.
 
   return Amazon::MWS::TAB::Response->new(text => $body);
 
-=cut
+=head1 ACCESSORS
+
+=head2 text
+
+Required parameter with the content of the text response.
 
 =head1 METHODS
 
@@ -37,6 +41,18 @@ A list of error messages, where each element is an hashref with this keys:
 =head2 is_success
 
 Boolean
+
+=head2 errors
+
+Combined error messages as a string.
+
+=head2 skus_errors
+
+Returns empty array.
+
+=head2 skus_warnings
+
+Returns empty array.
 
 =cut
 
