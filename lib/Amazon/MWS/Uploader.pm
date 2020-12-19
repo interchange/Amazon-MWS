@@ -1274,7 +1274,7 @@ sub upload_feed {
                         }
                         else {
                             $self->_error_logger(warning => $w->{code},
-                                                 $w->{error});
+                                                "$type:  $w->{error}");
                         }
                     }
                 }
