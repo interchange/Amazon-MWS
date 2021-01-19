@@ -2651,7 +2651,7 @@ sub mark_failed_products_as_redo {
                                           }));
 }
 
-=head get_product_data_timestamp($sku)
+=head2 get_product_data_timestamp($sku)
 
 Retrieve the C<amazon_mws_products.data_timestamp> column for the
 given sku.
