@@ -234,6 +234,20 @@ sub _build__unique_shop_id {
     }
 }
 
+=item data_timestamp
+
+A user-provided timestamp which should be inserted as-is in
+amazon_mws_products.data_timestamp to keep track of the age of the
+product data. This column is new (2021-01-19) and needs to be added
+for existing installation if you want to set it and make use of it
+with C<get_product_data_timestamp> method.
+
+If you don't use it, you don't need to alter your tables.
+
+=cut
+
+has data_timestamp => (is => 'rw');
+
 =item debug
 
 Print out additional information.
@@ -851,6 +865,9 @@ sub _mark_products_as_pending {
                     warnings => '', # clear out
                     timestamp_string => $p->timestamp_string,
                    );
+        if ($self->data_timestamp) {
+            $data{data_timestamp} = $self->data_timestamp;
+        }
         my $check = $self
           ->_exe_query($self->sqla->select(amazon_mws_products => [qw/sku/],  { %identifier }));
         my $existing = $check->fetchrow_hashref;
@@ -2633,6 +2650,29 @@ sub mark_failed_products_as_redo {
                                            sku => { -in => \@skus },
                                           }));
 }
+
+=head get_product_data_timestamp($sku)
+
+Retrieve the C<amazon_mws_products.data_timestamp> column for the
+given sku.
+
+See the C<data_timestamp> explanation before using this.
+
+=cut
+
+sub get_product_data_timestamp {
+    my ($self, $sku) = @_;
+    my $sth = $self->_exe_query($self->sqla->select(amazon_mws_products => [qw/data_timestamp/],
+                                                    {
+                                                     shop_id => $self->_unique_shop_id,
+                                                     status => [qw/ok pending/],
+                                                     sku => $sku,
+                                                    }));
+    my ($ts) = $sth->fetchrow_array;
+    $sth->finish;
+    return $ts;
+}
+
 
 =head2 get_products_with_amazon_shop_mismatches(@errors)
 
