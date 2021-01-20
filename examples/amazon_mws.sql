@@ -47,6 +47,7 @@ CREATE TABLE amazon_mws_products (
        listed_date DATETIME,
        -- our update
        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+       data_timestamp DATETIME,
        PRIMARY KEY (sku, shop_id)
 );
 
