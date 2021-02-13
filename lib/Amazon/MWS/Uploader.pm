@@ -2268,7 +2268,7 @@ sub buybox_price {
         if ($shipping_time eq '0-2 days' || $shipping_time eq '3-7 days') {
             my $current = $item->{Price}->{LandedPrice}->{Amount};
 
-            if ($current < $lowest) {
+            if ($lowest == 0 || $current < $lowest) {
                 $lowest = $current;
             }
         }
