@@ -2149,6 +2149,48 @@ sub get_lowest_price_for_asin {
     return $lowest;
 }
 
+=head2 buybox_price($asin)
+
+Determines current lowest price for the buybox.
+
+All prices retrieved from Amazon with the I<GetLowestOfferListingsForASIN> API call
+are considered, except when the shipping time exceeds 7 days.
+
+Returns 0 if there is no price available.
+
+=cut
+
+sub buybox_price {
+    my ($self, $asin) = @_;
+    my $listing;
+    my $lowest = 0;
+
+    try { $listing = $self->client
+      ->GetLowestOfferListingsForASIN(
+                                      ASINList => [ $asin ],
+                                      MarketplaceId => $self->marketplace_id,
+                                      ExcludeMe => 1,
+                                      ItemCondition => 'New',
+                                     );
+      }
+    catch { die Dumper($_) };
+
+    return $lowest unless $listing && @$listing;
+
+    foreach my $item (@$listing) {
+        my $shipping_time = $item->{Qualifiers}->{ShippingTime}->{Max};
+
+        if ($shipping_time eq '0-2 days' || $shipping_time eq '3-7 days') {
+            my $current = $item->{Price}->{LandedPrice}->{Amount};
+
+            if ($current < $lowest) {
+                $lowest = $current;
+            }
+        }
+    }
+    return $lowest;
+}
+
 =head2 shipping_confirmation_feed(@shipped_orders)
 
 Return a feed string with the shipping confirmation. A list of
