@@ -2356,6 +2356,8 @@ sub orders_waiting_for_shipping {
                                                     {
                                                      shop_id => $self->_unique_shop_id,
                                                      shipping_confirmation_job_id => undef,
+                                                     # ignore orders which were not imported
+                                                     shop_order_id => { '!=' => '' },
                                                      # do not stop the unconfirmed to be considered
                                                      # confirmed => 1,
                                                     }));
