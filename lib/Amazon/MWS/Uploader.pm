@@ -1461,6 +1461,11 @@ single items cancelled. The application code needs to be prepared to
 deal with such phantom items. You can check each order looping over
 C<$order->items> checking for C<$item->quantity>.
 
+=head2 get_order($amazon_order_number)
+
+Same as above, it returns a list of Amazon::MWS::XML::Order objects
+(expecting one) with the given amazon order number.
+
 =cut
 
 sub get_orders {
@@ -1491,6 +1496,11 @@ sub get_orders {
             die Dumper($_);
         };
     }
+    return $self->_make_order_objects(@order_structs);
+}
+
+sub _make_order_objects {
+    my ($self, @order_structs) = @_;
     my @orders;
     foreach my $order (@order_structs) {
         my $amws_id = $order->{AmazonOrderId};
@@ -1532,6 +1542,22 @@ sub get_orders {
                                                    retrieve_orderline_sub => $get_orderline);
     }
     return @orders;
+}
+
+sub get_order {
+    my ($self, $order_number) = @_;
+    my $res;
+    my @order_structs;
+    try {
+        my $res = $self->client->GetOrder(AmazonOrderId => [ $order_number ],
+                                          MarketplaceId => [ $self->marketplace_id ],
+                                         );
+        push @order_structs, @{ $res->{Orders}->{Order} };
+    }
+    catch {
+        die Dumper($_);
+    };
+    return $self->_make_order_objects(@order_structs);
 }
 
 =head2 order_already_registered($order)
