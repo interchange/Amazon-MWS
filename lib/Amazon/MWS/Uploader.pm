@@ -1649,6 +1649,7 @@ sub acknowledge_successful_order {
                                                     }]);
     # store the pairing amazon order id / shop order id in our table
     foreach my $order (@orders_to_register) {
+        die "Cannot import " . $order->amazon_order_number . " without the order number set" unless $order->order_number;
         $self->_insert_order($order, $job_id);
     }
 }
