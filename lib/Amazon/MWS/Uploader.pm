@@ -1568,6 +1568,18 @@ order.
 Return the row for this table (as an hashref) if present, nothing
 underwise.
 
+=head2 store_order_record($order)
+
+Insert an order in the amazon_mws_orders table. This is normally done
+after the export in the shop. However there are cases when you may
+want to store that manually (e.g. pending orders).
+
+=head2 remove_order_record($amazon_order_number)
+
+Remove the given order number, IF it has not been exported yet (no
+shop order number attached). This is meant to revert the previous
+method.
+
 =cut
 
 sub order_already_registered {
@@ -1585,6 +1597,21 @@ sub order_already_registered {
     else {
         return;
     }
+}
+
+sub remove_order_record {
+   my ($self, $amazon_order_number) = @_;
+   die "Bad usage, missing order" unless $amazon_order_number;
+   $self->_exe_query($self->sqla->delete(amazon_mws_orders => {
+                                                               shop_order_id => '',
+                                                               amazon_order_id => $amazon_order_number,
+                                                               shop_id => $self->_unique_shop_id,
+                                                              }));
+}
+
+sub store_order_record {
+    my ($self, $order) = @_;
+    $self->_insert_order($order);
 }
 
 =head2 acknowledge_successful_order(@orders)
@@ -1622,14 +1649,35 @@ sub acknowledge_successful_order {
                                                     }]);
     # store the pairing amazon order id / shop order id in our table
     foreach my $order (@orders_to_register) {
+        $self->_insert_order($order, $job_id);
+    }
+}
+
+sub _insert_order {
+    my ($self, $order, $job_id) = @_;
+    if ($order) {
         my %order_pairs = (
                            shop_id => $self->_unique_shop_id,
                            amazon_order_id => $order->amazon_order_number,
                            # this will die if we try to insert an undef order_number
-                           shop_order_id => $order->order_number,
+                           shop_order_id => $order->order_number // '',
                            amws_job_id => $job_id,
+                           status => $order->order_status,
                           );
-        $self->_exe_query($self->sqla->insert(amazon_mws_orders => \%order_pairs));
+        if ($self->order_already_registered($order)) {
+            $self->_exe_query($self->sqla->update(amazon_mws_orders => {
+                                                                        shop_order_id => $order->order_number // '',
+                                                                        amws_job_id => $job_id,
+                                                                        status => $order->order_status,
+                                                                       },
+                                                  {
+                                                   amazon_order_id => $order->amazon_order_number,
+                                                   shop_id => $self->_unique_shop_id,
+                                                  }));
+        }
+        else {
+            $self->_exe_query($self->sqla->insert(amazon_mws_orders => \%order_pairs));
+        }
     }
 }
 
