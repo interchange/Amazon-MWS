@@ -1659,7 +1659,6 @@ sub _insert_order {
         my %order_pairs = (
                            shop_id => $self->_unique_shop_id,
                            amazon_order_id => $order->amazon_order_number,
-                           # this will die if we try to insert an undef order_number
                            shop_order_id => $order->order_number // '',
                            amws_job_id => $job_id,
                            status => $order->order_status,
