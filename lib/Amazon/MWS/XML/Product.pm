@@ -135,7 +135,7 @@ An (optional) arraryref of children sku.
 
 =item search_terms
 
-An (optional) arrayref of search terms (max 5)
+An (optional) arrayref of search terms (total characters: 250)
 
 =item features
 
@@ -472,12 +472,17 @@ sub as_product_hash {
     }
     if (my $search_terms = $self->search_terms) {
         if (my @terms = @$search_terms) {
-            if (@terms > 5) {
-                warn "Max terms is 5, removing some of them: " .
-                  join(" ", splice(@terms, 5)) . "\n";
+            my $string = '';
+            my @filtered;
+            while (@terms) {
+                my $add = shift @terms;
+                if (length($string) + length($add) + @terms < 250) {
+                    push @filtered, $add;
+                }
             }
-            my @filtered = map { substr $_, 0, 50 } @terms;
-            $data->{DescriptionData}->{SearchTerms} = \@filtered;
+            if (@filtered) {
+                $data->{DescriptionData}->{SearchTerms} = join(' ', @filtered);
+            }
         }
     }
     if (my $features = $self->features) {
