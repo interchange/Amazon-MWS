@@ -39,7 +39,7 @@ foreach my $product ({
                       condition => 'Refurbished',
                       condition_note => 'Looks like new',
                       inventory => 1,
-                      search_terms => [qw/a b c d e f g/],
+                      search_terms => [qw/a b c d e f g/, 'x' x 250 ],
                       features => [qw/f1 f2 f3/, '',  qw/f4 f5 f6 f7/],
                       shipping_weight => '5',
                       shipping_weight_unit => 'GR',
@@ -106,11 +106,7 @@ my $exp_product_feed = <<'XML';
         <ShippingWeight unitOfMeasure="GR">5</ShippingWeight>
         <Manufacturer>A manufacturer</Manufacturer>
         <MfrPartNumber>1234123412343</MfrPartNumber>
-        <SearchTerms>a</SearchTerms>
-        <SearchTerms>b</SearchTerms>
-        <SearchTerms>c</SearchTerms>
-        <SearchTerms>d</SearchTerms>
-        <SearchTerms>e</SearchTerms>
+        <SearchTerms>a b c d e f g</SearchTerms>
         <OtherItemAttributes>WXY</OtherItemAttributes>
         <RecommendedBrowseNode>111111</RecommendedBrowseNode>
         <MerchantShippingGroupName>XYZ</MerchantShippingGroupName>
