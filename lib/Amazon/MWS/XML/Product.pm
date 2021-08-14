@@ -360,6 +360,17 @@ has children => (is => 'rw',
 
 =head1 METHODS
 
+=head2 category
+
+Determines Amazon category (e.g. Sports, PetSupplies) from the product_data value.
+
+=cut
+
+sub category {
+    my $self = shift;
+    my $cat = (keys (%{$self->product_data}))[0];
+}
+
 =head2 price_is_zero
 
 Return true if the price is 0.
