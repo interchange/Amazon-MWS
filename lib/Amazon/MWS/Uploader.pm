@@ -851,7 +851,17 @@ sub upload {
                     if (defined $row->{"amazon_$fld"}) {
                         # special case for Color and Size
                         if ($fld eq 'color' or $fld eq 'size') {
-                            $p->{product_data}->{Sports}->{VariationData}->{ucfirst($fld)} = $row->{"amazon_$fld"};
+                            if ($p->category eq 'Sports') {
+                                $p->{product_data}->{Sports}->{VariationData}->{ucfirst($fld)} = $row->{"amazon_$fld"};
+                            }
+                            elsif ($p->category eq 'PetSupplies') {
+                                if ($fld eq 'size') {
+                                    $p->{product_data}->{PetSupplies}->{ProductType}->{PetSuppliesMisc}->{Size} = $row->{"amazon_$fld"};
+                                }
+                                else {
+                                    $p->{product_data}->{PetSupplies}->{ProductType}->{PetSuppliesMisc}->{ColorSpecification} = { Color => $row->{"amazon_$fld"}, ColorMap => $row->{"amazon_$fld"} };
+                                }
+                            }
                         }
                         else {
                             $p->{$fld} = $row->{"amazon_$fld"};
