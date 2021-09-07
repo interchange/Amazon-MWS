@@ -864,16 +864,22 @@ sub upload {
                             }
                         }
                         else {
-                            $p->{$fld} = $row->{"amazon_$fld"};
+                            if (($fld eq 'brand' or $fld eq 'manufacturer') and length($row->{"amazon_$fld"}) > 50) {
+                                warn "Data for $fld for ", $p->sku, "exceeds limit of 50 characters:\n",
+                                    $row->{"amazon_$fld"};
+                            }
+                            else {
+                                $p->{$fld} = $row->{"amazon_$fld"};
+                            }
+
+                            $changes{$fld} = $row->{"amazon_$fld"};
                         }
-                        $changes{$fld} = $row->{"amazon_$fld"};
                     }
                 }
-
             }
         }
     }
-    
+
     my $feeder = Amazon::MWS::XML::Feed->new(
                                              products => \@products,
                                              xml_writer => $self->xml_writer,
