@@ -175,7 +175,7 @@ sub _build_last_name {
 sub _get_first_last_name {
     my $self = shift;
     my $address = $self->shipping_address;
-    die "Missing name in shipping address" unless $address->name;
+    die "Missing name in shipping address for Amazon order " . $self->amazon_order_number  unless $address->name;
     # this is totally euristic
     my ($first_name, $last_name) = ('', '');
     if (my $name = $address->name) {
