@@ -11,6 +11,7 @@ define_api_method RequestReport =>
         },
         StartDate => { type => 'datetime' },
         EndDate   => { type => 'datetime' },
+        ReportOptions => { type => 'string' },
     },
     respond => sub {
         my $root = shift;
