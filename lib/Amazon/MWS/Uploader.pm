@@ -863,12 +863,22 @@ sub upload {
                                 }
                             }
                         }
+                        elsif ($fld eq 'item_name') {
+                            $p->{title} = $row->{"amazon_$fld"};
+                        }
+                        elsif ($fld eq 'part_number') {
+                            $p->{manufacturer_part_number} = $row->{"amazon_$fld"};
+                        }
+                        elsif ($fld eq 'standard_product_id') {
+                            $p->{ean} = $row->{"amazon_$fld"};
+                        }
                         else {
                             if (($fld eq 'brand' or $fld eq 'manufacturer') and length($row->{"amazon_$fld"}) > 50) {
-                                warn "Data for $fld for ", $p->sku, "exceeds limit of 50 characters:\n",
+                                print "Data for $fld for ", $p->sku, " exceeds limit of 50 characters: \n",
                                     $row->{"amazon_$fld"};
                             }
                             else {
+                                print $p->sku, ": Set override for field $fld to ", $row->{"amazon_$fld"}, " old value ", $p->{$fld} || 'N/A', "\n";
                                 $p->{$fld} = $row->{"amazon_$fld"};
                             }
 
