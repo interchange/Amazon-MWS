@@ -1545,10 +1545,10 @@ sub submission_result {
     } catch {
         my $exception = $_;
         if (ref($exception) && $exception->can('xml')) {
-            warn "submission result error: " . $exception->xml;
+            warn "submission result error for feed id $feed_id: " . $exception->xml;
         }
         else {
-            warn "submission result error: " . Dumper($exception);
+            warn "submission result error for feed id $feed_id: " . Dumper($exception);
         }
     };
     die unless $xml;
