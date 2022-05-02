@@ -159,7 +159,26 @@ my $canceled = {
                             'PurchaseDate' => '2018-01-25T00:00:00Z',
                             'SalesChannel' => 'Amazon.ca',
                             'ShipServiceLevel' => 'Exp CA D2D Dom',
+                             TaxRegistrationDetails => {
+                                           member => [
+                                                      {
+                                                       taxRegistrationAuthority => {
+                                                                                    'country' => 'TR'
+                                                                                   },
+                                                       'taxRegistrationId' => '99999',
+                                                       'taxRegistrationType' => 'CitizenId'
+                                                      },
+                                                      {
+                                                      taxRegistrationAuthority => {
+                                                                                   country => "IE"
+                                                                                  },
+                                                      taxRegistrationId => "IE99999999",
+                                                      taxRegistrationType => "VAT"
+                                                      }
+                                                     ],
+                                                       },
                             'ShipmentServiceLevelCategory' => 'Expedited'
+
                };
 my $canceled_orderline =  [
                                 {
@@ -181,6 +200,8 @@ my $canceled_orderline =  [
 my $corder = Amazon::MWS::XML::Order->new(order => $canceled,
                                           include_tax_in_prices => 1,
                                           orderline => $canceled_orderline);
+is $corder->customer_vat_id, 'IE99999999';
+
 is $corder->total_cost, 0;
 ok !$corder->can_be_imported;
 ok !$corder->is_prime;
