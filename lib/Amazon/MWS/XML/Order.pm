@@ -543,14 +543,22 @@ Return the VAT ID if provided by Amazon.
 sub customer_vat_id {
     my $self = shift;
     my $order_data = $self->order;
-    if ($order_data->{TaxRegistrationDetails} and
-        $order_data->{TaxRegistrationDetails}->{member} and
-        $order_data->{TaxRegistrationDetails}->{member}->{taxRegistrationId}) {
-        return $order_data->{TaxRegistrationDetails}->{member}->{taxRegistrationId};
+    if ($order_data->{TaxRegistrationDetails}) {
+        if (my $detail = $order_data->{TaxRegistrationDetails}->{member}) {
+            my @details;
+            if (ref($detail) eq 'ARRAY') {
+                @details = @$detail;
+            }
+            elsif (ref($detail) eq 'HASH') {
+                @details = ($detail);
+            }
+            my ($vat_section) = grep { $_->{taxRegistrationType} eq 'VAT' } @details;
+            if ($vat_section) {
+                return $vat_section->{taxRegistrationId};
+            }
+        }
     }
-    else {
-        return undef;
-    }
+    return undef;
 }
 
 1;
