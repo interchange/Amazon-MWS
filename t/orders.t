@@ -15,7 +15,7 @@ my $order_data = {
                   'ShipmentServiceLevelCategory' => 'Standard',
                   'LatestShipDate' => '2014-10-28T22:59:59Z',
                   'OrderTotal' => {
-                                   'Amount' => '119.80',
+                                   'Amount' => '115.80',
                                    'CurrencyCode' => 'EUR'
                                   },
                   'ShippedByAmazonTFM' => 'false',
@@ -59,7 +59,7 @@ my $orderline_data = [
                                           },
                        'PromotionDiscount' => {
                                                'CurrencyCode' => 'EUR',
-                                               'Amount' => '0.00'
+                                               'Amount' => '4.00'
                                               },
                        'ConditionId' => 'New',
                        'ItemPrice' => {
@@ -97,9 +97,9 @@ my $order = Amazon::MWS::XML::Order->new(order => $order_data,
 ok $order->is_prime;
 ok $order->is_business;
 is $order->customer_vat_id, undef;
-is($order->subtotal, "119.80");
+is($order->subtotal, "115.80");
 my @items = $order->items;
-is($items[0]->price, "59.90");
+is($items[0]->price, "57.90");
 ok ($order->order_is_shipped, "It is shipped");
 
 my $global = 0;
@@ -123,7 +123,7 @@ my @newitems = $order->items;
 is $global, 1, "get_orderline called";
 
 is_deeply(\@newitems, \@items);
-is($items[0]->price, "59.90");
+is($items[0]->price, "57.90");
 is ($items[0]->amazon_order_item, $items[0]->remote_shop_order_item);
 ok ($order->order_is_shipped, "It is shipped");
 is ($order->amazon_order_number, $order->remote_shop_order_id, "alias ok");

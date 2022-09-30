@@ -11,6 +11,8 @@ use Moo;
 
 =item PromotionDiscount
 
+The total of all promotional discounts in the offer.
+
 =item Title
 
 =item OrderItemId
@@ -220,6 +222,9 @@ sub subtotal {
     my $amount = 0;
     if (my $price = $self->ItemPrice) {
         $amount = $price->{Amount} || 0;
+    }
+    if (my $discount = $self->PromotionDiscount) {
+        $amount -= $discount->{Amount} || 0;
     }
     if ($self->include_tax_in_prices) {
         $amount += $self->item_tax;
