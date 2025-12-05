@@ -5,7 +5,7 @@ use warnings;
 use utf8;
 
 use base 'Amazon::MWS::XML::GenericFeed';
-use Data::Dumper;
+use Data::Dumper::Concise;
 
 use Moo;
 

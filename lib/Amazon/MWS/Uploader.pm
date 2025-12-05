@@ -685,8 +685,24 @@ sub _build_client {
                                                logfile
                                                endpoint/);
 
-    return Amazon::MWS::Client->new(%mws_args);
+    my $client = Amazon::MWS::Client->new(%mws_args);
+
+    # Add handler to user agent
+    $client->agent->add_handler('request_prepare',
+                         sub {
+                             my $request = shift;
+
+                             $self->_set_request($request);
+                         }
+                     );
+
+    return $client;
 }
+
+has request => (
+    is => 'ro',
+    writer => '_set_request',
+);
 
 has _mismatch_patterns => (is => 'lazy', isa => HashRef);
 
@@ -864,7 +880,12 @@ sub upload {
                             }
                         }
                         elsif ($fld eq 'item_name') {
-                            $p->{title} = $row->{"amazon_$fld"};
+                            if (length($row->{"amazon_$fld"}) > 500) {
+                                warn "Data for $fld for ", $p->sku, " exceeds limit of 500 characters: \n", $row->{"amazon_$fld"}, "\n";
+                            }
+                            else {
+                                $p->{title} = $row->{"amazon_$fld"};
+                            }
                         }
                         elsif ($fld eq 'part_number') {
                             $p->{manufacturer_part_number} = $row->{"amazon_$fld"};
@@ -1374,7 +1395,9 @@ sub upload_feed {
                     foreach my $w (@$warns) {
                         if ($w->{sku} && $w->{error}) {
                             $self->_error_logger(warning => $w->{code},
-                                                 "$w->{sku}: $w->{error}");
+                                                 "$w->{sku}: $w->{error}",
+                                                 $job_id,
+                                             );
                             # and register it in the db
                             $self->_exe_query($self->sqla->update('amazon_mws_products',
                                                                   { warnings => "$job_id $w->{code} $w->{error}" },
@@ -1385,21 +1408,34 @@ sub upload_feed {
                         }
                         else {
                             $self->_error_logger(warning => $w->{code},
-                                                "$type:  $w->{error}");
+                                                 "$type:  $w->{error}",
+                                                 $job_id,
+                                             );
                         }
                     }
                 }
                 else {
-                    warn "$warn\n";
+                    warn "W Type $type: $warn\n";
                 }
             }
             return 1;
         }
         else {
             foreach my $err ($result->report_errors) {
+                if ($err->{code} eq 5001) {
+                    my $reqstr = 'N/A';
+
+                    if ($self->request) {
+                        $reqstr = $self->request->as_string;
+                    }
+                    
+                    $self->_error_logger($err->{type}, $err->{code}, "Weird XML error: $reqstr");
+                }
                 $self->_error_logger($err->{type},
                                      $err->{code},
-                                     $err->{message});
+                                     $err->{message},
+                                     $job_id,
+                                 );
             }
             $self->_exe_query($self->sqla
                               ->update('amazon_mws_feeds',
@@ -2249,6 +2285,7 @@ sub get_lowest_price_for_asin {
     catch { die Dumper($_) };
 
     return unless $listing && @$listing;
+
     my $lowest;
     foreach my $item (@$listing) {
         my $current = $item->{Price}->{LandedPrice}->{Amount};
@@ -2661,10 +2698,18 @@ sub cancel_feed {
 }
 
 sub _error_logger {
-    my ($self, $error_or_warning, $error_code, $message) = @_;
+    my ($self, $error_or_warning, $error_code, $message, $job_id) = @_;
     my $mode = 'warn';
     my $modes = $self->skus_warnings_modes;
-    my $out_message = "$error_or_warning: $message ($error_code)\n";
+    my $out_message;
+
+    if ($job_id) {
+        $out_message = "$job_id: $error_or_warning: $message ($error_code)\n";
+    }
+    else {
+        $out_message = "$error_or_warning: $message ($error_code)\n";
+    }
+
     # hardcode 8008 as print
     $modes->{8008} = 'print';
     if (exists $modes->{$error_code}) {

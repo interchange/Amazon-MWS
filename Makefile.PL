@@ -41,6 +41,7 @@ WriteMakefile(
         'Class::InsideOut' => 0,
         'Exception::Class' => 0,
         'Exporter'         => 0,
+        'Data::Dumper::Concise' => 0,
 
         'MIME::Base64'      => 0,
         'Digest::MD5'       => 0,
